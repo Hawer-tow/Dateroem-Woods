@@ -1,0 +1,16 @@
+flowchart TB
+  O["Website order placed<br/><small>order and delivery record PENDING</small>"] --> P{"M-Pesa<br/>payment"}
+  P -- "failed" --> X["CANCELLED<br/><small>stock returned</small>"]
+  P -- "paid" --> G["Pending pool<br/><small>per customer and area:<br/>LIGHT, BULK or COMBINED</small>"]
+  G -- "admin drops it" --> DR["Dropped<br/><small>refund owed</small>"]
+  DR --> RF["Refund via Send Money"]
+  G -- "admin assigns" --> A["On a trip<br/><small>light delivery or bulk side quest,<br/>vehicle and real date</small>"]
+  A --> D["Delivered<br/><small>received by, signature</small>"]
+  A -- "not delivered" --> RE["Back to the pool<br/><small>as priority, with reason</small>"]
+  RE --> G
+  D --> RV["Customer can rate it"]
+
+  classDef good fill:#EAF3EE,stroke:#2E6B4F,color:#1E2622
+  classDef warn fill:#FFF5E6,stroke:#C77700,color:#1E2622
+  class D,RV good
+  class X,DR,RE warn

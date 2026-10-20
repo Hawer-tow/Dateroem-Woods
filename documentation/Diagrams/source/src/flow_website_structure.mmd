@@ -1,0 +1,19 @@
+flowchart TB
+  subgraph Browser["Visitor's browser - React single-page app (frontend/website/src)"]
+    direction TB
+    R["App.jsx<br/><small>routes and providers</small>"]
+    CTX["context/<br/><small>Auth, Cart, Featured, CookieConsent,<br/>HelpWidget, ChatNudge</small>"]
+    PG["pages/<br/><small>Products, Product, Featured, Cart, Delivery area,<br/>Order status, Ordered goods,<br/>Shipping, Help, Bulk orders, About</small>"]
+    CMP["components/<br/><small>NavBar, HelpWidget (AI chat), AuthModal + AuthStory,<br/>ProductCard, ProductCampaignCard, StoryScroller ...</small>"]
+    CORE["core/ and wood/<br/><small>analytics, cookies, phone and email checks,<br/>Google sign-in, in-page jumps, painted wood brush</small>"]
+    API["api/client.js"]
+    R --> PG
+    CTX --- PG
+    PG --> CMP
+    PG --> API
+    CMP --> API
+    CMP --> CORE
+  end
+  API -- "/svc/* (prefix removed by the Vite proxy)" --> BFF["Website server :8000<br/><small>frontend/app</small>"]
+  API -- "/media/*" --> BFF
+  BFF --> BE["Backend :8080"]

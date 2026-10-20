@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph Callers["Callers"]
+    direction LR
+    B1["Website server :8000"]
+    B2["Mobile server :8001"]
+    B3["Admin server :8002"]
+    MP["M-Pesa callbacks<br/><small>through Caddy</small>"]
+  end
+  subgraph Backend["Spring Boot backend - package com.dateroem.backend"]
+    direction TB
+    C["controller/<br/><small>25 REST controllers under /api, 141 endpoints</small>"]
+    SEC["security/<br/><small>JwtService, AdminGuard, GoogleIdTokens</small>"]
+    S["service/<br/><small>business rules: orders, deliveries, trips, expenses,<br/>payments, reviews, AI, SMS</small>"]
+    CL["external clients (in service/)<br/><small>MpesaClient, GroqClient, AnthropicClient</small>"]
+    U["util/ and dto/ and model/<br/><small>JsonKeys, MediaUrls, FlakyNetworkRetry,<br/>request records, ExpenseTarget, RoleName</small>"]
+    SCH["Scheduled jobs<br/><small>SMS reconcile every 2 min,<br/>description tidy-up every 5 min</small>"]
+  end
+  DB[("MySQL dateroem<br/><small>39 tables, fn_trip_* functions,<br/>sp_recalculate_trip_profit</small>")]
+  EXT["M-Pesa, Groq, Anthropic, Google"]
+  Callers --> C
+  C --> SEC
+  C --> S
+  S --> U
+  S --> CL
+  SCH --> S
+  S -- "JdbcTemplate (plain SQL)" --> DB
+  CL --> EXT
+
+  classDef core fill:#1F4D3A,stroke:#1F4D3A,color:#FFFFFF
+  class S core

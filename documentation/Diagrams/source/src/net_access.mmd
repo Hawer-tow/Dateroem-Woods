@@ -1,0 +1,15 @@
+flowchart TB
+  I["From the internet<br/><small>customer browsers, admin phones with the shared APK,<br/>admins' desktop apps, Safaricom's payment results</small>"]
+  I --> N["ngrok tunnel<br/><small>https://&lt;reserved&gt;.ngrok-free.dev - runs on Windows</small>"]
+  N --> C{"Caddy :9099<br/><small>Caddyfile in fathersProject</small>"}
+  C -- "/mobile-api/*" --> MB["Mobile server<br/>:8001<br/><small>approved phones only</small>"]
+  C -- "/admin-api/*" --> AD["Admin server<br/>:8002<br/><small>approved computers only</small>"]
+  C -- "/downloadable/*" --> DL["downloads folder<br/><small>the APK file</small>"]
+  C -- "/api/dateroem-<br/>mpesa-callback/*" --> BE["Backend<br/>:8080"]
+  C -- "everything else" --> WP["Website build<br/>:4173"]
+  WP -- "/svc  /media" --> WB["Website server<br/>:8000"]
+
+  classDef edge fill:#FFF7E8,stroke:#C9A46A,color:#1E2622
+  classDef core fill:#1F4D3A,stroke:#1F4D3A,color:#FFFFFF
+  class N,C edge
+  class BE core

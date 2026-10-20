@@ -1,0 +1,15 @@
+flowchart TB
+  C["Create a trip<br/><small>only when no other trip is open</small>"]
+  C --> TR["Trees and farmers<br/><small>remainders from an earlier<br/>trip can be carried in</small>"]
+  C --> EX["Expenses, loans,<br/>capital"]
+  C --> DEL["Light and bulk<br/>deliveries"]
+  TR --> PRD["Products linked<br/>to their trees"]
+  EX --> PAY["Payments assigned<br/>or paid out"]
+  PAY --> CHK{"Finalize<br/><small>no active loans,<br/>bulk deliveries done</small>"}
+  DEL --> CHK
+  CHK -- "undelivered orders" --> DROP["Back to the pending<br/>pool as priority"]
+  CHK --> FIN["Trip closed<br/><small>totals and profit recalculated,<br/>end date set</small>"]
+  FIN --> RT["Remainder trees recorded<br/>for the next trip"]
+
+  classDef core fill:#1F4D3A,stroke:#1F4D3A,color:#FFFFFF
+  class C,FIN core

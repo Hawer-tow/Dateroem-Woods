@@ -1,0 +1,23 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as Client + its server
+  participant J as Backend
+  participant G as Google
+  U->>C: Username or email, and password
+  C->>J: POST /api/auth/login
+  Note over J: Username first, an email only if<br/>exactly one account has it.<br/>BCrypt check, account enabled
+  J-->>C: JWT, name and role
+  Note over C: Sent later as<br/>Authorization: Bearer
+  U->>C: Continue with Google
+  C->>G: Google sign-in pop-up
+  G-->>C: Signed ID token
+  C->>J: POST /api/auth/google
+  J->>G: Public keys (cached 6 h)
+  Note over J: Check signature, audience,<br/>verified email
+  opt New customer
+    J-->>C: needsPhone, needsUserName
+    U->>C: Chosen username and phone number
+    C->>J: Same token + username + phone
+  end
+  J-->>C: JWT for the account

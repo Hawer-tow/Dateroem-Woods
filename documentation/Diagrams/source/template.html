@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #ffffff; }
+  #wrap { display: inline-block; padding: 22px 26px; background: #ffffff; }
+  .mermaid { font-family: 'Segoe UI', Calibri, Arial, sans-serif; }
+</style>
+<script src="mermaid.min.js"></script>
+</head>
+<body>
+<div id="wrap"><pre class="mermaid">%%DIAGRAM%%</pre></div>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'loose',
+    theme: 'base',
+    flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis', nodeSpacing: 26, rankSpacing: 40, padding: 10, wrappingWidth: 230 },
+    sequence: { useMaxWidth: false, mirrorActors: false, actorMargin: 30, width: 150, height: 54, messageMargin: 30, boxMargin: 8, noteMargin: 8, boxTextMargin: 6, diagramMarginX: 8, diagramMarginY: 8, wrap: false, messageFontSize: 15, actorFontSize: 15, noteFontSize: 14 },
+    gantt: { useMaxWidth: false, useWidth: 860, barHeight: 18, barGap: 5, topPadding: 46, leftPadding: 120, gridLineStartPadding: 30, fontSize: 12, sectionFontSize: 13, numberSectionStyles: 3 },
+    er: { useMaxWidth: false },
+    state: { useMaxWidth: false },
+    themeVariables: {
+      fontFamily: "'Segoe UI', Calibri, Arial, sans-serif",
+      fontSize: '16px',
+      primaryColor: '#EAF3EE',
+      primaryBorderColor: '#2E6B4F',
+      primaryTextColor: '#1E2622',
+      secondaryColor: '#F6EFE6',
+      secondaryBorderColor: '#8A5A2B',
+      tertiaryColor: '#F7F8F6',
+      tertiaryBorderColor: '#C9D2CC',
+      lineColor: '#5F6B66',
+      clusterBkg: '#F7F8F6',
+      clusterBorder: '#B9C4BD',
+      edgeLabelBackground: '#FFFFFF',
+      actorBkg: '#EAF3EE',
+      actorBorder: '#2E6B4F',
+      actorTextColor: '#1E2622',
+      signalColor: '#3E4743',
+      signalTextColor: '#1E2622',
+      labelBoxBkgColor: '#F6EFE6',
+      labelBoxBorderColor: '#8A5A2B',
+      noteBkgColor: '#FFF7E8',
+      noteBorderColor: '#C9A46A',
+      activationBkgColor: '#DCEBE2',
+      activationBorderColor: '#2E6B4F',
+      sequenceNumberColor: '#FFFFFF',
+      gridColor: '#E1E6E3',
+      doneTaskBkgColor: '#CFE3D7',
+      doneTaskBorderColor: '#2E6B4F',
+      activeTaskBkgColor: '#F6EFE6',
+      activeTaskBorderColor: '#8A5A2B',
+      taskTextColor: '#1E2622',
+      taskTextOutsideColor: '#1E2622',
+      taskTextDarkColor: '#1E2622',
+      sectionBkgColor: '#F7F8F6',
+      altSectionBkgColor: '#FFFFFF',
+      sectionBkgColor2: '#F7F8F6',
+      todayLineColor: '#8A5A2B',
+    },
+  });
+  mermaid.run({ querySelector: '.mermaid' })
+    .then(() => { window.__state = 'ready'; })
+    .catch((e) => { window.__state = 'error: ' + (e && e.message ? e.message : e); });
+</script>
+</body>
+</html>

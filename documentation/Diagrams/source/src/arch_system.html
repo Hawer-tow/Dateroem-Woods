@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff}#wrap{display:inline-block;padding:10px}</style>
+<script src="lib_draw.js"></script>
+</head><body><div id="wrap"></div>
+<script>
+const D = Draw;
+D.start(870, 940);
+
+// People and devices
+D.band(10, 8, 850, 118, 'People and devices');
+D.box(30, 42, 240, 66, 'Customer website', 'any browser - React + Vite', 'client');
+D.box(315, 42, 240, 66, 'Staff mobile app', 'Android - Kotlin + Compose', 'client');
+D.box(600, 42, 240, 66, 'Admin desktop app', 'Windows - Python + PySide6', 'client');
+
+// Public entry
+D.band(10, 150, 560, 110, 'Public entry point (internet)', 'tr');
+D.box(30, 184, 250, 60, 'ngrok tunnel', 'https://<reserved>.ngrok-free.dev', 'edge');
+D.box(330, 184, 220, 60, 'Caddy router :9099', 'sends each path onward', 'edge');
+
+// Company computer
+D.band(10, 284, 850, 470, 'Company computer - Windows 11 with WSL Ubuntu', 'br');
+D.box(30, 330, 175, 74, 'Website files', 'vite preview :4173\n(developer: vite :5173)', 'bff');
+D.box(235, 330, 175, 74, 'Website server', 'FastAPI :8000\n+ /media files', 'bff');
+D.box(440, 330, 175, 74, 'Mobile server', 'FastAPI :8001', 'bff');
+D.box(665, 330, 175, 74, 'Admin server', 'FastAPI :8002', 'bff');
+D.box(235, 470, 400, 84, 'Core backend :8080', 'Java 17, Spring Boot - every business rule,\npayments, AI assistant, scheduled jobs', 'core');
+D.box(30, 476, 175, 72, 'media folder', 'product and campaign\nphotos and videos', 'data');
+D.cylinder(335, 612, 200, 100, 'MySQL 8 :3309', 'database "dateroem"\n39 tables');
+D.box(665, 622, 175, 80, 'Scheduled jobs', 'SMS reconcile 2 min\ndescription tidy-up 5 min', 'plain');
+
+// External
+D.band(10, 776, 850, 156, 'External services');
+D.box(30, 842, 185, 72, 'Safaricom M-Pesa', 'Daraja API\nSTK push, B2C payouts', 'ext');
+D.box(235, 842, 185, 72, 'Groq', 'AI chat assistant\n(default provider)', 'ext');
+D.box(440, 842, 185, 72, 'Anthropic Claude', 'handwriting scan,\noptional chat', 'ext');
+D.box(645, 842, 195, 72, 'Google', 'Sign-In token check,\nAnalytics (website)', 'ext');
+
+// Users -> entry
+D.arrow([[150, 108], [150, 184]], 'https', [158, 146], { anchor: 'start' });
+D.arrow([[390, 108], [390, 140], [255, 140], [255, 184]], 'https /mobile-api', [322, 133]);
+D.arrow([[280, 214], [330, 214]], '', null);
+// Caddy routes
+D.arrow([[360, 244], [360, 274], [117, 274], [117, 330]], 'website pages', [235, 268]);
+D.arrow([[470, 244], [470, 330]], '/mobile-api/*', [470, 302]);
+D.arrow([[530, 244], [530, 262], [648, 262], [648, 452], [600, 452], [600, 470]], 'M-Pesa callbacks', [560, 281], { anchor: 'start' });
+// Desktop direct
+D.arrow([[740, 108], [740, 330]], 'localhost:8002', [748, 220], { anchor: 'start' });
+// Website files -> website server
+D.arrow([[205, 367], [235, 367]], '', null);
+D.note(220, 322, '/svc /media', { size: 12 });
+// BFFs -> backend
+D.arrow([[322, 404], [322, 470]], '', null);
+D.arrow([[527, 404], [527, 470]], '', null);
+D.arrow([[752, 404], [752, 512], [635, 512]], '', null);
+// media
+D.arrow([[262, 404], [262, 440], [150, 440], [150, 476]], 'serves', [205, 436]);
+// backend -> db, jobs -> backend
+D.arrow([[435, 554], [435, 612]], 'SQL', [445, 588], { anchor: 'start' });
+D.arrow([[665, 662], [600, 662], [600, 554]], '', null);
+// backend -> external (bus)
+D.arrow([[260, 554], [260, 820], [122, 820], [122, 842]], '', null);
+D.arrow([[260, 820], [327, 820], [327, 842]], '', null);
+D.arrow([[327, 820], [532, 820], [532, 842]], '', null);
+D.arrow([[532, 820], [742, 820], [742, 842]], '', null);
+D.note(560, 808, 'outbound https calls from the backend', { size: 12.5 });
+// M-Pesa results come back in through the tunnel
+D.arrow([[30, 896], [19, 896], [19, 214], [30, 214]], '', null, { dashed: true });
+D.note(26, 770, 'M-Pesa results return through the tunnel', { size: 12, anchor: 'start' });
+D.done();
+</script></body></html>

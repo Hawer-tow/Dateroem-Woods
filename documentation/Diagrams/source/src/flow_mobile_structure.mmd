@@ -1,0 +1,14 @@
+flowchart TB
+  UI["Compose screens - ui/*<br/><small>HomeShell navigation, side menu, bottom dock<br/>(menu, trip dial, AI chat)<br/>AppLock: fingerprint or screen lock</small>"]
+  VM["ViewModels<br/><small>one per screen, state + loading</small>"]
+  ST["On-device stores (DataStore)<br/><small>session token, active trip,<br/>company SIM, company info</small>"]
+  KEY["DeviceIdentity<br/><small>this phone's key in the<br/>Android Keystore (signs sign-in)</small>"]
+  SMS["SmsReceiver and SmsQueueSync<br/><small>company SIM only</small>"]
+  API["ApiService (Retrofit) + RetrofitClient<br/><small>adds Authorization: Bearer</small>"]
+  UI --> VM
+  VM --> API
+  VM --> ST
+  VM --> KEY
+  SMS --> API
+  API -- "BuildConfig.MOBILE_SERVER_BASE_URL" --> MB["Mobile server :8001<br/><small>USB: http://127.0.0.1:8001/<br/>(adb reverse)<br/>shared APK:<br/>https://&lt;tunnel&gt;/mobile-api/</small>"]
+  MB -- "token + X-Client: mobile" --> BE["Backend :8080<br/><small>approved phones only</small>"]

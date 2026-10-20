@@ -1,0 +1,18 @@
+flowchart TB
+  A["Staff STK push<br/><small>bulk goods, any signed-in user</small>"] --> FT
+  B["M-Pesa SMS on the company SIM<br/><small>payments made while offline</small>"] --> SQ["SMS_QUEUE<br/><small>one row per receipt</small>"]
+  SQ -- "receipt not yet in the system" --> FT
+  SQ -- "receipt already recorded" --> LK["Linked only<br/><small>nothing to assign</small>"]
+  FT["FINANCIAL_TRANSACTION<br/><small>incoming payment, not yet assigned</small>"]
+  H["Expense entries created by staff<br/><small>transport, permits, salaries, farmer payments ...</small>"]
+  FT --> CL["Admin claims a batch<br/><small>default 7, locked so two admins never share one</small>"]
+  CL --> CA["Suggested matches<br/><small>same amount, closest creation time</small>"]
+  H --> CA
+  CA --> AS{"Admin decides"}
+  AS -- "assign" --> U["Entry receives the M-Pesa receipt<br/>and the transaction id"]
+  U --> PR["Trip profit recalculated<br/><small>sp_recalculate_trip_profit</small>"]
+  AS -- "cannot place it" --> RL["Release back to the pool"]
+  RL --> FT
+
+  classDef core fill:#1F4D3A,stroke:#1F4D3A,color:#FFFFFF
+  class FT core

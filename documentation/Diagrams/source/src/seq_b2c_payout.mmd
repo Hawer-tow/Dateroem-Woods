@@ -1,0 +1,20 @@
+sequenceDiagram
+  autonumber
+  actor A as Admin
+  participant P as App + its server
+  participant J as Backend + database
+  participant M as M-Pesa B2C
+  A->>P: Pay entry, loan or refund
+  P->>J: GET send-money/recipient
+  J-->>P: Name, phone, amount
+  A->>P: Checks bold details, confirms
+  P->>J: POST send-money
+  Note over J: Admin only, still unpaid,<br/>nothing in flight for 10 min.<br/>Saved as SEND_MONEY PENDING
+  J->>M: B2C BusinessPayment
+  M-->>J: ConversationID
+  loop While the transfer shows
+    P->>J: GET status
+  end
+  M->>J: POST .../b2c-result
+  Note over J: Success: receipt saved, entry paid,<br/>trip profit updated.<br/>Failure: reason saved
+  P-->>A: Receipt, or the reason

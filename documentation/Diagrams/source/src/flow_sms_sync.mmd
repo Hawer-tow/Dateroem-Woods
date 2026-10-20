@@ -1,0 +1,10 @@
+flowchart TB
+  SMS["M-Pesa SMS arrives on the company SIM"] --> R["SmsReceiver<br/><small>works even when the app is closed</small>"]
+  INB["SMS Sync screen:<br/>resync the inbox"] --> PS
+  R --> PS["MpesaSmsParser<br/><small>receipt, amount, type, balance</small>"]
+  PS --> Q["Mobile server POST /sms-queue"]
+  Q --> I["Backend: SmsQueueService.ingest<br/><small>only the account allowed to sync SMS;<br/>a receipt is never queued twice</small>"]
+  SW["Every 2 minutes:<br/>safety sweep"] --> I
+  I --> D{"Receipt already<br/>recorded?"}
+  D -- "yes" --> L["MATCHED<br/><small>linked for traceability</small>"]
+  D -- "no" --> N["New unassigned transaction<br/><small>PENDING_ASSIGNMENT</small>"]

@@ -1,0 +1,22 @@
+sequenceDiagram
+  autonumber
+  actor C as Customer
+  participant W as Website + its server
+  participant J as Backend + database
+  participant M as M-Pesa Daraja
+  C->>W: Place order (area, M-Pesa number)
+  W->>J: POST /api/orders
+  Note over J: Lock stock, save the order,<br/>items, stock movement, delivery
+  J->>M: STK push for the total
+  M-->>J: CheckoutRequestID
+  J-->>W: Saved, payment PENDING
+  M->>C: PIN prompt on the phone
+  C->>M: Enters PIN
+  par Callback, needs the tunnel
+    M->>J: POST .../mpesa-callback/stk
+  and Status check, no tunnel needed
+    W->>J: Order page polls the order
+    J->>M: STK status query (max every 8 s)
+  end
+  Note over J: Paid: order PAID<br/>Failed: CANCELLED, stock returned
+  W-->>C: Confirmed, or why it failed

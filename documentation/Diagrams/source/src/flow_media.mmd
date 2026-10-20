@@ -1,0 +1,8 @@
+flowchart TB
+  PH["Phone photo or video<br/><small>compressed on the phone</small>"] --> UP["Mobile server<br/><small>POST /uploads/products or /uploads/campaigns<br/>resized, named after the product</small>"]
+  UP --> MF[("fathersProject/media<br/><small>products/ and campaigns/</small>")]
+  UP -- "relative key<br/>products/rose-wood.jpg" --> BE["Backend keeps only the key<br/><small>PRODUCTS.Image, CAMPAIGN.Media</small>"]
+  BE -- "full URL = app.media.base-url + key" --> WB["Website server<br/><small>rewrites to /media/key</small>"]
+  BE -- "full URL" --> MS["Mobile server<br/><small>rewrites to media/key</small>"]
+  BE -- "full URL" --> AD["Desktop app<br/><small>loads it directly</small>"]
+  MF -- "served at /media" --> WB

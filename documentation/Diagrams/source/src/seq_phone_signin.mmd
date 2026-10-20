@@ -1,0 +1,24 @@
+sequenceDiagram
+  autonumber
+  actor U as Staff member
+  participant A as Phone app
+  participant J as Backend + database
+  actor D as Admin (desktop)
+  Note over A: First run: a private key is made in<br/>the phone's secure hardware.<br/>It never leaves the phone.
+  U->>A: Username and password
+  A->>J: GET /api/auth/device/challenge
+  J-->>A: One-time value (valid 2 minutes)
+  Note over A: Signs the value with the key
+  A->>J: POST /api/auth/login<br/>password, public key, signature
+  Note over J: Password, signature and<br/>unused value all checked
+  alt Account has never had an approved phone
+    J-->>A: Approved automatically. Token with phone id
+  else This phone is already approved
+    J-->>A: Token with phone id
+  else Any other phone
+    J-->>A: Refused: DEVICE_PENDING (saved as waiting)
+    D->>J: Users > Phones: Approve (and replace)
+    U->>A: Check again (new value, signed again)
+    J-->>A: Token with phone id
+  end
+  Note over J: Every later call: the token must name an<br/>approved phone, and the acting user<br/>is taken from the token

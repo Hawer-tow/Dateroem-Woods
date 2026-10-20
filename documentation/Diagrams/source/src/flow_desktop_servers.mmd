@@ -1,0 +1,5 @@
+flowchart TB
+  D["Desktop app - Servers section<br/><small>Start, Stop, Start All, Stop All, live logs</small>"] --> SM["ServerManager<br/><small>one QProcess per server</small>"]
+  SM -- "starts: wsl.exe -e bash -c<br/>checks each port every 3 s" --> W["Inside WSL Ubuntu<br/><small>MySQL :3309<br/>Backend :8080<br/>Website server :8000<br/>Mobile server :8001<br/>Admin server :8002<br/>Website dev :5173<br/>Website public build :4173<br/>Caddy router :9099</small>"]
+  SM -- "ngrok.exe on Windows" --> NG["ngrok tunnel<br/><small>status page :4040</small>"]
+  SM -. "adb reverse tcp:8001" .-> PH["Phone on USB"]

@@ -1,0 +1,16 @@
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant C as Chat + its server
+  participant J as Backend + database
+  participant AI as Groq or Anthropic
+  U->>C: Question (+ page context)
+  C->>J: POST /api/ai/chat
+  Note over J: Role, last 8 turns, catalogue,<br/>ratings, the person's own orders.<br/>Prompt built for this role
+  J->>AI: Chat request
+  opt Per-minute limit reached
+    J->>AI: Next fallback model
+  end
+  AI-->>J: Answer (+ screen shortcut)
+  Note over J: Shortcut kept only if the role<br/>may open it. Turns saved for<br/>signed-in users
+  J-->>C: Answer + shortcut button

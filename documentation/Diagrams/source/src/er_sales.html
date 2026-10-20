@@ -1,0 +1,62 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff}#wrap{display:inline-block;padding:10px}</style>
+<script src="lib_draw.js"></script>
+</head><body><div id="wrap"></div>
+<script>
+const D = Draw;
+const W = 180, H = 56;
+const X = [30, 250, 470, 690], Y = [20, 120, 230, 340, 450, 560];
+const box = (c, r, t, s, k) => D.box(X[c], Y[r], W, H, t, s, k || 'bff');
+D.start(900, 636);
+box(0, 0, 'ROLE', 'Customer, Admin ...', 'plain');
+box(0, 1, 'USERS', 'every account', 'plain');
+box(1, 0, 'USER_DEVICES', 'phones, one approved');
+D.box(250, 120, 400, H, 'ORDERS', 'status PENDING / PAID / CANCELLED', 'core');
+box(3, 1, 'DELIVERY_AREAS', 'city, pickup point, GPS', 'plain');
+box(0, 2, 'ORDER_ITEMS', 'quantity, unit price');
+box(1, 2, 'PRODUCT_PAYMENTS', 'M-Pesa STK payment');
+box(2, 2, 'BULK_DELIVERY', 'heavy orders');
+box(3, 2, 'LIGHT_DELIVERIES', 'date, signature');
+box(0, 3, 'PRODUCTS', 'price, stock, image', 'core');
+box(1, 3, 'BULK_TRIP_PROD.', 'production description');
+box(2, 3, 'TRIP', 'the delivery run', 'plain');
+box(3, 3, 'VEHICLE', 'truck, driver', 'plain');
+box(0, 4, 'TREES', 'where the wood came from', 'plain');
+box(1, 4, 'PRODUCT_REVIEWS', 'rated after delivery');
+box(2, 4, 'CAMPAIGN_PRODUCTS', 'link table');
+box(3, 4, 'CAMPAIGN', 'marketing', 'plain');
+box(0, 5, 'INVENTORY_MOVEMENT', 'every stock change');
+
+D.arrow([[120, 76], [120, 120]], '', null);
+// users -> their phones (through the gap under ROLE)
+D.arrow([[200, 120], [200, 98], [230, 98], [230, 48], [250, 48]], '', null);
+D.arrow([[210, 148], [250, 148]], 'places', [230, 134]);
+D.arrow([[690, 148], [650, 148]], '', null);
+D.note(670, 112, 'delivered to', { size: 12.5 });
+// ORDERS -> children
+D.arrow([[270, 176], [270, 200], [120, 200], [120, 230]], '', null);
+D.arrow([[340, 176], [340, 230]], '', null);
+D.arrow([[560, 176], [560, 230]], '', null);
+D.arrow([[630, 176], [630, 200], [780, 200], [780, 230]], '', null);
+D.note(452, 214, 'one order has many of each', { size: 12.5 });
+// products sold as items
+D.arrow([[120, 340], [120, 286]], 'sold as', [112, 318], { anchor: 'end' });
+// bulk -> light (side quests), bulk -> production description
+D.arrow([[650, 258], [690, 258]], '', null);
+D.arrow([[490, 286], [490, 312], [340, 312], [340, 340]], '', null);
+// trip -> bulk, trip -> light; vehicle -> light
+D.arrow([[560, 340], [560, 286]], '', null);
+D.arrow([[650, 368], [670, 368], [670, 300], [720, 300], [720, 286]], '', null);
+D.arrow([[800, 340], [800, 286]], '', null);
+// trees -> products
+D.arrow([[120, 450], [120, 396]], 'source of', [112, 428], { anchor: 'end' });
+// products -> reviews, campaign products (bus)
+D.arrow([[190, 396], [190, 424], [340, 424], [340, 450]], '', null);
+D.arrow([[340, 424], [560, 424], [560, 450]], '', null);
+D.arrow([[690, 478], [650, 478]], '', null);
+// products -> inventory (left margin)
+D.arrow([[30, 368], [15, 368], [15, 588], [30, 588]], '', null);
+D.note(230, 600, 'Arrows point from the "one" side to the "many" side.', { size: 12.5, anchor: 'start' });
+D.done();
+</script></body></html>
