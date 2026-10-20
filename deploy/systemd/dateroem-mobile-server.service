@@ -1,0 +1,22 @@
+# The phone app's server (FastAPI) on the hosted server; Caddy publishes it
+# at https://<domain>/mobile-api/. Settings in /etc/dateroem/mobile-server.env.
+[Unit]
+Description=Dateroem mobile server (FastAPI, port 8001)
+After=network-online.target dateroem-backend.service
+Wants=network-online.target
+
+[Service]
+User=dateroem
+Group=dateroem
+WorkingDirectory=/srv/dateroem/mobileServer
+EnvironmentFile=/etc/dateroem/mobile-server.env
+ExecStart=/srv/dateroem/mobileServer/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001 --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Dark by default (not the template's Light theme) so there's no white
+      flash between the system splash screen and Compose's first frame -
+      windowBackground here is the same forest color the splash uses.
+    -->
+    <style name="Theme.DateroemWoodSales" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/forest_dark</item>
+        <item name="android:statusBarColor">@color/forest_dark</item>
+        <item name="android:navigationBarColor">@color/forest_dark</item>
+    </style>
+
+    <!--
+      Android 12+'s SplashScreen API always shows something briefly on cold
+      start - it can't be fully skipped - so it shows the app icon (the
+      company emblem since 18 October 2026) on its dark disc, over the same
+      near-black the entrance (SplashScreen.kt) rises out of, so the
+      handoff reads as one scene: emblem, then the old oak coming up out of
+      the dark.
+    -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/forest_darkest</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/emblem_night</item>
+        <item name="postSplashScreenTheme">@style/Theme.DateroemWoodSales</item>
+    </style>
+</resources>

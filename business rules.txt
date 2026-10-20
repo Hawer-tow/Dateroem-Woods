@@ -1,0 +1,1121 @@
+THE BUSINESS RULES
+
+        1)BASE OPERATIONS
+ 
+ENTITIES HERE:
+. The users table connects to theroles table to get the role id so that it determines the user priviledges
+. every Tree object is connected to a trip through the trip id as well as the farmers id so that we know where the trees actally came from 
+. We have the vehicle entitty with its properties
+. we have the machine entity with its properties.   
+. we have the REMAINDER_TREES this is connected to a tree entity this incase some of the tree remain during processsin and is  connected to another tree object connected to another trip. and before its stored it has to be filled with the previous tree object data 
+. we have the permits this is resonsible to the authorization of the movement of the products locally and is also linked to the trip id .
+. we have the BULK_DELIVERY this is linked to the trip id and has things like payment which decscribe how much money is paid .
+. we have the BULK_TRIP_PRODUCTION_DESCRIPTION this holds the main data for the a certain bulk delivery since most of the deliveries will always be done in a bulk manner not a light one.
+. we have the profits table that is reposible for hosting the profits made from a trip and all its children and record a positive profit or negative profit.
+
+  The permits, BULK_DELIVERY are also connected to the FINANCIAL_TRANSACTION so that it can be allocated manually incase of offline from an sms and it can aslo be updated from the mpesa stk push and payment account incase the server was not offline filling all the neccessary propertis needed.
+ TRANSACTION:
+. then we have farmers payments this are connected to the farmer id  and in the transaction is a record of the user id who recorded the transaction.
+  this is also connected to the FINANCIAL_TRANSACTION so that it can be allocated manually incase of offline from an sms and it can aslo be updated from the mpesa stk push and payment account incase the server was not offline filling all the neccessary propertis needed.
+ 
+ EXPENSES:
+. machine expense is linked with the machine entity and is responsible for for any of the machines owned operation costs or the emergencies.
+. Salaries are also viewed as expeenses and are linked to both the user id and the trip id since customers are paid based on the trip they are involved in. 
+. Transport expenses are linked to the vehicle Unique_Identifier of a registered owned vehicle and the cost are liked to this or another transport vehicle which may not be important to note its Unique_Identifier this expense is also linked to the User_ID.
+. COMMUNICATIONS expenses are also liked to the user id and and the Trip_ID so we know how much is used in the communications.
+. other expenses are also used and may not be listed in the mentioned expenses categories also linked to the use id and Trip_ID.
+  all this here are also connected to the FINANCIAL_TRANSACTION so that it can be allocated manually incase of offline from an sms and it can aslo be updated from the mpesa stk push and payment account incase the server was not offline filling all the neccessary propertis needed.
+
+ MAIN ENTITY HERE:
+ . THE TRIP here is a major ase here that connects most of the things here its connected to most of the products here . having childrens like the LIGHT_DELIVERIES as well as the BULK_DELIVERY 
+                2)SHIPPING AND SALES
+
+ MAIN ENTITIES HERE:
+. Products entiry is connected to a tree object and it has its attributes unique to a certain product produced by the company.
+. ORDER_ITEMS this entiry is derived fron the product it hosts the product id and  the order id based on an order made from a user. from the users table and checking roles.
+ OTHER TABLES HERE:
+. the orders are  the specific entries that are used when one orders a order and thats where the order items come from.
+. the inventory movement table is connected to the ORDER_ITEMS and is used to tack movement of products.
+. the deliveries this is the delivery of the ordered its called the lIGHT_DELIVERIES this is used to connect the order_id  the Worker_ID who is just a user who is has a certain role which is worker or employee.
+ TRANSACTION:
+. the product payments  this is the account factor. here the order id is used to track an ordered item and calculate the users total amount to pay and then it provides the final amount to be paid its linked to a trip id .
+ AUDIT:
+. the auditlogs table is the table reponsible of tracking changes done in the shipping and sales sections tracking when certain things were done for audit purposes.
+
+
+
+                    3)MARKETING
+
+ MAIN ENTITIES HERE:
+. Campaign this is the major campaign launch to the customers
+. EVENTS this is the launch of the events for marketin purposes but its all connected to the userid to know who launched the event.
+.
+
+. CAMPAIGN_AUDIENCE this is liked by the campaign as well as the user_id mostly as user who is just a customer
+. CAMPAIGN_LOGS this is the logs of the compais and is linked to a userid an employee and the compaign in discusiions for audito purposes.
+. CUSTOMER_PROFILES this this is liknked to the user id and is used to check the user and send  the copaind audience based on the profile so that one knows what to post.
+
+
+                            4)TRANSACTIONS
+
+. SMS_QUEUE this is a table that is used to connect the sms in a physical phone or device used to make direct payments on behalf of the company by tracking mpesa messages in absense of internet connection.
+. loan LOAN_REPAYMENTS is the table that is mainly used for the loan payment still connected to the FINANCIAL_TRANSACTION table.
+. loan table this is the table that is used for tracking what loan was used and what and its connected to the loan repayment so we track our loan payments it has the user_id who assigned it as a loan its also connected to the FINANCIAL_TRANSACTION
+. the capital table is mainly used to track the capital currently present in the company as well connected to the FINANCIAL_TRANSACTION table and the trip id  as well as the user_id of the capital of the user who might be a partner of financier.
+
+
+ MAIN TABLE IN THIS CATEGORY:
+ . FINANCIAL_TRANSACTION this table is resposible of major tacking of major expenses and transactions for both audit consistency and accuracy its connected to the sms queue by its id and assignedby the user_id so that we know who assigned to what transaction for offline transactions.
+ . in the case of mpesa payment to paybill as well as the stk push to the user this table is filled with this details and is allowed to then fill the rest of the table for consistency of the details.
+ . incase the reference ids are similar then they will be flagged as a double payment and cannot be filled. e.g the stk push happened the FINANCIAL_TRANSACTION table was filled it updated the rest of the table that is associated with the said transaction. the server goes offline
+   and then the mpesa message comes the server checks if its already assigned marks the sms assigned and the user does not have to assingn anything for that message but if it was done offline then the user will assign the snms message from the business machine to the server and its updated preventig double assingnement of the data.
+
+  
+  
+  
+                                    (THE DATABASE
+ 
+
+ 
+  /*
+Creation order below is dependency-safe (every FK target already exists
+by the time it's referenced). USERS is created right after ROLE (its only
+dependency) so every later table can safely FK its Deleted_By to USERS.
+Exception: ROLE has no FK on Deleted_By since it's created before USERS.
+
+ROLE, USERS, FARMER, REMAINDER_TREES, TRIP, VEHICLE, MACHINE, SMS_QUEUE,
+CAMPAIGN, TREES, FINANCIAL_TRANSACTION, PRODUCTS, ORDERS, PROFIT,
+CUSTOMER_PROFILES, EVENTS, AUDIT_LOGS, CAMPAIGN_AUDIENCE, CAMPAIGN_LOGS,
+FARMER_PAYMENTS, SALARIES, TRANSPORT, COMMUNICATIONS, MACHINE_EXPENSES,
+ACCOMODATION, OTHER_EXPENSES, PERMITS, BULK_DELIVERY, ORDER_ITEMS,
+INVENTORY_MOVEMENT, PRODUCT_PAYMENTS, LIGHT_DELIVERIES, CAPITAL, LOAN,
+BULK_TRIP_PRODUCTION_DESCRIPTION, LOAN_REPAYMENTS
+*/
+
+#///////////////////////////////////// all the tables  ///////////////////////////////////////////////////////////
+####################  ROLE
+create table ROLE(
+Role_ID int auto_increment,
+Name varchar(250),
+Created_At datetime,
+Update_At datetime,
+
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Role_ID)
+);
+
+####################  USERS
+create table USERS(
+User_ID int auto_increment,
+User_Name varchar(100),
+Name varchar(250),
+Password varchar(250),
+Email varchar(250),
+Phone_NO varchar(250),
+Bank_account Varchar(250),
+Status boolean,
+
+Role_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (User_ID),
+FOREIGN KEY (Role_ID) REFERENCES ROLE(Role_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  FARMER
+create table FARMER(
+Farmer_ID int auto_increment,
+Name varchar(250),
+Phone_NO varchar(250),
+Bank_Details_Marked varchar(250),
+Balance decimal(10,2),
+
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Farmer_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  REMAINDER_TREES
+create table REMAINDER_TREES(
+Remainder_Trees_ID int auto_increment,
+Previous_Trip_ID int,
+NO_Trees int,
+Type_Trees varchar(250),
+Total_Body_Feet decimal(10,2),
+
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Remainder_Trees_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  TRIP
+create table TRIP(
+Trip_ID int auto_increment,
+Start_Date date,
+End_Date date,
+NO_of_Deliveries int,
+Total_Payment decimal(10,2),
+Hard_Cash decimal(10,2),
+Soft_Cash decimal(10,2),
+Product_Description varchar(250),
+Total_Body_Feet decimal(10,2),
+
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Trip_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  VEHICLE
+create table VEHICLE(
+Vehicle_ID int auto_increment,
+Unique_Identifier varchar(250) unique,
+Driver varchar(250),
+Phone_Number varchar(250),
+Description varchar(250),
+
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Vehicle_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  MACHINE
+create table MACHINE(
+Machine_ID int auto_increment,
+Name varchar(250),
+Serial_NO varchar(250),
+Description varchar(250),
+
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Machine_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  SMS_QUEUE
+create table SMS_QUEUE(
+Sms_Queue_ID int auto_increment,
+Sim_Slot int,
+Mpesa_Reference_ID varchar(250),
+Raw_Sms_Text varchar(250),
+Amount decimal(10,2),
+Transaction_Type varchar(250),
+Mpesa_Balance decimal(10,2),
+Status varchar(250),
+Created_At date,
+Received_At date,
+
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Sms_Queue_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  CAMPAIGN
+create table CAMPAIGN(
+Campaign_ID int auto_increment,
+Name varchar(250),
+Channel varchar(250),
+Start_At date,
+End_At date,
+Status varchar(250),
+
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Campaign_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  TREES
+create table TREES (
+Trees_ID int not null auto_increment,
+House_Hold varchar(250),
+Coordinates varchar(250),
+No_Trees int,
+Type_Trees varchar(250),
+Active boolean,
+
+Remainder_Trees_ID int,
+Farmer_ID int,
+Trip_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Trees_ID),
+FOREIGN KEY (Remainder_Trees_ID) REFERENCES REMAINDER_TREES(Remainder_Trees_ID),
+FOREIGN KEY (Farmer_ID) REFERENCES FARMER(Farmer_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  FINANCIAL_TRANSACTION
+create table FINANCIAL_TRANSACTION(
+Financial_Transaction_ID int auto_increment,
+Payment_Mode varchar(250),
+Reference_ID varchar(250),
+Category varchar(250),
+Amount decimal(10,2),
+Target_ID int,
+Created_At date,
+
+Sms_Queue_ID int,
+Assigned_By int,
+
+Transaction_Cost int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Financial_Transaction_ID),
+FOREIGN KEY (Sms_Queue_ID) REFERENCES SMS_QUEUE(Sms_Queue_ID),
+FOREIGN KEY (Assigned_By) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  PRODUCTS
+create table PRODUCTS(
+Product_ID int auto_increment,
+Name varchar(250),
+Ske varchar(250),
+Type varchar(250),
+Description varchar(250),
+Price decimal(10,2),
+Stock decimal(10,2),
+Attributes varchar(250),
+Image varchar(250),
+
+Trees_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Product_ID),
+FOREIGN KEY (Trees_ID) REFERENCES TREES(Trees_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  ORDERS
+create table ORDERS(
+Order_ID int auto_increment,
+Total int,
+Status varchar(250),
+Created_At date,
+Hotspot_City varchar(250),
+
+User_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Order_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  PROFIT
+create table PROFIT(
+Profit_ID int auto_increment,
+Expencted_Amount decimal(10,2),
+Recorded_Amount decimal(10,2),
+Deccription varchar(250),
+
+Trip_ID int unique,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Profit_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  CUSTOMER_PROFILES
+create table CUSTOMER_PROFILES(
+Segment varchar(250),
+Lifetime_Value int,
+Last_Active date,
+
+User_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (User_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  EVENTS
+create table EVENTS(
+Event_ID int auto_increment,
+Event_Type varchar(250),
+Payload varchar(250),
+Created_At date,
+
+User_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Event_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  AUDIT_LOGS
+create table AUDIT_LOGS(
+Audit_log_ID int auto_increment,
+Target_Table varchar(250),
+Target_Id int,
+Payload varchar(250),
+Created_At date,
+
+Actor_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Audit_log_ID),
+FOREIGN KEY (Actor_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  CAMPAIGN_AUDIENCE
+create table CAMPAIGN_AUDIENCE(
+Assigned_At date,
+
+User_ID int,
+Campaign_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Campaign_ID, User_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Campaign_ID) REFERENCES CAMPAIGN(Campaign_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  CAMPAIGN_LOGS
+create table CAMPAIGN_LOGS(
+Campaign_log_ID int auto_increment,
+Channel varchar(250),
+Status varchar(250),
+Sent_At date,
+
+User_ID int,
+Campaign_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Campaign_log_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Campaign_ID) REFERENCES CAMPAIGN(Campaign_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  FARMER_PAYMENTS
+create table FARMER_PAYMENTS(
+Farmer_Payments_ID INT auto_increment,
+Farmer_ID int,
+Reference_ID varchar(250),
+Amount decimal(10,2),
+Method varchar(250),
+Recorded_At datetime,
+Description varchar(250),
+refunded boolean,
+
+Recorder_By int,
+Financial_Transaction_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Farmer_Payments_ID),
+FOREIGN KEY (Recorder_By) REFERENCES USERS(User_ID),
+FOREIGN KEY (Farmer_ID) REFERENCES FARMER(Farmer_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  SALARIES
+create table SALARIES(
+Salary_ID int auto_increment,
+Amount decimal(10,2),
+unique_Salary_Id varchar(250),
+Salary_Type varchar(250),
+Type varchar(250),
+Description varchar(250),
+Created_At boolean,
+
+Financial_Transaction_ID int,
+Trip_ID int,
+User_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Salary_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  TRANSPORT
+create table TRANSPORT(
+Transport_ID int auto_increment,
+Additional_ID varchar(100),
+Amount decimal(10,2),
+Type varchar(250),
+Reference_ID varchar(250),
+Description varchar(250),
+
+User_ID int,
+Vehicle_Unique_ID varchar(250),
+Financial_Transaction_ID int,
+Trip_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Transport_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Vehicle_Unique_ID) REFERENCES VEHICLE(Unique_Identifier),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  COMMUNICATIONS
+create table COMMUNICATIONS(
+Communications_ID int auto_increment,
+Amount decimal(10,2),
+Description varchar(250),
+Reference_ID varchar(250),
+type varchar(250),
+
+User_ID int,
+Trip_ID int,
+Financial_Transaction_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Communications_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  MACHINE_EXPENSES
+create table MACHINE_EXPENSES(
+Machine_Expenses_ID int auto_increment,
+Type varchar(250),
+Amount decimal(10,2),
+Date_Of_Expense datetime,
+Reference_ID varchar(250),
+
+Machine_ID int,
+Financial_Transaction_ID int,
+Trip_ID int,
+User_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Machine_Expenses_ID),
+FOREIGN KEY (Machine_ID) REFERENCES MACHINE(Machine_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  ACCOMODATION
+create table ACCOMODATION(
+Accomodation_ID int auto_increment,
+Amount decimal(10,2),
+Reference_ID varchar(250),
+Description varchar(250),
+Type varchar(250),
+Created_At datetime,
+
+User_ID int,
+Trip_ID int,
+Financial_Transaction_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Accomodation_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  OTHER_EXPENSES
+create table OTHER_EXPENSES(
+Other_Expenses_ID int auto_increment,
+Amount decimal(10,2),
+Reference_ID varchar(250),
+Description varchar(250),
+
+Trip_ID int,
+User_ID int,
+Financial_Transaction_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Other_Expenses_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  PERMITS
+create table PERMITS(
+Permit_ID int auto_increment,
+Serial_NO varchar(250),
+Amount decimal(10,2),
+Reference_ID varchar(250),
+Start_Date date,
+End_Date date,
+
+Trip_ID int,
+Financial_Transaction_ID int,
+User_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Permit_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  BULK_DELIVERY
+create table BULK_DELIVERY(
+Bulk_Delivery_ID int auto_increment,
+Amount_Paid decimal(10,2),
+Reference_ID varchar(250),
+Delivered_To varchar(250),
+Delivered_At date,
+Description varchar(250),
+
+Financial_Transaction_ID int,
+Trip_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Bulk_Delivery_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  ORDER_ITEMS
+create table ORDER_ITEMS(
+Order_Items_ID int auto_increment,
+Qty int,
+Unit_Price decimal(10,2),
+
+Order_ID int,
+Product_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Order_Items_ID),
+FOREIGN KEY (Order_ID) REFERENCES ORDERS(Order_ID),
+FOREIGN KEY (Product_ID) REFERENCES PRODUCTS(Product_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  INVENTORY_MOVEMENT
+create table INVENTORY_MOVEMENT(
+Inventory_Movement_ID int auto_increment,
+Changes varchar(250),
+Reason varchar(250),
+Reference_ID varchar(250),
+Created_At date,
+
+Product_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Inventory_Movement_ID),
+FOREIGN KEY (Product_ID) REFERENCES PRODUCTS(Product_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  PRODUCT_PAYMENTS
+create table PRODUCT_PAYMENTS(
+Product_Payment_ID int auto_increment,
+Provided varchar(250),
+Status varchar(250),
+Amount decimal(10,2),
+Provider_Ref varchar(250),
+Created_At date,
+Description varchar(250),
+
+Order_ID int,
+Financial_Transaction_ID int,
+Trip_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Product_Payment_ID),
+FOREIGN KEY (Order_ID) REFERENCES ORDERS(Order_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  lIGHT_DELIVERIES
+create table LIGHT_DELIVERIES(
+Light_Delivery_ID int auto_increment,
+Status varchar(250),
+Sta varchar(250),
+Delivered_At date,
+Signature_Blub varchar(250),
+
+Order_ID int,
+Worker_ID int,
+Trip_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Light_Delivery_ID),
+FOREIGN KEY (Order_ID) REFERENCES ORDERS(Order_ID),
+FOREIGN KEY (Worker_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  CAPITAL
+create table CAPITAL(
+Capital_ID int auto_increment,
+Amount decimal(10,2),
+Reference_ID varchar (250),
+Description varchar(250),
+Category varchar(250),
+Created_At date,
+
+Trip_ID int,
+Capital_From_User int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Capital_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Capital_From_User) REFERENCES USERS(User_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  LOAN
+create table LOAN(
+Loan_ID int auto_increment,
+Amount decimal(10,2),
+Reference_ID varchar(250),
+Description varchar(250),
+Category varchar(250),
+Status varchar(250),
+
+Trip_ID int,
+User_ID int,
+Financial_Transaction_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Loan_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (User_ID) REFERENCES USERS(User_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  BULK_TRIP_PRODUCTION_DESCRIPTION
+create table BULK_TRIP_PRODUCTION_DESCRIPTION(
+Bulk_Trip_Production_Description_ID int auto_increment,
+Product_Type varchar(250),
+Product_Description varchar(250),
+Product_Measurement varchar(250),
+Total_Body_Feet decimal(10,2),
+Product_Total decimal(10,2),
+
+Bulk_Delivery_ID int,
+Trip_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Bulk_Trip_Production_Description_ID),
+FOREIGN KEY (Bulk_Delivery_ID) REFERENCES BULK_DELIVERY(Bulk_Delivery_ID),
+FOREIGN KEY (Trip_ID) REFERENCES TRIP(Trip_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+####################  LOAN_REPAYMENTS
+create table LOAN_REPAYMENTS(
+Loan_Repayment_ID int auto_increment,
+Amount_Paid decimal(10,2),
+Payment_Date date,
+Description varchar(250),
+Reference_ID varchar(250),
+
+Financial_Transaction_ID int,
+Loan_ID int,
+Is_Deleted boolean not null default false,
+Deleted_By int,
+Deleted_At datetime,
+
+PRIMARY KEY (Loan_Repayment_ID),
+FOREIGN KEY (Financial_Transaction_ID) REFERENCES FINANCIAL_TRANSACTION(Financial_Transaction_ID),
+FOREIGN KEY (Loan_ID) REFERENCES LOAN(Loan_ID),
+FOREIGN KEY (Deleted_By) REFERENCES USERS(User_ID)
+);
+
+
+
+i want to create trigers and methods that will reduce the main server work since the will run directly in the server to reduce the servers duty and make sure that some of this tasks are done in the lower forms 
+ 
+ some of the methods i want them to be as such as those calculating the profit made from a certain trip
+
+1) profit method:
+
+ profit =
+ ( Trip total payment(
+                    PRODUCT_PAYMENTS(Trip_ID).amount 
+                    +
+                    BULK_DELIVERY(Trip_ID).Amount_Paid
+                    )
+
+                       -
+
+     all expenses (  
+                    LOAN(Trip_ID).amount
+                    +
+                    CAPITAL(Trip_ID).amount
+                    +
+                    TREES(Trip_ID).FARMER_PAYMENTS(Farmer_ID).amount
+                    +
+                    SALARIES(Trip_ID).amount 
+                    +
+                    ACCOMODATION(Trip_ID).amount 
+                    +
+                    TRANSPORT(Trip_ID).amount 
+                    +
+                    COMMUNICATIONS(Trip_ID).amount 
+                    +
+                    MACHINE_EXPENSES(Trip_ID).amount 
+                    +
+                    OTHER_EXPENSES(Trip_ID).amount 
+                    +
+                    PERMITS(Trip_ID).amount
+              )
+      transaction cost (
+                   the simplication is in the simplifications calculations
+                )
+
+ )
+
+ 2) simplified calculations:
+ in this also its simpler to create methods that take the trip id and can calculate the total in a single column based on the Trip_ID
+
+                    LOAN(Trip_ID).amount  - method that takes the Trip_ID and then calculates the total loan
+                    
+                    CAPITAL(Trip_ID).amount - method that takes the Trip_ID and then calculates the total capital used
+                    
+                    TREES(Trip_ID).FARMER_PAYMENTS(Farmer_ID).amount - method that takes the Trip_ID and then calculates the total payments done for the trees associated wiht a certain trip
+                    
+                    SALARIES(Trip_ID).amount - method that takes the Trip_ID and then calculates the total salaries made for a certain trip
+                    
+                    ACCOMODATION(Trip_ID).amount - method that takes the Trip_ID and then calculates the total accomodation expeenses for a certain trip
+                    
+                    TRANSPORT(Trip_ID).amount - method that takes the Trip_ID and then calculates the total transport cost used for a certain trip
+                    
+                    COMMUNICATIONS(Trip_ID).amount - method that takes the Trip_ID and then calculates the total communication costs for a certain trip
+                    
+                    MACHINE_EXPENSES(Trip_ID).amount - method that takes the Trip_ID and then calculates the total machine costs for a certain trip
+                    
+                    OTHER_EXPENSES(Trip_ID).amount - method that takes the Trip_ID and then calculates the total unpresidented cost not in any category for a certain trip
+                    
+                    PERMITS(Trip_ID).amount - method that takes the Trip_ID and then calculates the total permint costs for a certain trip
+
+
+                    transactions costs simplification:
+
+
+                                ( LOAN_REPAYMENTS. (LOAN(Trip_ID).ID) . Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) )  . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total loan repayment transaction costs for a certain trip
+                                +
+                                ( CAPITAL(Trip_ID).Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total capital transaction costs for a certain trip
+                                +
+                                ( TREES(Trip_ID).FARMER_PAYMENTS(Farmer_ID).Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total farmer payment transaction costs for a certain trip
+                                +
+                                ( SALARIES(Trip_ID).unique_Salary_Id = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total salaries transaction costs for a certain trip
+                                +
+                                ( ACCOMODATION(Trip_ID).Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total accomodation transaction costs for a certain trip
+                                +
+                                ( TRANSPORT(Trip_ID).Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total transport transaction costs for a certain trip
+                                +
+                                ( COMMUNICATIONS(Trip_ID).Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total  communications transaction costs for a certain trip
+                                +
+                                ( MACHINE_EXPENSES(Trip_ID).Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total machine expenses  transaction costs for a certain trip
+                                +
+                                ( OTHER_EXPENSES(Trip_ID).Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total OTHER_EXPENSES transaction costs for a certain trip
+                                +
+                                ( PERMITS(Trip_ID).Reference_ID = FINANCIAL_TRANSACTION(Reference_ID) ) . FINANCIAL_TRANSACTION(Transaction_Cost) - method that takes the Trip_ID and then calculates the total permits transaction costs for a certain trip
+
+
+
+
+
+
+
+3) audit trailing
+
+tables like the AUDIT_LOGS and FINANCIAL_TRANSACTION as well as other tables are very crutial and have columns such as assignedby and this colunmns should not in anycase be null for 
+us to know who and when updated the tables.
+
+we will also create a column for the existing tables so that in case one deleletes a record its marked as deleted and cannot be seen by any other person especially the fronend user and mobile but the desktop user can see this 
+you can also advise whether a secondaty table that matches the parent table so that if its deleted its added to this table but it must be professional for a proper operation company like style.
+
+
+
+#################################################################  END  #####################################################################################################
+
+
+
+
+        TECH STACK (decided):
+
+DateroemWoodSales (mobile app) - Kotlin + Jetpack Compose (Material3), Retrofit + OkHttp + Gson for REST/JSON calls to the backend. Already scaffolded in Android Studio (com.dateroem.woodsales, minSdk 24, targetSdk 35).
+
+backend - Java, Spring Boot. Spring JDBC (JdbcTemplate) / MyBatis for calling the MySQL stored functions and procedures directly (fn_trip_profit, sp_recalculate_trip_profit, etc. from dateroem_functions_procedures.sql) rather than JPA/Hibernate, since those are built around entity mapping and are awkward for calling stored routines. JPA may still be used for plain CRUD entities if convenient. Exposes REST/JSON APIs consumed by the mobile app, the frontend server, and mobileServer.
+
+frontend (server) - Python, FastAPI. Acts as a BFF/caching layer between the React website and the Java backend: serves the built React static bundle, caches read-heavy data (e.g. via Redis) to keep the site responsive if the backend is briefly unavailable, and proxies writes through to the backend API. Uses the existing dateroem_frontend MySQL user (SELECT-heavy, limited INSERT) for any direct cached reads.
+
+frontend (UI) - React (Vite build), the actual website the public/customers see. Talks to the Python frontend server's API, not directly to the Java backend.
+
+mobileServer - Python, FastAPI. Same caching/stability role as the frontend server, but serving the Kotlin mobile app instead of the website - absorbs peak-hour load and serves cached/simplified data so the mobile app stays responsive if the Java backend is under load. Uses the existing dateroem_mobile MySQL user for any direct cached reads.
+
+admin_server_control - Kotlin, Compose Multiplatform Desktop (planned; built after the other servers are running). Chosen to reuse the same language/UI paradigm as the Android app and to interoperate directly with the JVM-based Java backend. JavaFX is the fallback if Compose Desktop tooling proves inconvenient.
+
+All inter-service communication is intended to use public/private key encryption (keys already prepared: mobile2serverencryption_decription_private_key.pem / _public_key.pem).
+
+        fathersProject folder:
+
+this folder has subfolders the frontend,mobileServer,admin_server_control and the backend
+
+frontend:
+in this folders the frontend will host the server associated with the client side/website and it has to be a server that communicates with the main sever so that it is in ad distributed format
+but it host most of the simplifying algorithm such as caching the data so that the number of users is handled gracefully
+
+
+
+backend:
+ the backend will host the server that is the major server that is the basis of the entire project and it allows the front end to have lessened work to do in order that this is the main server doin major computations and if it fails the user can still get the cached data given fron this server
+this server is the major hosting server architecture.
+
+since the database have triggers and methods the work of the server is to ensure that mostly that it offers the allocation of the FINANCIAL_TRANSACTION table details to the rest of the tables.
+such that if an allowed user is allowed to access the that table then and approves the transaction then its updated to the rest of the tables.
+note that the tables have things like (Reference_ID, amount as well as other properties)  now this is what is filled into another table e.g transport expense in the Reference_ID.
+note that the server does an overwriting on the other tables and after that then it proceeds to the calculation of the transactions cost since this must happen after the overwriting of a prefilled expense and after that the calculations are done 
+e.g profit calculations by the calling the database method for calculation of the profit so that its filled.
+
+note some of the data is already prefilled in the database with an associated trip id now what happens is since one has already filled in one of the categories e.g communications when the authorized user is updating the tables checks e.g for an already registered expense e.g nairobi communication 20ksh and checks the FINANCIAL_TRANSACTION table for that amount and assigns it to that expense by overwriting things like the Reference_ID Financial_Transaction_ID etc 
+
+
+1) 
+
+mobileServer: 
+ this is the sever that is resposible for allowing the mobile user from the mobile app to access the main backend server and it allows them to quickly get thins like cached data as well as simplified computation for the serverv offering stability
+for this server during peek hours.
+
+
+
+admin_server_control:
+ this is the folder where we are going to create the actual desktop application to allow the development of the only software here that can directly acces the main backend server for adjustment audit trailing and this can only be done by the admins and can only have the 
+super admins monitoring the server through the desktop application.
+
+
+in all of this servers i want to implement the secure public private key so that the communications are secure.
+
+          DateroemWoodSales folder:
+
+this is the folder where the mobile application files lie and will be resposible for the actualization of the creation of the mobile application which i will be cheking in the android studio to see the kind of changes that have been implemented to the project so that i can build
+the mobile application
+
+the mobile application should have a login page similar to that of the netfid application having an entrance that gives the dateroem name as a small video effect the login page that will have a backround of the companies some of the products as well a clean display of the major profits e.g how many trips made and the profit comment.
+ and below still some profile of the said user and then we will proceed to the various layouts needed since the mobile user will handle most of the business proceses as well as the desktop user.
+
+ that was the entrance to the application. now the major mobile applications duties 
+
+ BASE OPERATIONS
+
+
+
+
+ the backend server:
+
+ remember the naming in the servers names i want them to be like SuperAdmin or Super_Admin such a capitalandanother name depending on the servers since camel is used in java such should be used not Superadmin or Super_admin
+
+  tis server will run in java and it will do the following:
+  
+  1) request the profit valuse from the database methods
+
+  2) the users and roles
+   here the servre will check the a user based on role id and in the role table it checks the name of that role and that role is what will specify the priveledge offered to that user.
+   e.g if the role name associated with that is employee then the user can only do staff job e.g the product delivery at Worker_ID in the light delivery 
+   if the user is a customer then that is a customer who is suspetible to marketing pushes  and so on.
+   some of the roles names can be employee, customer,  admin, superAdmin etc
+  . not a user has a distinct username and phone number email which i want to be implemented in the wesite server to allow login using google to allow one to esasily login or sign into the application 
+  .  
+  3) the other base operations tables 
+
+  . here the server will have a complex task of connecting alot of logic from of this tables .
+  . the main table here is the trip table it host most of the connections to the rest of the tables. it has its id which is connected in to other tables in more than one of their records to help track the sales made based on that said sales.
+  . we will create a shortcut to calculate he total amount of Total_Payment in the table given by the 
+       ( (PRODUCT_PAYMENTS(Trip_ID).amount) the total amount associted with that trip id )  
+                                    +
+       ((BULK_DELIVERY(Trip_ID).Amount_Paid) the total amount associated with that trip id )
+  now this will be used to set the data to place the total amount to write in TRIP(Total_Payment)
+  .  the soft cash and the cash will be filled by providing an option for the user to fill the amount of cash paid in hard or soft cash.
+  . not the tree table hostin the main fuel to the business it has id and its Remainder_Trees_ID so that we know if we can link it with a remainder product not used to deliver/produce it in another tree also linked to the Trip_ID and the Farmer_ID it assists to connect 
+  the tree to both the farmers and the FARMER_PAYMENTS.
+  now the main function of the sever is to ensure most of the fields are provided to the user and are filled for consistency.
+   now for all the expenses tables such as machine expense ,transport that move money for production. all this need to have them filled the Reference_ID part may be left open for assignment to the table by an admin who can either do this in the desktop or the mobile phone.
+   the other tables such as the vehicle and th machine are used to compliment the payment by showing which machine exactly or th vehicle was used in the expense and it can be used to create dynaminc reposts in the desktop or the mobile for show of what has been used and do other estimation of the things mostly effected for presentation to the user.
+
+since the servers are accessin thie main server it should handle one user at a time in writing notifyin a user that anothe is already assigning the data. e.g if in the FINANCIAL_TRANSACTION table has 14 transactions not assigned and another user logs in it can reduce onse load to 7 for each and manage this storaeges gracefully.
+next is that the server should have the following categories let me call them pages so that each handles a task independently and is excempted from the other .
+
+1)the products page (handles the products viewing or creation functions )
+2)the marketing page ( handles the marketing viewing or creation functions )
+3)the delivery page ( handles the delivery view update for the light and bulk delivery ) 
+4)the expenses page ( handles the view of all the expenses in categories e.g transport,communication etc )
+5)the transactins page ( handles the transactions operations for the operaions such as assigning meaning to transactons in the FINANCIAL_TRANSACTION table to the rest of the tables as well as functions such as paying salaries to the users here and also assigning that immediately incase the servers are online or after if they are offline)
+6)the loans and finances page
+
+as described keenly in the rest of the information here we will see that the pages might be connected e.g in expenses one can see each individual expense in a certain category e.g salaries but in the trip section one cannot see 
+the entire data meaning that if their is high trafic a user wants to see the single expenses but in trip there is a total for each category then the user can be fed with this by redirection to that page in order for them to see the totals instead of idicidual data. simplifying the server work in pick times.
+
+
+
+
+   the mobile application:
+
+   thi is the main server to request most of the data from the server it will have 3 sections:
+   1) the products creation  page  (marketer/admin/worker priviledge)
+   2) the marketing creation page  (marketer/admin privildge)
+   3) the expenses categories page ( for all the expenses in the business) 
+                  (                       
+                    TREES(Trip_ID).FARMER_PAYMENTS(Farmer_ID).amount
+                    
+                    SALARIES(Trip_ID).amount 
+                    
+                    ACCOMODATION(Trip_ID).amount 
+                    
+                    TRANSPORT(Trip_ID).amount 
+                    
+                    COMMUNICATIONS(Trip_ID).amount 
+                    
+                    MACHINE_EXPENSES(Trip_ID).amount 
+                    
+                    OTHER_EXPENSES(Trip_ID).amount 
+                    
+                    PERMITS(Trip_ID).amount    )
+                    it will offer various api connections to the varioust tables mentioned so that one can edit.
+                    it will be connected with a trip so that one can select the type of expense and can see all the e,g accomodation expenses so far depending on the trip.
+   4) the transactions category page - for transactions mostly the payment to the farmes using a simplified method e.g  the assignings of payments made or the actual payments to the workers 
+      here  there is sending money to a farmer, as well as viewing payments cost from other users e.g a filled data on transport cost and assigning it to that cost but this is done by a high priviledged user e.g an admin.
+   5) the  loans and finance page  (only of the admin/Superadmins)   this is involved in the cheking of this 
+                  (  LOAN(Trip_ID).amount  
+                    
+                    CAPITAL(Trip_ID).amount  )
+
+      here one can view the laons capital as well as LOAN_REPAYMENTS table and assing a transaction to this area.
+   6) the heavy delivery orders search and finalization  (this is involved in the searching for a heavy products order manually to various companies and prompting for a bulk delivery,)
+      in here we have prompting for bulk goods which can be prompted or paid in cash still its recorded here and then its filled in the transactions category page by assignin it.
+   7) the trips page this is the page where one is able to view a trip see things like how many light and heavy deliveries associated to it.
+      the loans total and from whome and any existin financial balance that existed.
+      the profit makde from the trip. the category of the expenses and listed beside them is the amounts e.g if in the communications write communications and beside the total this is already easy with teh functions in the database.
+      but the cached data should be the profit since the rest will be done one by one they can be exempted in less data scenarious this is what i mean by caching.
+
+one of the heavy task of this said server is to ensure it can cache frequently gotten data for easy display to the number of users in the mobile application.
+since the data migh be large we can allow the serer to send only a maximum of data  related to 3-6 trips and more of that will require allot of data and one has to do this in a case when the server is free if its loaded even 2 or even 1 trip data can be send  
+to reduce load in traffic times.
+
+note here that the layout the ui features can be adjusted as long as the apis works and the the basic busines logic works then fine tunng the ui can happen gracefully.
+the pages represent various layouts and what short cut or children layouts might exist in them.
+
+in the front end i want this "one sees a certain product written e.g most ordered if from the database statistics or the marketing its so buy now  and below it you can click teh order now and its added to the cart feature in the system.
+and when you click it you go to a payout that is generated when one opens a certain product and there are some information on the product . e.g this is rosewood native to africa and so an so on in good ordering and this is what the user sees."
+now in the product creation is where the image is provided and the major descriptions aregiven on the said product but in marketing that buy now most orderd is what is done in the marketing creation and many more 
+
+ the frontend sever
+
+this has this major sections.
+  1) product view page.
+     .  this is the page where the users are able to view the products that are in the database and see what to order in a very likeable manner.
+
+  2) marketing view page
+     .  this is the page where they are able to see the marketing e.g for a certain product and see what they can do 
+     here there will be products and links to the products in the product view page so one can also order for short products .
+  3) light product order page
+     . this is where one vies the cart of the selected products and then one can then pay or drop the products request to pay an stk push occurs then after that the order is placed they are take to the delivery and shipping so that they ara able to see the products shipping and know when to receive this products. 
+
+  4) shipping and deliveries.    
+     .  this is the page responsible for the automatic display of the delivery areas to receive the goods we will have predefined areas in specific cities where we will be delivering the goods so that the user can pick them up.
+
+  this frontend will also feature a chatbot to help users in the asking of questins and it will be linked to databases such as  PRODUCTS, product payments order items  so that one can ask basic information about the products and will receive an answer.
+  5) the help center/chat bot area. will link you to the help desk as well as the linking to the company email phone numbers. etc 
+  6) heavy order page.  (we have this last page very crutial but not entiry main in this. its purpose is to allow one to make a big order instead of using the database it will link the user to the whatsapp of the company, telephone number and the email of the comapny . )
+     since from there the admin in the mobile can allow heavy negotiations since the producs in this category are quite heavy and have issue like the permits certifications etc.
+
+note here that the layout the ui features can be adjusted as long as the apis works and the the basic busines logic works then fine tunng the ui can happen gracefully.
+in netfix there is this perfect ordering of movies with a movie main photo/image and a small description in it eg new episode watch now recently added i want the products display to be such 
+one sees a certain product written e.g most ordered if from the database statistics or the marketing its so buy now  and below it you can click teh order now and its added to the cart feature in the system.
+and when you click it you go to a payout that is generated when one opens a certain product and there are some information on the product . e.g this is rosewood native to africa and so an so on in good ordering and this is what the user sees.
+
+
+i know that other tables e. the stk push will be created but since the it will still connnect to the FINANCIAL_TRANSACTION table then it can be added later slowly among other tables needed. 
+check all this and see if its ok any new features needed or tables and if its possible.

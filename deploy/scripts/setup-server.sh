@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# One-time preparation of a NEW Ubuntu 24.04 server for Dateroem
+# (Hosting and Deployment Guide, DWS-CFG-03). Run as root from the unpacked
+# release, with the company domain and an email for certificate notices:
+#   sudo bash dateroem/deploy/scripts/setup-server.sh dateroemwoods.co.ke dateroemwoodsales@gmail.com
+#
+# Installs Java 17, MySQL 8, Python 3, Caddy and the firewall; creates the
+# "dateroem" service account, the folders, the database and its account;
+# writes the settings files in /etc/dateroem with the domain, a new database
+# password and a new sign-in secret filled in. Safe to run again: existing
+# settings files are kept as they are.
+set -euo pipefail
+
+DOMAIN="${1:-}"
+EMAIL="${2:-}"
+if [[ -z "$DOMAIN" || -z "$EMAIL" ]]; then
+  echo "usage: sudo bash setup-server.sh <domain> <email for certificate notices>"
+  exit 1
+fi
+[[ $EUID -eq 0 ]] || { echo "Run it with sudo."; exit 1; }
+# Accept "https://www.example.co.ke/" as well as "example.co.ke".
+DOMAIN="${DOMAIN#https://}"; DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN%%/*}"; DOMAIN="${DOMAIN#www.}"
+DEPLOY="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+step() { printf '\n== %s\n' "$*"; }
+
+step "Packages: Java 17, MySQL 8, Python 3, firewall"
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -q
+apt-get install -y -q openjdk-17-jre-headless mysql-server python3 python3-venv python3-pip \
+  rsync curl gnupg openssl ufw unattended-upgrades apt-transport-https
+
+step "Caddy (from its official package repository)"
+if ! command -v caddy >/dev/null; then
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
+  chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
+  apt-get update -q
+  apt-get install -y -q caddy
+fi
+
+step "Automatic security updates"
+cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+
+step "Firewall: only remote login (SSH), HTTP and HTTPS from outside"
+SSH_PORT="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')"
+ufw allow "${SSH_PORT:-22}/tcp" >/dev/null
+ufw allow 80/tcp >/dev/null
+ufw allow 443/tcp >/dev/null
+ufw --force enable >/dev/null
+ufw status | sed 's/^/  /'
+
+step "Service account and folders"
+id dateroem >/dev/null 2>&1 || useradd --system --home-dir /srv/dateroem --shell /usr/sbin/nologin dateroem
+install -d -o dateroem -g dateroem -m 755 /srv/dateroem /srv/dateroem/media /srv/dateroem/downloads
+install -d -o root -g root -m 700 /srv/dateroem/backups
+install -d -o root -g dateroem -m 750 /etc/dateroem /etc/dateroem/mpesa
+echo "$DOMAIN" > /etc/dateroem/domain
+
+step "Database and its account"
+systemctl enable --now mysql >/dev/null 2>&1
+if [[ -f /etc/dateroem/backend.env ]]; then
+  DB_PASSWORD="$(grep -E '^DATEROEM_DB_PASSWORD=' /etc/dateroem/backend.env | cut -d= -f2-)"
+else
+  DB_PASSWORD="$(openssl rand -hex 24)"
+fi
+JWT_SECRET="$(openssl rand -base64 48 | tr -d '\n/+=')"
+mysql --protocol=socket -u root <<SQL
+CREATE DATABASE IF NOT EXISTS dateroem CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'dateroem_backend'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+CREATE USER IF NOT EXISTS 'dateroem_backend'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';
+ALTER USER 'dateroem_backend'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+ALTER USER 'dateroem_backend'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON dateroem.* TO 'dateroem_backend'@'localhost';
+GRANT ALL PRIVILEGES ON dateroem.* TO 'dateroem_backend'@'127.0.0.1';
+FLUSH PRIVILEGES;
+SQL
+echo "  database dateroem and account dateroem_backend ready (MySQL listens only on this machine)"
+
+step "Settings files in /etc/dateroem (existing ones are kept)"
+for name in backend website-server mobile-server admin-server; do
+  target="/etc/dateroem/$name.env"
+  if [[ -f "$target" ]]; then
+    echo "  kept $target"
+    continue
+  fi
+  sed -e "s|__DOMAIN__|$DOMAIN|g" -e "s|__DB_PASSWORD__|$DB_PASSWORD|g" -e "s|__JWT_SECRET__|$JWT_SECRET|g" \
+    "$DEPLOY/env/$name.env.example" > "$target"
+  chown root:dateroem "$target"
+  chmod 640 "$target"
+  echo "  made $target"
+done
+
+step "Caddy: the domain for the router"
+install -d /etc/systemd/system/caddy.service.d
+cat > /etc/systemd/system/caddy.service.d/dateroem.conf <<EOF
+[Service]
+Environment=DATEROEM_DOMAIN=$DOMAIN
+Environment=DATEROEM_EMAIL=$EMAIL
+EOF
+systemctl daemon-reload
+
+ADDRESS="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1)}')"
+step "Done. Next:"
+cat <<EOF
+  1. At the domain registrar, point $DOMAIN and www.$DOMAIN to this server
+     (two "A" records, value ${ADDRESS:-<this server's public IP>}).
+  2. Copy the database here and run:
+       sudo bash $DEPLOY/scripts/import-database.sh dateroem-db-....sql.gz
+  3. Fill in the values only you can get (M-Pesa, AI keys, Gmail App Password):
+       sudo nano /etc/dateroem/backend.env
+       sudo nano /etc/dateroem/website-server.env
+  4. Install the release and start everything:
+       sudo bash $DEPLOY/scripts/install-release.sh dateroem-release-....tar.gz
+EOF

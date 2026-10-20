@@ -1,0 +1,143 @@
+# Production router for the hosted Ubuntu server (Hosting and Deployment
+# Guide, DWS-CFG-03). It keeps the public paths of the development
+# Caddyfile at the repo root, so the phone app and the desktop app only
+# need the new domain:
+#   https://<domain>/              the website
+#   https://<domain>/mobile-api/   the phone app's server
+#   https://<domain>/admin-api     the desktop app's server
+# Caddy gets and renews the HTTPS certificate by itself (Let's Encrypt) -
+# the trusted certificate Safaricom requires for the payment callbacks.
+#
+# DATEROEM_DOMAIN and DATEROEM_EMAIL come from the systemd drop-in that
+# setup-server.sh writes (/etc/systemd/system/caddy.service.d/dateroem.conf).
+# The backend (8080) is never public: it trusts X-Actor-User-Id from the
+# servers in front of it, so only the payment callbacks reach it.
+{
+	email {$DATEROEM_EMAIL}
+}
+
+# One address for everything (Google sign-in lists exactly one origin).
+www.{$DATEROEM_DOMAIN} {
+	redir https://{$DATEROEM_DOMAIN}{uri} permanent
+}
+
+{$DATEROEM_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Request size limits (9 October 2026): anything larger is refused (413)
+	# here, before a server reads it - an upload is checked for a sign-in
+	# only once it has arrived, so without these anyone could send huge
+	# files to fill memory or disk. Phone and desktop apps: campaign videos
+	# up to 60 MB (sent as they are). Website and
+	# Safaricom: small forms only.
+	# The phone app's server.
+	handle_path /mobile-api/* {
+		request_body {
+			max_size 70MB
+		}
+		reverse_proxy 127.0.0.1:8001
+	}
+	# Phone app downloads (APK files put in /srv/dateroem/downloads).
+	handle_path /downloadable/* {
+		root * /srv/dateroem/downloads
+		file_server
+	}
+	# The desktop app's server; its API description pages stay private.
+	@admin_api_docs path /admin-api/docs* /admin-api/redoc* /admin-api/openapi.json
+	handle @admin_api_docs {
+		respond 404
+	}
+	handle_path /admin-api/* {
+		request_body {
+			max_size 70MB
+		}
+		reverse_proxy 127.0.0.1:8002
+	}
+	# Safaricom's payment results, straight to the backend. Production
+	# registers /api/dateroem-payments (Safaricom rejects addresses with
+	# "mpesa" in them); the sandbox path stays for testing.
+	#
+	# These paths are the only public way to reach the backend, and the
+	# backend acts on what they say (a payment succeeded or failed). Only
+	# Safaricom should be able to post here, so requests from any other
+	# address are refused. The customer STK result is also re-checked
+	# against Safaricom in code (TransactionService.handleMpesaCallback), so
+	# a forged STK message is rejected even if it somehow reached the
+	# backend; this list is the matching protection for the Send Money (B2C)
+	# result, which has no such re-check.
+	#
+	# IMPORTANT: confirm this list against Safaricom's current published
+	# callback source addresses before go-live - they change from time to
+	# time. If a real payment result ever fails to arrive, check here first.
+	@safaricom remote_ip 196.201.214.0/24 196.201.213.0/24 196.201.212.0/24 196.201.176.0/20
+	handle /api/dateroem-payments/* {
+		request_body {
+			max_size 1MB
+		}
+		handle @safaricom {
+			reverse_proxy 127.0.0.1:8080
+		}
+		respond 403
+	}
+	handle /api/dateroem-mpesa-callback/* {
+		request_body {
+			max_size 1MB
+		}
+		handle @safaricom {
+			reverse_proxy 127.0.0.1:8080
+		}
+		respond 403
+	}
+	# The website's own server (the built site calls it under /svc) and the
+	# product and campaign pictures it serves.
+	handle_path /svc/* {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy 127.0.0.1:8000
+	}
+	handle /media/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+	# Everything else: the built website. Unknown paths get index.html, so
+	# page addresses such as /products/7 work when opened directly.
+	handle {
+		root * /srv/dateroem/frontend/website/dist
+		# Built files have a content hash in their name - cache them long;
+		# index.html is checked every time so a new release shows at once.
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@page path / /index.html
+		header @page Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+
+	# When a server behind Caddy is down (18 October 2026): an app or a site
+	# call gets one calm sentence as JSON, a browser the "we'll be right
+	# back" page (deploy/maintenance, written by the website's brand:export) -
+	# never a bare 502. The website's own pages are files, so they stay up.
+	handle_errors {
+		@down expression `{err.status_code} >= 502 && {err.status_code} <= 504`
+		@calls expression `{http.request.orig_uri.path}.startsWith("/svc/") || {http.request.orig_uri.path}.startsWith("/mobile-api/") || {http.request.orig_uri.path}.startsWith("/admin-api/") || {http.request.orig_uri.path}.startsWith("/api/") || {http.request.orig_uri.path}.startsWith("/media/")`
+		handle @down {
+			handle @calls {
+				header Content-Type application/json
+				respond `{"detail":"We can't reach Dateroem right now. Please try again in a few minutes."}` 503
+			}
+			handle {
+				root * /srv/dateroem/deploy/maintenance
+				rewrite * /index.html
+				header Cache-Control "no-store"
+				file_server
+			}
+		}
+	}
+}

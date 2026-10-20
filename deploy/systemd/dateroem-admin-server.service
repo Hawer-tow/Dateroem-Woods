@@ -1,0 +1,23 @@
+# The desktop app's server (FastAPI) on the hosted server; Caddy publishes
+# it at https://<domain>/admin-api. One process on purpose: the wrong-password
+# limit is kept in its memory. Settings in /etc/dateroem/admin-server.env.
+[Unit]
+Description=Dateroem admin server (FastAPI, port 8002)
+After=network-online.target dateroem-backend.service
+Wants=network-online.target
+
+[Service]
+User=dateroem
+Group=dateroem
+WorkingDirectory=/srv/dateroem/admin_server_control/server
+EnvironmentFile=/etc/dateroem/admin-server.env
+ExecStart=/srv/dateroem/admin_server_control/server/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8002 --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

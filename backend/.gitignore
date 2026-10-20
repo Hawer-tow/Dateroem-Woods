@@ -1,0 +1,9 @@
+target/
+.idea/
+*.iml
+.DS_Store
+application-local.properties
+.env
+
+# SMS test mode writes codes here (app.sms.provider=test) - never commit it.
+sms-test-outbox.txt

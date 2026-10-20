@@ -1,0 +1,23 @@
+# The website's own server (FastAPI) on the hosted server. One process on
+# purpose: the email form's and sign-in limits are kept in its memory.
+# Settings in /etc/dateroem/website-server.env (DWS-CFG-03).
+[Unit]
+Description=Dateroem website server (FastAPI, port 8000)
+After=network-online.target dateroem-backend.service
+Wants=network-online.target
+
+[Service]
+User=dateroem
+Group=dateroem
+WorkingDirectory=/srv/dateroem/frontend
+EnvironmentFile=/etc/dateroem/website-server.env
+ExecStart=/srv/dateroem/frontend/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

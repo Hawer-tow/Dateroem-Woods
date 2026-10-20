@@ -1,0 +1,5074 @@
+/* Colour themes (20 October 2026): "is it possible to add more themes like
+   the dark and light theme and what we have will be default" - Forest (the
+   board's Living Forest greens) is the default; <html data-theme> picks Dark
+   or Light (src/context/ThemeContext.jsx - remembered in this browser and,
+   for a signed-in customer, with the account). Every colour has a value in
+   each theme:
+     --bg, --bg-elevated, --bg-inset  the page, raised cards and panels, inset wells
+     --bg-rgb, --bg-elevated-rgb      the same as "r, g, b", for see-through tints
+     --ink-rgb                        hairlines and tints: white on the dark themes,
+                                      black on the light one
+     --nav-bg                         the bar along the top
+   The About story and the sign-in photo panel are built on dark photographs,
+   so they keep the Forest colours in every theme. */
+:root,
+:root[data-theme='forest'],
+.story,
+.auth-screen__story-side {
+  color-scheme: dark;
+  --bg: #0f241b;
+  --bg-rgb: 15, 36, 27;
+  --bg-elevated: #1d4232;
+  --bg-elevated-rgb: 29, 66, 50;
+  --bg-inset: #173628;
+  --text: #f5f5f1;
+  --text-muted: #b3c2b4;
+  --ink-rgb: 255, 255, 255;
+  --danger: #e5484d;
+  --ok: #4caf50;
+  --inset-shade: rgba(0, 0, 0, 0.25);
+  --nav-bg: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.4));
+  --wood-ink: repeating-linear-gradient(100deg, #fcdca6 0, #f4b566 1.2em, #e8892f 2.3em, #f4b566 3.4em, #fcdca6 4.6em);
+  --wood-tone: #eb9a4b;
+  --wood-tone-hover: #f4b566;
+}
+
+/* Dark: charcoal greys with the same wood, for anyone who finds the green
+   tiring. Text 15.6:1, muted text 7.4:1, wood 6.3:1 on the cards. */
+:root[data-theme='dark'] {
+  --bg: #121417;
+  --bg-rgb: 18, 20, 23;
+  --bg-elevated: #1e2124;
+  --bg-elevated-rgb: 30, 33, 36;
+  --bg-inset: #181b1e;
+  --text: #f2f2ef;
+  --text-muted: #a9b1b6;
+}
+
+/* Light: warm paper with dark text. The wood's honey tones are too pale for
+   small text on white, so text and hairlines take a darker, barkier wood
+   (4.8:1 or more); the painted planks of the buttons stay the same. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f1ea;
+  --bg-rgb: 244, 241, 234;
+  --bg-elevated: #ffffff;
+  --bg-elevated-rgb: 255, 255, 255;
+  --bg-inset: #ebe5d9;
+  --text: #1c2520;
+  --text-muted: #57635b;
+  --ink-rgb: 0, 0, 0;
+  --danger: #c5292e;
+  --ok: #2e7d32;
+  --inset-shade: rgba(0, 0, 0, 0.05);
+  --nav-bg: linear-gradient(to bottom, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.88));
+  --wood-ink: repeating-linear-gradient(100deg, #9a5216 0, #b0601d 1.2em, #7c3d0e 2.3em, #b0601d 3.4em, #9a5216 4.6em);
+  --wood-tone: #a4561a;
+  --wood-tone-hover: #8a4512;
+}
+
+:root {
+  --radius: 8px;
+
+  /* "the rest of the areas in the website that have an orange like
+     appearance ... place the paint like color like the one dateroem uses
+     ... so that they deliver the tree bark like feel since this is a wood
+     sawing site" - there is no flat orange anymore. Everything it used to
+     color is painted with the same brush and palette as the Dateroem
+     wordmark (src/wood/woodPaint.js; the textures are regenerated from it
+     on every build by scripts/paint-wood-textures.mjs):
+       --wood-plank  a sawn board, for filled surfaces (buttons, badges...)
+       --wood-log    a cut log end, for round ones
+       --wood-ink    the wordmark's honey-to-orange paint, for text
+       --wood-tone   one flat wood color, for hairline borders and icons
+                     where paint would be too fine to see
+       --wood-on     dark bark brown, for text and icons sitting on wood
+       --wood-tint*  the board showing faintly through a dark surface, for
+                     selected/active states
+     --wood-ink and --wood-tone change with the theme (above). */
+  --wood-plank: url('../assets/wood/plank.svg') 50% 50% / 600px 200px #eda256;
+  --wood-log: url('../assets/wood/log-end.svg') center / cover #eda256;
+  --wood-on: #2a1508;
+  --wood-tint: linear-gradient(rgba(var(--bg-rgb), 0.8), rgba(var(--bg-rgb), 0.8)), var(--wood-plank);
+  --wood-tint-elevated: linear-gradient(rgba(var(--bg-elevated-rgb), 0.8), rgba(var(--bg-elevated-rgb), 0.8)), var(--wood-plank);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Painted wood text - every piece of text that used to be flat orange,
+   same fonts as before, now carrying the wordmark's paint. Only on text
+   without a box of its own: clipping a background to the text would wipe
+   out a pill's or chip's own background (those use --wood-tone instead). */
+.product-grid .product-card__price,
+.cart-list__price,
+.order-confirmation__eta,
+.my-orders__order-box-delivery,
+.area-card__tick,
+.area-card__maps-link {
+  color: var(--wood-tone);
+  background-image: var(--wood-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+/* Big figures are large enough to show the sawn grain itself. */
+.product-detail__price,
+.cart-page__total {
+  color: var(--wood-tone);
+  background: var(--wood-plank);
+  background-size: 300px 100px;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+/* Filled with painted board, dark bark-brown lettering on top, and a
+   faint bark edge so the board reads as a cut piece, not a flat swatch. */
+.btn--primary,
+.product-card__badge,
+.media-card__badge,
+.media-card__chip:hover,
+.chat-bubble--user,
+.area-card__badge,
+.help-widget__history-count {
+  background: var(--wood-plank);
+  color: var(--wood-on);
+  box-shadow: inset 0 0 0 1px rgba(74, 38, 14, 0.35);
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.app-main {
+  flex: 1;
+  padding: 24px clamp(16px, 4vw, 64px);
+}
+
+.navbar {
+  background: var(--nav-bg);
+  backdrop-filter: blur(6px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.navbar__row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px clamp(16px, 4vw, 64px);
+}
+.navbar__spacer {
+  flex: 1;
+}
+.navbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.navbar__wordmark {
+  display: block;
+  height: 32px;
+  width: auto;
+}
+/* The rings are laid down one year at a time from the heart outward when
+   the page opens - the tree growing to its full age - then stay still. */
+.wood-wordmark__ring {
+  animation: wood-ring-grow 0.5s ease-out both;
+  animation-delay: calc(0.25s + var(--ring) * 45ms);
+}
+@keyframes wood-ring-grow {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wood-wordmark__ring {
+    animation: none;
+  }
+}
+.navbar__brand-suffix {
+  color: var(--text);
+  font-weight: 400;
+}
+.navbar__toggle {
+  display: none;
+  /* Matches .navbar__user-icon's exact shape/size/tint - "the icon and
+     the main menu shortcut dont seem to fit with the name" was these two
+     buttons looking like an unrelated square badge next to a circular
+     one, rather than reading as one consistent icon-button pair. */
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.2);
+  background: rgba(var(--ink-rgb), 0.08);
+  color: var(--text);
+  font-size: 1.1rem;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.navbar__toggle:hover {
+  border-color: var(--wood-tone);
+}
+.navbar__links {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 0 clamp(16px, 4vw, 64px) 0;
+}
+.navbar__links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.navbar__links a:hover {
+  color: var(--text);
+}
+/* Icon-only now, matching .navbar__user-icon/.navbar__toggle's exact
+   circular treatment for consistency. The badge uses --danger (red), not
+   the site's orange/wood - "the pulsating dot ... give it a vibrant color for
+   fast identification, the orange color it has is the same as the name
+   cart" was it blending into the rest of the nav's own accent color
+   instead of standing out as a distinct "something's here" signal. */
+.navbar__cart {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.2);
+  background: rgba(var(--ink-rgb), 0.08);
+  color: var(--text) !important;
+  font-size: 1.15rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.navbar__cart:hover {
+  border-color: var(--wood-tone);
+  background: rgba(var(--ink-rgb), 0.12);
+}
+.navbar__cart-dot {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--danger);
+  border: 2px solid var(--bg);
+  animation: navbar-cart-dot-pulse 1.6s ease-in-out infinite;
+}
+@keyframes navbar-cart-dot-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(229, 72, 77, 0.6);
+  }
+  50% {
+    transform: scale(1.25);
+    box-shadow: 0 0 0 5px rgba(229, 72, 77, 0);
+  }
+}
+
+.navbar__account {
+  position: relative;
+}
+.navbar__user-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.2);
+  background: rgba(var(--ink-rgb), 0.08);
+  color: var(--text);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.navbar__user-icon:hover {
+  border-color: var(--wood-tone);
+}
+.navbar__account-menu {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.1);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+.navbar__account-name {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* "sign in ... out of site for filling completely stack at the top" -
+   align-items:center on a non-scrolling overlay clips overflow evenly on
+   both sides with no way to reach it: once the form (plus, on mobile, the
+   on-screen keyboard shrinking the visible area) was taller than the
+   viewport, the top of the modal - the tabs, the first field - ended up
+   pushed above y=0 with nothing scrollable to bring it back. overflow-y
+   here plus margin:auto on .modal (instead of align-items:center) is the
+   pattern that actually stays scrollable when content overflows while
+   still centering normally when it fits. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+.modal {
+  position: relative;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  padding: 32px;
+  width: min(400px, 100%);
+  margin: auto 0;
+}
+.modal__close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal__close:hover {
+  color: var(--text);
+}
+.modal__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.modal__tab {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.modal__tab--active {
+  border-color: var(--wood-tone);
+  color: var(--text);
+  background: var(--wood-tint-elevated);
+}
+.modal__message {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+.modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.modal__form input {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: rgba(var(--ink-rgb), 0.05);
+  color: var(--text);
+  font-size: 1rem;
+}
+.modal__field-note {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+/* A form error sits right above the button, not in page-sized padding. */
+.modal__form .state-message {
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+/* "Continue with Google" above the usual form - Google's own button (its
+   look is theirs to set), then an "or" rule. Room is kept for the button
+   while it loads so the form doesn't jump. */
+.auth-google {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 16px;
+}
+.auth-google[hidden] {
+  display: none;
+}
+.auth-google__button {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+.auth-google__button[hidden] {
+  display: none;
+}
+/* The stand-in until Google sign-in is set up: Google's own "outline"
+   look (white pill, grey edge, the "G"), dimmed so it reads as not yet
+   available. */
+.auth-google__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid #dadce0;
+  background: #fff;
+  color: #3c4043;
+  font-family: Roboto, 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+.auth-google--checking .auth-divider {
+  visibility: hidden;
+}
+.auth-google__note,
+.auth-google .state-message {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  font-size: 0.88rem;
+}
+.auth-google__note {
+  color: var(--text-muted);
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(var(--ink-rgb), 0.14);
+}
+
+/* Someone new from Google: just their phone number to go. */
+.auth-finish__hello {
+  margin: 4px 0 8px;
+  font-size: 1.3rem;
+}
+.auth-finish__email {
+  margin: -8px 0 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.auth-finish__back {
+  align-self: center;
+}
+
+/* The SMS code that confirms a phone number (PhoneCodeStep): at sign-up,
+   and once at checkout for accounts made before codes were sent. */
+.phone-code__sent {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.phone-code__sent strong {
+  color: var(--text);
+  white-space: nowrap;
+}
+.modal__form input.phone-code__input {
+  font-size: 1.5rem;
+  letter-spacing: 0.45em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  padding: 12px 8px 12px calc(8px + 0.45em);
+}
+.phone-code__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.btn--link:disabled {
+  cursor: default;
+  opacity: 0.6;
+  text-decoration: none;
+}
+.phone-check__title {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+}
+.phone-check__lead {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.modal--phone .modal__form > .btn--link {
+  align-self: center;
+}
+
+/* Sign in / create account as a screen of its own: the form on the left,
+   the About page's film on the right ("the animation ... on the right and
+   the password sign in or create account on the left"). Phones: the film
+   as a band across the top, the form under it. */
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-columns: minmax(380px, 42%) 1fr;
+  background: var(--bg);
+  animation: forest-fade 0.25s ease both;
+}
+.auth-screen__form-side {
+  display: flex;
+  overflow-y: auto;
+  padding: 32px clamp(20px, 4vw, 56px);
+}
+.auth-screen__form {
+  /* margin:auto centres it, and still lets a tall form scroll. */
+  width: min(400px, 100%);
+  margin: auto;
+}
+.auth-screen__brand {
+  display: block;
+  height: 34px;
+  width: auto;
+  margin-bottom: 28px;
+}
+.auth-screen__title {
+  margin: 0 0 6px;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+.auth-screen__lead {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.auth-screen__notice {
+  margin: -6px 0 18px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--wood-tone);
+  border-radius: 4px;
+  background: var(--wood-tint-elevated);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.auth-screen__email {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.auth-screen__email .modal__field-note {
+  margin: 0;
+}
+.auth-screen__field-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+.modal__form input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.auth-screen__suggestion {
+  padding: 0;
+  font: inherit;
+  color: var(--wood-tone);
+  text-decoration: underline;
+}
+.auth-screen__story-side {
+  position: relative;
+  overflow: hidden;
+  background: #050a07;
+}
+.auth-screen__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.28);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.auth-screen__close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* The film: drawn on a canvas that fills the panel, darkened toward the
+   bottom so the chapter's words read clearly over it. */
+.auth-story {
+  position: absolute;
+  inset: 0;
+}
+.auth-story__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+.auth-story--showing .auth-story__canvas {
+  opacity: 1;
+}
+.auth-story__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(5, 10, 7, 0.94) 0%, rgba(5, 10, 7, 0.55) 30%, rgba(5, 10, 7, 0) 58%),
+    linear-gradient(to right, rgba(5, 10, 7, 0.4), rgba(5, 10, 7, 0) 28%);
+}
+.auth-story__caption {
+  position: absolute;
+  left: clamp(20px, 4vw, 52px);
+  right: clamp(20px, 4vw, 52px);
+  bottom: clamp(24px, 6vh, 56px);
+}
+.auth-story__progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.auth-story__bars {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+}
+.auth-story__bar {
+  flex: 1;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(var(--ink-rgb), 0.25);
+}
+.auth-story__bar span {
+  display: block;
+  height: 100%;
+  background: var(--wood-tone);
+  transform-origin: left center;
+}
+.auth-story__pause {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.3);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: pointer;
+}
+.auth-story__pause:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+.auth-story__words {
+  animation: forest-fade 0.6s ease both;
+}
+.auth-story__label {
+  margin: 0 0 6px;
+  color: var(--wood-tone);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.auth-story__title {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: clamp(1.3rem, 2.2vw, 1.95rem);
+  line-height: 1.2;
+}
+.auth-story__text {
+  max-width: 46ch;
+  margin: 0;
+  color: rgba(245, 245, 241, 0.82);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+@media (max-width: 899px) {
+  .auth-screen {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  /* The film first on a phone (the form stays first for screen readers). */
+  .auth-screen__story-side {
+    order: -1;
+    flex: none;
+    height: 36vh;
+    min-height: 210px;
+  }
+  .auth-screen__form-side {
+    overflow: visible;
+    padding: 24px 20px 40px;
+  }
+  .auth-story__caption {
+    bottom: 18px;
+  }
+  .auth-story__progress {
+    margin-bottom: 12px;
+  }
+  .auth-story__title {
+    font-size: 1.15rem;
+  }
+  .auth-story__text {
+    display: none;
+  }
+}
+
+/* Every page's foot: the emblem, then every way to reach the business
+   (WhatsApp, TikTok, Instagram, email, phone) as the Help page's pills. */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-top: 24px;
+  padding: 32px 16px 28px;
+  border-top: 1px solid rgba(var(--ink-rgb), 0.08);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.footer p {
+  margin: 0;
+}
+.footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+.footer__emblem {
+  flex: none;
+  display: block;
+}
+.footer__name {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: var(--bg-elevated);
+  color: var(--wood-tone);
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.footer__link:hover {
+  border-color: var(--wood-tone);
+  background: var(--wood-tint-elevated);
+}
+.footer__link .icon {
+  flex: none;
+}
+.footer__copy {
+  font-size: 0.8rem;
+}
+
+/* The Theme menu at the end of the top links (components/ThemeMenu.jsx):
+   one button, a short list of Forest / Dark / Light with a swatch of each
+   theme's page, card and wood. The swatches keep their own colours in every
+   theme so each shows what it gives. */
+.theme-menu {
+  position: relative;
+  margin-left: auto;
+}
+.theme-menu__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.theme-menu__button:hover,
+.theme-menu__button[aria-expanded='true'] {
+  color: var(--text);
+  border-color: rgba(var(--ink-rgb), 0.3);
+}
+.theme-menu__button:focus-visible,
+.theme-menu__item:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 2px;
+}
+.theme-menu__caret {
+  width: 6px;
+  height: 6px;
+  margin: -3px 1px 0 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.theme-menu__list {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 25;
+  min-width: 170px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+.theme-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+}
+.theme-menu__item:hover {
+  background: rgba(var(--ink-rgb), 0.07);
+}
+.theme-menu__item[aria-checked='true'] {
+  font-weight: 600;
+}
+.theme-menu__item .icon {
+  color: var(--wood-tone);
+}
+.theme-menu__label {
+  flex: 1;
+}
+.theme-menu__swatch {
+  position: relative;
+  flex: none;
+  width: 22px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+.theme-menu__swatch::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #eb9a4b;
+}
+.theme-menu__swatch--forest {
+  background: linear-gradient(135deg, #0f241b 0 55%, #1d4232 55%);
+}
+.theme-menu__swatch--dark {
+  background: linear-gradient(135deg, #121417 0 55%, #1e2124 55%);
+}
+.theme-menu__swatch--light {
+  background: linear-gradient(135deg, #f4f1ea 0 55%, #ffffff 55%);
+}
+.theme-menu__swatch--light::after {
+  background: #a4561a;
+}
+
+.product-row {
+  margin-bottom: 40px;
+}
+.product-row h2 {
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+}
+.product-row__scroller {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+}
+
+/* "make the total product horizontally 5 ... let the product card a
+   little bit bigger ... now it feels empty" - with no width cap on the
+   page, a wide monitor stretched the old 190px-minimum cards paper-thin
+   across the screen with lots of dead space between them. Capping the
+   grid's own width and raising the minimum card size lands on 5 per row
+   at a normal desktop width, sizing down gracefully as it narrows.
+   auto-fill (not auto-fit) so a short last row - or a search down to one
+   or two results - stays sized like every other card instead of
+   stretching to fill the whole row on its own. */
+/* "center the products for large screens and increase the size of the
+   products so that they occupy the space and enlarge if the screen size
+   increases ... same to the featured" and "instead of fixating on a certain
+   length can it stretch automatically ... no matter the screen size" (20
+   October 2026): the catalogue - Featured banner, search, grid - fills the
+   page at any width, with the page's even margins on both sides. A card's
+   smallest width is a share of the screen (17%), so about the same number
+   fit in a row on any screen and they simply grow on bigger ones - a
+   1440px laptop shows four, a 1920px or 4K monitor five, larger. */
+.products-page .featured-banner {
+  max-width: none;
+}
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(252px, 17vw), 1fr));
+  gap: clamp(24px, 1.4vw, 40px);
+}
+
+.product-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 360px;
+  margin-bottom: 24px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  border-radius: 999px;
+}
+.product-search__icon {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.product-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.product-search input::placeholder {
+  color: var(--text-muted);
+}
+.product-search__clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+.product-search__clear:hover {
+  color: var(--text);
+}
+
+.product-card {
+  flex: 0 0 200px;
+  scroll-snap-align: start;
+  text-decoration: none;
+  color: inherit;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.07);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.product-grid .product-card {
+  /* Only the grid layout (the catalog) gets bigger, real cards - the
+     horizontal "featured" scroller stays its own compact size. */
+  flex: unset;
+}
+.product-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  z-index: 2;
+}
+.product-card__image {
+  height: 130px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: var(--text-muted);
+  position: relative;
+}
+.product-grid .product-card__image {
+  /* Taller with the wider cards on big screens, so photos keep their shape. */
+  height: max(232px, 13vw);
+  font-size: 3rem;
+}
+.product-card__badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.product-card__body {
+  padding: 10px 12px;
+}
+.product-grid .product-card__body {
+  padding: 18px 18px 20px;
+}
+.product-card__body h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+.product-grid .product-card__body h3 {
+  font-size: 1.16rem;
+  margin: 0 0 7px;
+}
+.product-card__price {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.product-grid .product-card__price {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* Matches .navbar__user-icon/.navbar__toggle's exact treatment - a plain
+   text pill sitting on its own above the content read as disconnected
+   from the rest of the page; a circular icon button in the same language
+   as the nav's own icon buttons reads as part of one consistent system. */
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.2);
+  background: rgba(var(--ink-rgb), 0.08);
+  color: var(--text);
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+/* The drawn arrow (BackArrowIcon) - exactly centred, unlike the "←" text
+   character it replaced. */
+.back-button svg {
+  display: block;
+  flex: 0 0 auto;
+}
+@media (max-width: 720px) {
+  /* A comfortable thumb target on phones. */
+  .back-button {
+    width: 40px;
+    height: 40px;
+  }
+}
+.back-button:hover {
+  border-color: var(--wood-tone);
+  background: rgba(var(--ink-rgb), 0.12);
+}
+
+.product-detail {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.product-detail__image {
+  flex: 1 1 320px;
+  min-height: 320px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-inset);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  color: var(--text-muted);
+}
+.product-detail__info {
+  flex: 1 1 320px;
+}
+.product-detail__price {
+  font-size: 1.5rem;
+  margin: 16px 0 8px;
+}
+.product-detail__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+/* A long description: a 3-line preview beside the price, the full text
+   formatted in "About this product" below (ProductDescription.jsx). */
+.product-detail__description--preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.product-detail__more {
+  color: var(--wood-tone);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.product-detail__more:hover {
+  text-decoration: underline;
+}
+.product-about {
+  margin: 40px 0 8px;
+  padding: 22px 24px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  max-width: 900px;
+  scroll-margin-top: 90px;
+}
+.product-about__heading {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+}
+.product-description {
+  max-width: 72ch;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.product-description > :last-child {
+  margin-bottom: 0;
+}
+.product-description__paragraph {
+  margin: 0 0 12px;
+}
+.product-description__heading {
+  margin: 18px 0 8px;
+  font-size: 1rem;
+  color: var(--wood-tone);
+}
+.product-description__heading:first-child {
+  margin-top: 0;
+}
+.product-description__list {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+.product-description__list li {
+  margin: 4px 0;
+}
+.product-description__list li::marker {
+  color: var(--wood-tone);
+}
+.product-description__specs {
+  margin: 0 0 14px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.product-description__spec {
+  display: grid;
+  grid-template-columns: minmax(110px, 36%) 1fr;
+}
+.product-description__spec + .product-description__spec {
+  border-top: 1px solid rgba(var(--ink-rgb), 0.08);
+}
+.product-description__spec dt,
+.product-description__spec dd {
+  margin: 0;
+  padding: 8px 12px;
+}
+.product-description__spec dt {
+  background: rgba(var(--ink-rgb), 0.04);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+.btn--primary {
+  /* Painted board (see the wood rules near the top), with a slightly
+     darker bottom edge and lettering pressed into it. */
+  box-shadow: inset 0 0 0 1px rgba(74, 38, 14, 0.35), inset 0 -2px 0 rgba(74, 38, 14, 0.22);
+  text-shadow: 0 1px 0 rgba(255, 244, 222, 0.35);
+}
+.btn--primary:hover {
+  filter: brightness(1.07) saturate(1.05);
+}
+.btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--secondary {
+  background: transparent;
+  border: 1px solid var(--text-muted);
+  color: var(--text);
+}
+.btn--text {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+}
+
+.state-message {
+  color: var(--text-muted);
+  padding: 40px 0;
+  text-align: center;
+}
+.state-message--error {
+  color: var(--danger);
+}
+
+/* "arrange them in the best way possible like cards and playable in that
+   area only ... like netflix videos not outside it so it doesn't feel
+   stuffed" - a responsive poster grid; auto-fill + a 220px floor means
+   this is already a single column on a phone (no media query needed) and
+   flows into more columns as the viewport grows, forest palette (the
+   existing --bg-elevated/wood tokens) carried straight through. */
+.marketing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+.media-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.media-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+}
+.media-card__frame {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background: #000;
+  overflow: hidden;
+}
+.media-card__media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Video gets letterboxed rather than cropped like a poster image would -
+   losing part of a promo clip to a crop is worse than a couple of black
+   bars, and it still never leaves this fixed-size frame either way. */
+.media-card__media--video {
+  object-fit: contain;
+  background: #000;
+}
+.media-card__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 12px;
+}
+.media-card__placeholder {
+  font-size: 2.5rem;
+}
+.media-card__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.media-card__body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.media-card__body h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text);
+}
+.media-card__products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.media-card__chip {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--wood-tone);
+  color: var(--wood-tone);
+  text-decoration: none;
+}
+.media-card__cta {
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+/* "Featured" - live campaigns shown where customers already are (the
+   Products page banner, a tag on the product) instead of a "Marketing"
+   tab nobody would open. Never a pop-up, never sound. */
+.featured-page h1 {
+  margin: 0 0 20px;
+}
+.featured-page__empty {
+  text-align: center;
+}
+.featured-page__empty .state-message {
+  padding-bottom: 16px;
+}
+.featured-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 1360px;
+  margin-bottom: 24px;
+  padding: 14px 52px 14px 14px;
+  background: var(--wood-tint-elevated);
+  border: 1px solid rgba(235, 154, 75, 0.35);
+  border-radius: var(--radius);
+}
+.featured-banner__media {
+  flex: 0 0 160px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wood-tone);
+}
+.featured-banner__media img,
+.featured-banner__media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.featured-banner__text {
+  flex: 1;
+  min-width: 0;
+}
+.featured-banner__label {
+  margin: 0 0 2px;
+  color: var(--wood-tone);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.featured-banner__text h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+.featured-banner__products {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.featured-banner__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.featured-banner__more {
+  color: var(--wood-tone);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+.featured-banner__more:hover {
+  text-decoration: underline;
+}
+.featured-banner__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.featured-banner__close:hover {
+  color: var(--text);
+}
+@media (max-width: 640px) {
+  .featured-banner {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px;
+  }
+  .featured-banner__media {
+    flex: 0 0 96px;
+    height: 72px;
+  }
+  .featured-banner__text {
+    flex: 1 1 0;
+    padding-right: 24px;
+  }
+  .featured-banner__actions {
+    flex: 1 1 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.featured-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: -8px 0 20px;
+}
+.featured-filter__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wood-tone);
+  font-weight: 600;
+}
+.featured-filter__clear {
+  padding: 4px 12px;
+  background: none;
+  border: 1px solid var(--text-muted);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.featured-filter__clear:hover {
+  border-color: var(--wood-tone);
+}
+.featured-filter__ended {
+  margin: -8px 0 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.product-card__featured {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  max-width: calc(100% - 16px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(8, 18, 12, 0.8);
+  color: var(--wood-tone);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.product-card__featured .icon {
+  flex-shrink: 0;
+}
+.product-card__featured-name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-detail__featured {
+  /* Its own line under the rating (which runs inline). */
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 10px;
+  padding: 4px 12px;
+  border: 1px solid var(--wood-tone);
+  border-radius: 999px;
+  color: var(--wood-tone);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.product-detail__featured:hover {
+  background: var(--wood-tint-elevated);
+}
+/* The back arrow and "All products" side by side above a product. */
+.product-detail__topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.product-detail__topbar .back-button {
+  margin-bottom: 0;
+}
+.product-detail__all-products {
+  color: var(--wood-tone);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.product-detail__all-products:hover {
+  text-decoration: underline;
+}
+/* The product's campaign as a card: the video (or picture) in a frame that
+   takes its own shape within a set height - an upright phone video stays
+   upright, a wide one wide - beside a few words about the campaign. Big
+   enough to watch, small enough that the page clearly carries on below. */
+.product-campaign {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 26px;
+  /* The same width as "About this product" above it, so the two read as
+     one column ("that card feel little in width"). */
+  width: min(100%, 900px);
+  margin: 40px 0 8px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(235, 154, 75, 0.22);
+  border-radius: var(--radius);
+  scroll-margin-top: 90px;
+}
+/* A stage at least as wide as it is tall ("a rice seed in a bag" was an
+   upright video alone in a wide card): the whole video stands in the
+   middle at full height, never cropped, with a soft blurred glow of itself
+   either side; wide media fill the stage edge to edge. A very wide video
+   is capped so the words still fit beside it. */
+.product-campaign__frame {
+  --frame-height: clamp(260px, 48vh, 440px);
+  position: relative;
+  flex: none;
+  width: min(calc(var(--frame-height) * var(--stage-ratio, 1.7778)), 580px);
+  max-width: 100%;
+  aspect-ratio: var(--stage-ratio, 1.7778);
+  overflow: hidden;
+  border-radius: 8px;
+  background: #050a07;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+}
+.product-campaign__glow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(26px) brightness(0.5) saturate(1.25);
+  transform: scale(1.2);
+}
+.product-campaign__media {
+  position: relative;
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  object-fit: contain;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.45);
+}
+.product-campaign__text {
+  /* Fills the rest of the card beside the media. */
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+.product-campaign__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  color: var(--wood-tone);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.product-campaign__text h2 {
+  margin: 0 0 14px;
+  font-size: 1.25rem;
+}
+.product-campaign__also {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.product-campaign__products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.product-campaign__more {
+  color: var(--wood-tone);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.product-campaign__more:hover {
+  text-decoration: underline;
+}
+@media (max-width: 640px) {
+  .product-campaign {
+    width: auto;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+  }
+  /* A phone is upright too: the frame takes the media's own shape. */
+  .product-campaign__frame {
+    align-self: center;
+    width: calc(var(--frame-height) * var(--ratio, 1.7778));
+    aspect-ratio: var(--ratio, 1.7778);
+  }
+  /* Stacked, a flex size would become a minimum height. */
+  .product-campaign__text {
+    flex: none;
+    min-width: 0;
+  }
+}
+
+/* "the card stretches all the way horizontally taking space that would
+   otherwise, if concentrated, reduce the memory load ... batched together
+   ... in a very ordery manner ... not like products" - the previous grid
+   still gave the name column every leftover pixel of the items panel, so
+   a short name left a wide dead gap before the price/controls - visually
+   "stretched" even though it was already boxed as a card. This caps the
+   whole list at a compact width instead of stretching to match its wide
+   container, and puts each item's controls (stepper, price, remove) on
+   their own line right under the name - close together, not spread
+   across a nearly-empty row. */
+.cart-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 460px;
+}
+.cart-list__item {
+  display: flex;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.07);
+  border-radius: var(--radius);
+}
+.cart-list__thumb {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.cart-list__info {
+  flex: 1;
+  min-width: 0;
+}
+.cart-list__name {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.cart-list__controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cart-list__price {
+  font-weight: 600;
+  margin-right: auto;
+}
+.cart-list__remove {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cart-list__remove:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.qty-stepper__btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.2);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.qty-stepper__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.qty-stepper__btn:not(:disabled):hover {
+  border-color: var(--wood-tone);
+  color: var(--wood-tone);
+}
+.qty-stepper__value {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+}
+.qty-stepper--compact .qty-stepper__btn {
+  width: 28px;
+  height: 28px;
+  font-size: 1rem;
+}
+.cart-page__total {
+  font-size: 1.3rem;
+  margin: 20px 0;
+}
+
+/* "make the cart thing to be centered them being in the left does not
+   fully utilize space" - the page sits in a centered column instead of
+   flush against the left edge of the wide app shell, and on screens wide
+   enough for it the items and the checkout form sit side by side instead
+   of one long left-aligned stack with empty space to the right. */
+.cart-page {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+/* "the stk message ... make it look good e.g a pop up screen that shows
+   waiting for confirmation" - not dismissible (no modal__close, no
+   click-outside-to-close - see the overlay markup) since the request is
+   already in flight by the time this shows. */
+.modal--waiting {
+  text-align: center;
+}
+.checkout-waiting__spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  border: 4px solid rgba(var(--ink-rgb), 0.15);
+  /* Honey running into sapwood orange, like a ring of the wordmark. */
+  border-top-color: #f4b566;
+  border-right-color: #e5822b;
+  animation: checkout-waiting-spin 0.8s linear infinite;
+}
+@keyframes checkout-waiting-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.checkout-waiting__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+.checkout-waiting__hint {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+.cart-page__body {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+.cart-page__items {
+  min-width: 0;
+}
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.checkout-form__area-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  border-radius: var(--radius);
+}
+.checkout-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.checkout-form input,
+.checkout-form select {
+  padding: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.checkout-form__confirm {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+}
+.checkout-form__confirm input {
+  width: auto;
+  padding: 0;
+}
+.checkout-form__note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.order-confirmation__payment {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+.order-confirmation__payment--pending {
+  background: var(--wood-tint);
+  color: var(--wood-tone);
+}
+.order-confirmation__payment--ok {
+  background: rgba(76, 175, 80, 0.15);
+  color: var(--ok);
+}
+.order-confirmation__payment--failed {
+  background: rgba(229, 72, 77, 0.15);
+  color: var(--danger);
+}
+
+.order-confirmation__status {
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+}
+.order-confirmation__status-label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.order-confirmation__status-value {
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+.order-confirmation__eta {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+.order-confirmation__items {
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+}
+.order-confirmation__item-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.order-confirmation__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+.order-confirmation__item-name {
+  color: var(--text);
+}
+.order-confirmation__item-price {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.order-confirmation__status-hint {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* "bigger card its there [keep it] - each order is a little card only 4
+   horizontally - each card will have its own description ... like how
+   products are" - two big cards total (Assigned / Not yet assigned);
+   inside each, every ORDER (not every item) is its own small card, a
+   fixed 4-across grid, laid out like a product card (image on top, text
+   below) instead of the full-width row this replaces. */
+.my-orders {
+  text-align: center;
+}
+/* "the main cards ... make them a little bit bigger ... the width can be
+   increased so that the ordered products fit well" - the orders get up to
+   1000px on their own, and share a wider row with the ratings panel
+   ("place my ratings ... right of the main order goods cards") when this
+   customer has ratings. Still centered either way. */
+.my-orders__layout {
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: left;
+}
+.my-orders__layout--with-ratings {
+  max-width: 1400px;
+  display: grid;
+  /* "make it a little bit smaller ... for full screens like one using a
+     laptop it feels too invasive" - editing happens in the popup, so the
+     side panel only needs to list and link; compacted further below. */
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 20px;
+  align-items: start;
+}
+.my-orders__main {
+  min-width: 0;
+}
+.my-orders__group-card {
+  margin: 20px 0 0;
+  padding: 22px 24px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  text-align: left;
+}
+.my-orders__group-title {
+  margin: 0 0 18px;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+.my-orders__order-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.my-orders__order-box {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid rgba(var(--ink-rgb), 0.07);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.my-orders__order-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+.my-orders__order-box-thumb {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.my-orders__order-box-body {
+  padding: 10px 12px 12px;
+}
+.my-orders__order-box-id {
+  display: block;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+.my-orders__order-box-date {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+.my-orders__order-box-delivery {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.my-orders__order-box-items {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+/* One card per product: the picture links to the product, "×3" says how
+   many orders it covers, and each order number links to that order. */
+.my-orders__group-note {
+  margin: -10px 0 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.my-orders__group-card--delivered {
+  border: 1px solid rgba(235, 154, 75, 0.45);
+}
+.my-orders__group-card--collapsed > summary {
+  margin: 0;
+  cursor: pointer;
+  font-weight: 700;
+}
+.my-orders__group-card--collapsed[open] > summary {
+  margin-bottom: 18px;
+}
+.my-orders__order-box-thumb {
+  position: relative;
+  text-decoration: none;
+}
+.my-orders__count-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 30px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--wood-plank);
+  color: var(--wood-on);
+  box-shadow: inset 0 0 0 1px rgba(74, 38, 14, 0.35), 0 2px 6px rgba(0, 0, 0, 0.35);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+.my-orders__order-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+.my-orders__order-links a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(235, 154, 75, 0.6);
+  text-underline-offset: 2px;
+}
+.my-orders__order-links a:hover {
+  color: var(--wood-tone);
+}
+/* "Show N older delivered products" under the Delivered goods grid. */
+.my-orders__show-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px dashed rgba(235, 154, 75, 0.55);
+  background: var(--wood-tint);
+  color: var(--wood-tone);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.my-orders__show-more:hover {
+  border-style: solid;
+  border-color: var(--wood-tone);
+}
+.my-orders__show-more:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 2px;
+}
+.my-orders__show-more[aria-expanded='true'] .ratings-panel__chevron {
+  transform: translateY(2px) rotate(-135deg);
+}
+/* A delivered order's rating strip, attached under its card. */
+.my-orders__order {
+  display: flex;
+  flex-direction: column;
+}
+.my-orders__order > .my-orders__order-box {
+  flex: 1;
+  height: auto;
+}
+.my-orders__order-box--with-rating {
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.my-orders__order-box--with-rating:hover {
+  transform: none;
+}
+.my-orders__order-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: var(--bg);
+  border: 1px solid rgba(var(--ink-rgb), 0.07);
+  border-top: 1px dashed rgba(235, 154, 75, 0.35);
+  border-radius: 0 0 10px 10px;
+}
+.my-orders__rate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: var(--wood-plank);
+  color: var(--wood-on);
+  box-shadow: inset 0 0 0 1px rgba(74, 38, 14, 0.35);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.my-orders__rate-btn:hover {
+  filter: brightness(1.07);
+}
+.my-orders__rate-btn--done {
+  background: var(--wood-tint);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(235, 154, 75, 0.4);
+  font-weight: 600;
+}
+/* The label only - applied to the stars too, the ellipsis ate the
+   partially clipped star row. */
+.my-orders__rate-btn > span:not(.stars) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-orders__rate-btn .stars {
+  flex: 0 0 auto;
+}
+.my-orders__rate-btn:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 2px;
+}
+/* Below this the orders would be squeezed beside the panel - stack
+   instead, ratings first so they're still found (and edited) quickly. */
+@media (max-width: 1180px) {
+  .my-orders__layout--with-ratings {
+    max-width: 1000px;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .my-orders__layout--with-ratings .ratings-panel {
+    order: -1;
+    position: static;
+    max-height: none;
+  }
+}
+@media (max-width: 900px) and (min-width: 721px) {
+  .my-orders__order-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.order-confirmation__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.shipping-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.shipping-list__item {
+  background: var(--bg-elevated);
+  padding: 16px;
+  border-radius: var(--radius);
+}
+
+.chat-window {
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  padding: 16px;
+  max-width: 480px;
+}
+.chat-window__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+  margin-bottom: 12px;
+}
+.chat-bubble {
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 80%;
+  margin: 0;
+}
+.chat-bubble p {
+  margin: 0;
+  /* The assistant now formats multi-item answers one per line (see
+     AiChatService's prompt) - plain HTML collapses "\n" by default, which
+     would otherwise run every product back into one paragraph. */
+  white-space: pre-line;
+}
+.chat-bubble--user {
+  align-self: flex-end;
+}
+.chat-bubble--bot {
+  align-self: flex-start;
+  background: var(--bg);
+}
+.chat-bubble__link {
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+.chat-window__form {
+  display: flex;
+  gap: 8px;
+}
+.chat-window__form input {
+  flex: 1;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+/* The assistant's answers, laid out as headings and lists instead of one
+   block of text - "it should be able to categorize the answers properly". */
+.chat-answer > * + * {
+  margin-top: 6px;
+}
+.chat-answer__heading {
+  font-weight: 700;
+  color: var(--wood-tone);
+}
+.chat-answer * + .chat-answer__heading {
+  margin-top: 10px;
+}
+.chat-answer__list {
+  margin: 0;
+  padding-left: 18px;
+}
+.chat-answer__list li + li {
+  margin-top: 3px;
+}
+.chat-answer__list li::marker {
+  color: var(--wood-tone);
+}
+
+/* Holds the scrolling list plus the "go to the latest answer" arrow,
+   which floats over the bottom of the list rather than scrolling with it. */
+.chat-window__viewport {
+  position: relative;
+}
+.chat-window__messages {
+  position: relative;
+}
+.chat-window__jump {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--wood-tone);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  animation: chat-jump-in 0.18s ease-out;
+}
+.chat-window__jump:hover {
+  background: var(--bg-elevated);
+}
+.chat-window__jump-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--wood-tone);
+  border: 2px solid var(--bg);
+}
+@keyframes chat-jump-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
+/* "Dateroem is typing" while an answer is on its way. */
+.chat-bubble--typing {
+  display: flex;
+  gap: 5px;
+  padding: 12px 14px;
+}
+.chat-bubble--typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wood-tone);
+  animation: chat-typing 1.1s ease-in-out infinite;
+}
+.chat-bubble--typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.chat-bubble--typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes chat-typing {
+  0%, 60%, 100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+/* Send shows a small spinner (sized to sit inside the button) while the
+   answer is coming, instead of just going dim. */
+.chat-window__send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 96px;
+}
+.chat-window__send:disabled {
+  opacity: 0.85;
+  cursor: progress;
+}
+.chat-window__send-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: checkout-waiting-spin 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-window__send-spinner {
+    animation-duration: 2s;
+  }
+  .chat-bubble--typing span {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+.heavy-order-page__contacts {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+/* "pictures that can be used to show case what bulk orders look like" - the
+   Bulk Orders page's slideshow (ShowcaseSlider.jsx), above the contacts. */
+.heavy-order-page__showcase-title {
+  margin: 28px 0 12px;
+  font-size: 1.15rem;
+}
+.showcase {
+  position: relative;
+  outline: none;
+}
+.showcase:focus-visible .showcase__frame {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 3px;
+}
+.showcase__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 520px;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background: var(--bg-elevated);
+  touch-action: pan-y;
+  user-select: none;
+}
+.showcase__slide {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.showcase__slide.is-active {
+  opacity: 1;
+}
+/* Phone photos are often taken upright: the whole picture is shown, never
+   trimmed, over a blurred and darkened copy of itself that fills the rest
+   of the frame. */
+.showcase__slide::before {
+  content: '';
+  position: absolute;
+  inset: -24px;
+  background: var(--showcase-picture) center / cover no-repeat;
+  filter: blur(22px) brightness(0.45);
+}
+.showcase__slide img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.showcase__slide figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 32px 18px 14px;
+  background: linear-gradient(transparent, rgba(var(--bg-rgb), 0.9));
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.showcase__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.4);
+  background: rgba(var(--bg-rgb), 0.72);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.showcase__arrow:hover,
+.showcase__arrow:focus-visible {
+  border-color: var(--wood-tone);
+  background: rgba(var(--bg-rgb), 0.82);
+}
+.showcase__arrow--prev {
+  left: 12px;
+}
+.showcase__arrow--next {
+  right: 12px;
+}
+.showcase__dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 10px;
+}
+/* A 24px target around a small dot; the current one stretches into a wood bar. */
+.showcase__dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.showcase__dot::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(var(--ink-rgb), 0.28);
+  transition: width 0.2s ease, background 0.2s ease;
+}
+.showcase__dot[aria-current='true']::before {
+  width: 20px;
+  background: var(--wood-tone);
+}
+@media (max-width: 600px) {
+  .showcase__frame {
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
+  }
+  .showcase__arrow {
+    width: 34px;
+    height: 34px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .showcase__slide,
+  .showcase__dot::before {
+    transition: none;
+  }
+}
+
+/* "help is mostly ai in mobile it can be placed to feel like a side
+   area" - a floating button that opens a panel sliding in from the
+   right edge, on every page, instead of the chat being its own
+   full-page destination. */
+.help-widget__fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  /* A freshly cut log end - pale heart, rings, bark rim - for the one big
+     round button on every page. */
+  background: var(--wood-log);
+  color: var(--wood-on);
+  font-size: 1.4rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  z-index: 51;
+  transition: transform 0.2s ease, opacity 0.2s ease, bottom 0.2s ease, filter 0.2s ease;
+}
+.help-widget__fab:hover {
+  transform: scale(1.06);
+  filter: brightness(1.07) saturate(1.05);
+}
+.help-widget__fab--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
+}
+.help-widget__scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 45;
+}
+/* "give it some space on both ends top and bottom so it doesnt feel
+   encroaching" - inset from the viewport edges like a floating card
+   instead of a flush full-height slab, with rounded corners all the way
+   around instead of just looking like a clipped strip of the page. */
+.help-widget {
+  /* Referenced by the closed-state transform below so the mobile media
+     query only needs to override this one value (not transform itself,
+     which would fight .help-widget--open's rule over source order). */
+  --edge-gap: 20px;
+  /* --vw-top/--vw-height are set by HelpWidget.jsx from
+     window.visualViewport while it's open, tracking the on-screen
+     keyboard - height (not top+bottom) is what actually shrinks with it,
+     so the input row stays pinned in view above the keyboard instead of
+     being pushed down behind it. Falls back to the old fixed-inset
+     behavior wherever visualViewport isn't available. */
+  position: fixed;
+  top: calc(var(--vw-top, 0px) + 24px);
+  right: var(--edge-gap);
+  height: calc(var(--vw-height, 100vh) - 48px);
+  width: min(380px, 88vw);
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.1);
+  border-radius: 20px;
+  z-index: 46;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 12px;
+  transform: translateX(calc(100% + var(--edge-gap)));
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.3s;
+}
+/* The shadow only while open: parked off-screen, its blur reached back into
+   the page as a dark strip down the right edge (seen on the Light theme). */
+.help-widget--open {
+  transform: translateX(0);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
+}
+.help-widget__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.help-widget__header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.help-widget__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+}
+.help-widget__close:hover {
+  color: var(--text);
+}
+.help-widget__hint {
+  padding: 0;
+  text-align: left;
+  font-size: 0.85rem;
+}
+/* "adjust history to be like a feature ... like a clock like feature in
+   it you click it you see your chat" / "place that clock on the left
+   side below the stars and the assistant name" - a row right under the
+   header (mirrors the mobile app's layout), clock button on the left, a
+   dropdown panel of week/month buckets underneath it. */
+.help-widget__history-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+}
+.help-widget__history-btn {
+  background: none;
+  border: none;
+  color: var(--wood-tone);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.help-widget__history-btn:hover {
+  background: rgba(var(--ink-rgb), 0.08);
+}
+.help-widget__viewing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--wood-tone);
+}
+.help-widget__viewing .btn {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+.help-widget__history-panel {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  padding: 10px;
+  z-index: 47;
+}
+.help-widget__history-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 4px 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.help-widget__history-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  background: var(--bg-elevated);
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.help-widget__history-item:hover {
+  background: rgba(var(--ink-rgb), 0.08);
+}
+.help-widget__history-item span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.help-widget__history-count {
+  border-radius: 20px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+}
+.help-widget .chat-window--widget {
+  flex: 1;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.help-widget .chat-window--widget .chat-window__viewport {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.help-widget .chat-window--widget .chat-window__messages {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+/* Answers with lists read better with a little more room. */
+.help-widget .chat-bubble--bot {
+  max-width: 92%;
+}
+.help-page__chat-cta {
+  margin: 16px 0;
+}
+/* "improve the help number and email to be in better fitting colors" -
+   plain <a> tags with no color override render as the browser's default
+   blue/purple, clashing hard against the forest theme; every link here
+   uses the same wood treatment as the rest of the site instead. */
+.help-page__contact {
+  margin-top: 4px;
+}
+/* The email one is a button (it opens the email window). */
+button.help-page__contact-link {
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.help-page__contact-label {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.help-page__contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.help-page__contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: var(--bg-elevated);
+  color: var(--wood-tone);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.help-page__contact-link:hover {
+  border-color: var(--wood-tone);
+  background: var(--wood-tint-elevated);
+}
+.help-page__contact-address {
+  margin: 12px 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.help-page__contact-address span {
+  color: var(--text);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+/* "Send us an email" - typed on the site and sent from the website, so
+   nobody has to open an email app; a window over the Help and Bulk Orders
+   pages (EmailDialog.jsx). Fields look like the sign-in form's. */
+.modal.email-modal {
+  width: min(600px, 100%);
+  padding: 28px;
+}
+.email-modal:focus {
+  outline: none;
+}
+.help-email h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  padding-right: 32px;
+  font-size: 1.25rem;
+}
+.help-email__intro {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.help-email__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.help-email__to {
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
+  color: var(--text);
+}
+.help-email__to span {
+  margin-right: 8px;
+  color: var(--text-muted);
+}
+.help-email__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.help-email__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.help-email__form input,
+.help-email__form textarea {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: rgba(var(--ink-rgb), 0.05);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+}
+.help-email__form textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+.help-email__form input:focus-visible,
+.help-email__form textarea:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 1px;
+}
+.help-email__form input[readonly] {
+  opacity: 0.8;
+}
+.help-email__note {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+.help-email__suggestion {
+  padding: 0;
+  font: inherit;
+  color: var(--wood-tone);
+  text-decoration: underline;
+}
+/* The bot trap: off screen, never focusable by people. */
+.help-email__trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.help-email__form .state-message {
+  margin: 0;
+  padding: 0;
+}
+.help-email__send {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.help-email--sent p {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+}
+.help-email__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.email-modal__own-app {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(var(--ink-rgb), 0.08);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.email-modal__own-app a {
+  color: var(--wood-tone);
+}
+.email-modal__own-app span {
+  color: var(--text);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+  .modal.email-modal {
+    padding: 22px 16px;
+  }
+}
+.help-email--sent h2 .icon--inline {
+  color: var(--wood-tone);
+}
+
+/* "adding faqs in the help area ... to stop feeling less empty" - the
+   questions admins keep in the desktop app (FAQs): a search box, topic
+   pills in the same style as the contact links, and one row per question
+   that opens to its answer. */
+.help-faq {
+  margin-top: 28px;
+}
+.help-faq h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+}
+.help-faq__tools {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.help-faq__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+.help-faq__search:focus-within {
+  border-color: var(--wood-tone);
+}
+.help-faq__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+.help-faq__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.help-faq__topic {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.help-faq__topic:hover {
+  border-color: var(--wood-tone);
+  color: var(--text);
+}
+.help-faq__topic[aria-pressed="true"] {
+  border-color: var(--wood-tone);
+  background: var(--wood-tint-elevated);
+  color: var(--wood-tone);
+}
+.help-faq__topic:focus-visible,
+.help-faq__item > summary:focus-visible,
+.help-faq__link:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 2px;
+}
+.help-faq__group h3 {
+  margin: 22px 0 6px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.help-faq__item {
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
+}
+.help-faq__item > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 4px;
+  border-radius: 6px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+.help-faq__item > summary::-webkit-details-marker {
+  display: none;
+}
+.help-faq__item > summary::after {
+  content: "+";
+  flex: none;
+  color: var(--wood-tone);
+  font-weight: 400;
+}
+.help-faq__item[open] > summary::after {
+  content: "\2212";
+}
+.help-faq__item > summary:hover {
+  color: var(--wood-tone);
+}
+.help-faq__answer {
+  padding: 0 4px 14px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.help-faq__answer p,
+.help-faq__answer ol {
+  margin: 0 0 8px;
+}
+.help-faq__answer ol {
+  padding-left: 22px;
+}
+.help-faq__link {
+  display: inline-block;
+  margin-top: 2px;
+  border-radius: 4px;
+  color: var(--wood-tone);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.help-faq__link::after {
+  content: " \2192";
+}
+.help-faq__link:hover {
+  text-decoration: underline;
+}
+
+/* "this should ask permission from the user not implement it
+   automatically so we do not violate privacy laws" - sits above
+   everything (even the help widget's fab) until a choice is made;
+   nothing in CookieConsentContext marks a category granted before then. */
+.cookie-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: var(--bg-elevated);
+  border-top: 1px solid rgba(var(--ink-rgb), 0.12);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+}
+.cookie-banner__body {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 18px clamp(16px, 4vw, 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cookie-banner__text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.cookie-banner__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.cookie-banner__option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.cookie-banner__option input {
+  margin-top: 3px;
+}
+.cookie-banner__option-desc {
+  color: var(--text-muted);
+}
+.cookie-banner__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+/* Customize is a normal choice, not a warning: wood, not btn--text's
+   danger red (that red stays for Remove and Sign out). */
+.cookie-banner__actions .cookie-banner__customize {
+  color: var(--wood-tone);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.cookie-banner__actions .cookie-banner__customize:hover {
+  color: var(--wood-tone-hover);
+}
+
+@media (max-width: 720px) {
+  /* Wordmark + "Woods" + three 36px icon buttons must all fit one row
+     even on a 360px phone, or the menu button gets pushed off-screen. */
+  .navbar__row {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .navbar__brand {
+    gap: 5px;
+    font-size: 1rem;
+  }
+  .navbar__wordmark {
+    height: 22px;
+  }
+  .navbar__toggle {
+    display: flex;
+  }
+  .navbar__links {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 8px 16px 16px;
+  }
+  .navbar__links--open {
+    display: flex;
+  }
+  .theme-menu {
+    margin: 8px 0 0;
+  }
+  .theme-menu__list {
+    position: static;
+    margin-top: 6px;
+    box-shadow: none;
+  }
+  .navbar__links a {
+    padding: 12px 4px;
+    font-size: 1rem;
+    border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
+  }
+
+  .app-main {
+    padding: 20px 16px 32px;
+  }
+
+  /* One column with real breathing room instead of a near-miss 2-up
+     squeeze - "feels congested" was largely this grid sitting right at
+     the edge of fitting two cramped columns on common phone widths. */
+  .product-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .cart-page__body {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  /* The base .cart-list styling (capped width, name-then-controls) is
+     already compact enough to hold up on a phone screen unchanged. */
+  .cart-list {
+    max-width: none;
+  }
+  /* 4 fixed columns is a desktop-width call - two per row still reads as
+     a proper little card on a phone, instead of squeezing four. */
+  .my-orders__order-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .marketing-grid {
+    gap: 20px;
+  }
+
+  .chat-window {
+    max-width: none;
+  }
+
+  .help-widget {
+    --edge-gap: 12px;
+    width: 90vw;
+    top: calc(var(--vw-top, 0px) + 16px);
+    height: calc(var(--vw-height, 100vh) - 32px);
+    border-radius: 16px;
+  }
+
+  .cookie-banner__actions {
+    flex-direction: column;
+  }
+  .cookie-banner__actions .btn {
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+}
+@media (max-width: 380px) {
+  .navbar__brand {
+    font-size: 0.9rem;
+  }
+  .navbar__wordmark {
+    height: 20px;
+  }
+}
+
+
+/* Delivery areas grouped into one card per city, searchable - used on the
+   Shipping page (read-only directory) and at checkout (pick one). */
+.area-picker__search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.area-picker__search input {
+  flex: 1 1 260px;
+  padding: 10px 14px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+}
+.area-picker__search input:focus {
+  outline: none;
+  border-color: var(--wood-tone);
+}
+.area-picker__count {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.area-picker__empty {
+  padding: 16px 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+}
+.area-picker__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.area-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1px solid rgba(var(--ink-rgb), 0.06);
+}
+.area-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.area-card__header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.area-card__badge {
+  font-size: 0.75rem;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.area-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* "if the areas are more that can fit in that card we need it to be
+     also designed in a way one can still see this" - a city with a lot
+     of areas (Nairobi, say) used to just stretch the card tall enough to
+     fit every one, throwing off the whole grid row next to it. Capping
+     the list's own height and scrolling inside it instead keeps every
+     card a similar size, with nothing ever hidden - the search box above
+     also still narrows a long list down directly. */
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.area-card__list::-webkit-scrollbar {
+  width: 6px;
+}
+.area-card__list::-webkit-scrollbar-thumb {
+  background: rgba(var(--ink-rgb), 0.15);
+  border-radius: 999px;
+}
+.area-card__area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid rgba(var(--ink-rgb), 0.1);
+  border-radius: 8px;
+  font: inherit;
+  text-align: left;
+}
+button.area-card__area {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+button.area-card__area:hover {
+  border-color: var(--wood-tone);
+}
+.area-card__area--selected {
+  border-color: var(--wood-tone);
+  background: var(--wood-tint);
+  font-weight: 600;
+}
+.area-card__description {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.area-picker__locate {
+  margin: 4px 0 12px;
+}
+.area-picker__location-note {
+  padding: 0;
+  margin: -4px 0 12px;
+  text-align: left;
+  font-size: 0.85rem;
+  animation: area-picker-note-fade 6s ease-out forwards;
+}
+@keyframes area-picker-note-fade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.area-card--nearby {
+  border-color: var(--wood-tone);
+}
+.area-card__distance {
+  margin-left: 8px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.area-card__row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+.area-card__row-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.area-card__maps-link {
+  font-size: 0.78rem;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.area-card__maps-link:hover {
+  text-decoration: underline;
+}
+.checkout-form__label {
+  margin: 0;
+  font-weight: 600;
+}
+
+
+/* Product ratings - stars painted with the wordmark's wood ink over dim
+   empty stars; everything else uses the same cards, pills and wood
+   tokens as the rest of the site. */
+.stars {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  vertical-align: -0.1em;
+}
+.stars--sm {
+  font-size: 0.85rem;
+}
+.stars--md {
+  font-size: 1.05rem;
+}
+.stars--lg {
+  font-size: 1.45rem;
+}
+.stars__base {
+  color: rgba(var(--ink-rgb), 0.16);
+}
+.stars__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  color: var(--wood-tone);
+  background-image: var(--wood-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.star-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.star-input__row {
+  display: flex;
+  gap: 2px;
+}
+.star-input__star {
+  background: none;
+  border: none;
+  padding: 2px;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: rgba(var(--ink-rgb), 0.18);
+  transition: transform 0.12s ease;
+}
+.star-input__star:hover {
+  transform: scale(1.12);
+}
+.star-input__star:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.star-input__star--on {
+  color: var(--wood-tone);
+  background-image: var(--wood-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.star-input__label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.product-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+}
+.product-card__rating-average {
+  font-weight: 700;
+}
+.product-card__rating-count {
+  color: var(--text-muted);
+}
+
+.rating-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 6px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.rating-line:hover .rating-line__count {
+  text-decoration: underline;
+}
+.rating-line__average {
+  font-weight: 700;
+}
+.rating-line__count {
+  color: var(--text-muted);
+}
+
+.product-reviews {
+  margin: 40px 0 8px;
+  padding: 22px 24px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  max-width: 900px;
+  scroll-margin-top: 90px;
+}
+/* Where "5 ratings", "Featured in" and "Read the full description" land
+   (core/jumpTo) - outlined only when reached from the keyboard. */
+:is(.product-about, .product-campaign, .product-reviews):focus {
+  outline: none;
+}
+:is(.product-about, .product-campaign, .product-reviews):focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 3px;
+}
+.product-reviews__heading {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+}
+.product-reviews__overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 40px;
+  align-items: center;
+}
+.product-reviews__score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.product-reviews__average {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--wood-tone);
+  background-image: var(--wood-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.product-reviews__total {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.product-reviews__bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 240px;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.product-reviews__bar-row {
+  display: grid;
+  grid-template-columns: 34px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.product-reviews__bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(var(--ink-rgb), 0.08);
+  overflow: hidden;
+}
+.product-reviews__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--wood-plank);
+  background-size: 300px 100px;
+}
+.product-reviews__bar-count {
+  text-align: right;
+}
+.product-reviews__list {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.product-reviews__item {
+  padding: 14px 0;
+  border-top: 1px solid rgba(var(--ink-rgb), 0.07);
+}
+.product-reviews__item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.product-reviews__name {
+  font-weight: 700;
+}
+.product-reviews__month {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.product-reviews__verified {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+.product-reviews__comment {
+  margin: 8px 0 0;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.product-reviews__private {
+  margin: 14px 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.modal.review-modal {
+  width: min(480px, 100%);
+  padding: 28px;
+}
+.review-modal__product {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-right: 24px;
+}
+.review-modal__thumb,
+.ratings-card__thumb {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.review-modal__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.review-modal__name {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.review-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.review-modal__comment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.review-modal__comment textarea {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: rgba(var(--ink-rgb), 0.05);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+.review-modal__comment textarea:focus {
+  outline: none;
+  border-color: var(--wood-tone);
+}
+.review-modal__count {
+  align-self: flex-end;
+  font-size: 0.75rem;
+}
+.review-modal__privacy {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  border-radius: var(--radius);
+}
+.review-modal__privacy legend {
+  padding: 0 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.review-modal__privacy-note {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.review-modal__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.review-modal__check input {
+  margin-top: 3px;
+  accent-color: var(--wood-tone);
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+/* Only put on the page once the agreement has been read to its end. */
+.review-consent__agree {
+  margin-top: 10px;
+  animation: review-agree-in 0.35s ease;
+}
+@keyframes review-agree-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.review-consent__hint--scroll {
+  color: var(--wood-tone);
+  font-weight: 600;
+}
+.review-consent {
+  margin-top: 12px;
+}
+.review-consent__title {
+  margin: 0 0 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.review-consent__text {
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--inset-shade);
+  border: 1px solid rgba(var(--ink-rgb), 0.1);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+.review-consent__text:focus-visible {
+  outline: 2px solid var(--wood-tone);
+}
+.review-consent__text ol {
+  margin: 0;
+  padding-left: 18px;
+}
+.review-consent__text li + li {
+  margin-top: 6px;
+}
+.review-consent__hint {
+  margin: 8px 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.review-modal__error,
+.ratings-card__error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+.review-modal__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.review-modal__remove {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(var(--ink-rgb), 0.08);
+  padding-top: 12px;
+}
+.review-modal__remove .btn--text {
+  padding: 0;
+  font-size: 0.88rem;
+}
+.btn--link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+/* "place my ratings ... right of the main order goods cards for quicker
+   identification ... they need to do this fast and detect the area fast" -
+   a panel with a painted-board header so it's spotted at a glance, and it
+   stays in view (sticky) while the orders beside it scroll. */
+.ratings-panel {
+  position: sticky;
+  top: 100px;
+  margin-top: 20px;
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(235, 154, 75, 0.45);
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-align: left;
+}
+.ratings-panel__title {
+  margin: 0;
+  padding: 12px 18px;
+  font-size: 1.05rem;
+  background: var(--wood-plank);
+  /* One board wide enough for the full-width (stacked) panel - the usual
+     600px tile shows its repeat seams across a long strip. */
+  background-size: 1200px 400px;
+  color: var(--wood-on);
+  box-shadow: inset 0 -1px 0 rgba(74, 38, 14, 0.35);
+  text-shadow: 0 1px 0 rgba(255, 244, 222, 0.35);
+}
+.ratings-panel__body {
+  padding: 14px 16px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ratings-panel__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.ratings-panel__count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--wood-tint);
+  border: 1px solid var(--wood-tone);
+  color: var(--wood-tone);
+  font-size: 0.75rem;
+  text-align: center;
+}
+.ratings-card__intro {
+  margin: -4px 0 10px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.ratings-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ratings-card__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid rgba(var(--ink-rgb), 0.07);
+  border-radius: 8px;
+}
+.ratings-card__item--rated {
+  align-items: flex-start;
+}
+.ratings-card__item .ratings-card__thumb {
+  width: 48px;
+  height: 48px;
+}
+.ratings-card__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.ratings-card__name {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+.ratings-card__name:hover {
+  text-decoration: underline;
+}
+.ratings-card__meta {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+.ratings-card__stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ratings-card__chip {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.2);
+  color: var(--text-muted);
+}
+.ratings-card__chip--public {
+  border-color: var(--wood-tone);
+  color: var(--wood-tone);
+}
+.ratings-card__hidden {
+  font-size: 0.74rem;
+  color: var(--danger);
+}
+.ratings-card__comment {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+.ratings-card__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.ratings-card__action {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.ratings-flash {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  background: var(--wood-tint-elevated);
+  border: 1px solid var(--wood-tone);
+  font-size: 0.86rem;
+}
+/* "like a tab with the last rated product then you can drop down" - the
+   side panel shows a taste of each list; this button opens the ratings
+   view, where the rated goods take the middle of the page. */
+.ratings-panel__caption {
+  margin: -4px 0 6px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ratings-panel__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px dashed rgba(235, 154, 75, 0.55);
+  background: var(--wood-tint);
+  color: var(--wood-tone);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.ratings-panel__toggle:hover {
+  border-style: solid;
+  border-color: var(--wood-tone);
+}
+.ratings-panel__toggle:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 2px;
+}
+.ratings-panel__chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+.ratings-panel__empty {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+/* Ratings view, right-hand side: "a button like tab like feature to go
+   back to the ordered goods". */
+.ratings-panel__summary {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.ratings-panel__back {
+  width: 100%;
+}
+/* Ratings view, middle: every rating as cards, searchable. */
+.ratings-full__messages {
+  margin-top: 20px;
+}
+.ratings-full__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+.ratings-full__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ratings-full__head .ratings-full__title {
+  margin: 0;
+}
+.ratings-search {
+  flex: 0 1 260px;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--ink-rgb), 0.15);
+  background: rgba(var(--ink-rgb), 0.05);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+}
+.ratings-search:focus {
+  outline: none;
+  border-color: var(--wood-tone);
+}
+.ratings-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+@media (max-width: 720px) {
+  .ratings-search {
+    flex-basis: 100%;
+  }
+  .ratings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The narrow side-column version (laptops and up): same content, tighter. */
+@media (min-width: 1181px) {
+  .my-orders__layout--with-ratings .ratings-panel__title {
+    padding: 9px 14px;
+    font-size: 0.95rem;
+  }
+  .my-orders__layout--with-ratings .ratings-panel__body {
+    padding: 12px;
+    gap: 14px;
+  }
+  .my-orders__layout--with-ratings .ratings-panel__heading {
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+  }
+  .my-orders__layout--with-ratings .ratings-panel .ratings-card__intro {
+    font-size: 0.76rem;
+  }
+  .my-orders__layout--with-ratings .ratings-panel .ratings-card__item {
+    padding: 8px;
+    gap: 8px;
+  }
+  .my-orders__layout--with-ratings .ratings-panel .ratings-card__item .ratings-card__thumb {
+    width: 40px;
+    height: 40px;
+  }
+  .my-orders__layout--with-ratings .ratings-panel .ratings-card__name {
+    font-size: 0.85rem;
+  }
+  .my-orders__layout--with-ratings .ratings-panel .ratings-card__meta,
+  .my-orders__layout--with-ratings .ratings-panel .ratings-card__comment {
+    font-size: 0.74rem;
+  }
+  .my-orders__layout--with-ratings .ratings-panel .ratings-card__chip {
+    font-size: 0.68rem;
+  }
+  .my-orders__layout--with-ratings .ratings-panel .ratings-card__action {
+    padding: 4px 11px;
+    font-size: 0.76rem;
+  }
+  .my-orders__layout--with-ratings .ratings-panel .ratings-flash {
+    font-size: 0.8rem;
+  }
+}
+@media (max-width: 520px) {
+  .product-reviews {
+    padding: 18px 16px;
+  }
+}
+.review-consent__end {
+  display: block;
+  height: 1px;
+}
+.product-card__rating--none,
+.rating-line--none {
+  opacity: 0.75;
+}
+
+/* ---- Icons (Icon.jsx) - line icons in place of emoji ---- */
+.icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: -0.18em;
+}
+.icon--inline {
+  margin-right: 0.45em;
+}
+.icon--after {
+  margin-left: 0.35em;
+}
+/* Section headings: the icon picks up the wood tone as a small accent. */
+.my-orders__group-title .icon,
+.ratings-panel__heading .icon,
+.area-card__header .icon,
+.area-picker__locate .icon {
+  color: var(--wood-tone);
+}
+.help-page__contact-link .icon--inline {
+  margin-right: 0;
+}
+.product-search__icon,
+.product-search__clear,
+.help-widget__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.help-widget__fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.help-widget__fab .icon {
+  filter: drop-shadow(0 1px 0 rgba(255, 244, 222, 0.55));
+}
+
+/* ---- Motion: small, calm, forest-like ----
+   "add small motions not too much ... let the motions still follow the
+   forest like theme" - things grow into place the way saplings rise in a
+   row (a short rise with a soft growth curve, one after another), wood
+   grain drifts under a hovered button as if catching the light, and the
+   log-end chat button sends out a ring or two like a tree's growth rings.
+   Only cheap properties (opacity, transform) - smooth on low-end phones -
+   and nothing moves for visitors who turn motion off (bottom). */
+:root {
+  --grow-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes forest-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes forest-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* "backwards": holds the start state only while waiting its turn, then
+   hands the element back untouched - hover lifts etc. keep working. */
+.app-main > * > h1,
+.product-card,
+.my-orders__group-card,
+.my-orders__order,
+.ratings-panel,
+.product-detail__image,
+.product-detail__info,
+.product-campaign,
+.product-about,
+.product-reviews,
+.media-card,
+.area-card {
+  animation: forest-rise 0.5s var(--grow-ease) backwards;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+/* One after another, like a row of saplings. */
+:is(.product-card, .my-orders__group-card, .my-orders__order, .media-card, .area-card):nth-child(2) { --i: 1; }
+:is(.product-card, .my-orders__group-card, .my-orders__order, .media-card, .area-card):nth-child(3) { --i: 2; }
+:is(.product-card, .my-orders__group-card, .my-orders__order, .media-card, .area-card):nth-child(4) { --i: 3; }
+:is(.product-card, .my-orders__group-card, .my-orders__order, .media-card, .area-card):nth-child(5) { --i: 4; }
+:is(.product-card, .my-orders__group-card, .my-orders__order, .media-card, .area-card):nth-child(6) { --i: 5; }
+:is(.product-card, .my-orders__group-card, .my-orders__order, .media-card, .area-card):nth-child(7) { --i: 6; }
+:is(.product-card, .my-orders__group-card, .my-orders__order, .media-card, .area-card):nth-child(8) { --i: 7; }
+:is(.product-card, .my-orders__group-card, .my-orders__order, .media-card, .area-card):nth-child(n + 9) { --i: 8; }
+.product-detail__info,
+.ratings-panel {
+  --i: 1;
+}
+.product-about {
+  --i: 2;
+}
+.product-campaign {
+  --i: 3;
+}
+.product-reviews {
+  --i: 4;
+}
+
+/* Pop-ups settle in rather than snapping open. */
+.modal-overlay {
+  animation: forest-fade 0.2s ease backwards;
+}
+.modal {
+  animation: forest-rise 0.35s var(--grow-ease) backwards;
+}
+
+/* Buttons: a gentle press, and the painted grain drifts on hover. */
+.btn {
+  transition: transform 0.15s ease, filter 0.15s ease, background-position 0.9s var(--grow-ease), border-color 0.15s ease;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.btn--primary:hover:not(:disabled) {
+  background-position: 36% 50%;
+}
+
+/* Menu links: a thin painted line grows under the hovered one, like a
+   branch reaching out (wide screens only - phones use the full menu). */
+@media (min-width: 721px) {
+  .navbar__links a {
+    position: relative;
+  }
+  .navbar__links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -5px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--wood-ink);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.35s var(--grow-ease);
+  }
+  .navbar__links a:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+/* The log-end chat button sends out a growth ring twice after the page
+   opens - noticed, then quiet. */
+.help-widget__fab::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(235, 154, 75, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  animation: growth-ring 2.4s ease-out 1.6s 2;
+}
+@keyframes growth-ring {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.65);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-main > * > h1,
+  .product-card,
+  .my-orders__group-card,
+  .my-orders__order,
+  .ratings-panel,
+  .product-detail__image,
+  .product-detail__info,
+  .product-campaign,
+  .product-about,
+  .product-reviews,
+  .media-card,
+  .area-card,
+  .modal-overlay,
+  .modal {
+    animation: none;
+  }
+  .help-widget__fab::after {
+    display: none;
+  }
+  .btn,
+  .navbar__links a::after {
+    transition: none;
+  }
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   About page - the journey from tree to doorstep (AboutPage.jsx,
+   StoryScroller.jsx). The film stays pinned under the navbar while its
+   section scrolls past; cards fly in from alternating sides on wide
+   screens and sit under the picture on phones.
+   ------------------------------------------------------------------ */
+.about-hero {
+  max-width: 760px;
+  padding: clamp(12px, 4vh, 40px) 0 clamp(28px, 6vh, 56px);
+}
+.about-hero > * {
+  animation: forest-rise 0.6s var(--grow-ease) backwards;
+}
+.about-hero__eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--wood-tone);
+  background-image: var(--wood-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.about-hero__title {
+  margin: 0 0 14px;
+  font-size: clamp(2rem, 5.2vw, 3.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  animation-delay: 70ms;
+}
+.about-hero__lead {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--text-muted);
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
+  line-height: 1.65;
+  animation-delay: 140ms;
+}
+
+.story {
+  position: relative;
+  /* Full width - out past the page's side padding. */
+  margin: 0 calc(-1 * clamp(16px, 4vw, 64px));
+  /* One screen per stage, less a little, plus the screen it's pinned in. */
+  height: calc(var(--story-stages, 5) * 80vh + 100vh);
+  height: calc(var(--story-stages, 5) * 80svh + 100svh);
+}
+.story__sticky {
+  position: sticky;
+  top: var(--story-top, 64px);
+  height: calc(100vh - var(--story-top, 64px));
+  height: calc(100svh - var(--story-top, 64px));
+  overflow: hidden;
+}
+.story__screen {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, #173322, var(--bg) 70%);
+}
+.story__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.story--ready .story__canvas {
+  opacity: 1;
+}
+/* The film's edges melt into the page; darker where cards and the
+   timeline sit so their text stays easy to read. */
+.story__shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(var(--bg-rgb), 0.75), rgba(var(--bg-rgb), 0) 16%, rgba(var(--bg-rgb), 0) 60%, rgba(var(--bg-rgb), 0.88)),
+    linear-gradient(to right, rgba(var(--bg-rgb), 0.55), rgba(var(--bg-rgb), 0) 38%, rgba(var(--bg-rgb), 0) 62%, rgba(var(--bg-rgb), 0.55));
+}
+/* A hairline of painted wood filling as the frames arrive, then gone. */
+.story__loading {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(var(--ink-rgb), 0.06);
+  transition: opacity 0.6s ease 0.4s;
+}
+.story__loading > span {
+  display: block;
+  height: 100%;
+  background: var(--wood-ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.3s ease;
+}
+.story__loading--done {
+  opacity: 0;
+}
+.story__hint {
+  position: absolute;
+  left: 50%;
+  bottom: 104px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.14);
+  background: rgba(var(--bg-rgb), 0.6);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.story--started .story__hint {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+}
+
+/* The timeline: five stages on a line that fills with painted wood. */
+.story__rail {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(18px, 4vh, 36px);
+  z-index: 2;
+  width: min(760px, calc(100% - 48px));
+  transform: translateX(-50%);
+}
+.story__rail ol {
+  position: relative;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.story__rail li {
+  flex: 1;
+}
+.story__rail button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.story__rail button:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.story__rail-line {
+  position: absolute;
+  top: 11px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(var(--ink-rgb), 0.18);
+  overflow: hidden;
+}
+.story__rail-fill {
+  display: block;
+  height: 100%;
+  background: var(--wood-ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.story__rail-dot {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--ink-rgb), 0.35);
+  background: var(--bg);
+  transition: transform 0.35s var(--grow-ease), border-color 0.35s ease, background 0.35s ease;
+}
+.story__rail li.is-done .story__rail-dot {
+  border-color: var(--wood-tone);
+  background: var(--wood-tone);
+}
+.story__rail li.is-active .story__rail-dot {
+  border-color: var(--wood-tone);
+  background: var(--wood-log);
+  box-shadow: 0 0 0 5px rgba(235, 154, 75, 0.18);
+  transform: scale(1.35);
+}
+/* A growth ring as each stage is reached. */
+.story__rail li.is-active .story__rail-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid rgba(235, 154, 75, 0.6);
+  opacity: 0;
+  animation: growth-ring 1.2s ease-out;
+}
+.story__rail-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+.story__rail li.is-active .story__rail-label,
+.story__rail button:hover .story__rail-label {
+  color: var(--text);
+}
+
+/* The cards - frosted panels over the film. */
+.story__cards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.story-card {
+  position: absolute;
+  top: 45%;
+  width: min(430px, 40vw);
+  margin: 0;
+  padding: 28px 28px 30px;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  background: linear-gradient(155deg, rgba(var(--bg-elevated-rgb), 0.66), rgba(8, 20, 13, 0.78));
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(var(--ink-rgb), 0.07);
+  /* The frost is redone for every new frame behind it - kept light. */
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.2);
+  /* Its own layer from the start, so flying in never waits on one. */
+  will-change: transform, opacity;
+  opacity: 0;
+  transform: translate3d(var(--from), -50%, 0);
+  transition: opacity 0.3s ease, transform 0.4s ease;
+}
+/* A notch of painted board along the top edge. */
+.story-card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 28px;
+  width: 56px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--wood-plank);
+}
+.story-card--left {
+  left: clamp(20px, 6vw, 110px);
+  --from: -60px;
+}
+.story-card--right {
+  right: clamp(20px, 6vw, 110px);
+  --from: 60px;
+}
+.story-card.is-active {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0);
+  transition: opacity 0.6s var(--grow-ease) 0.1s, transform 0.8s var(--grow-ease) 0.1s;
+}
+/* Its lines follow the card in, one after another. */
+.story-card > * {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.story-card.is-active > * {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s ease, transform 0.6s var(--grow-ease);
+}
+.story-card.is-active > :nth-child(1) {
+  transition-delay: 0.2s;
+}
+.story-card.is-active > :nth-child(2) {
+  transition-delay: 0.28s;
+}
+.story-card.is-active > :nth-child(3) {
+  transition-delay: 0.36s;
+}
+.story-card__label {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 12px;
+  color: var(--wood-tone);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.story-card__number {
+  color: var(--wood-tone);
+  background: var(--wood-plank);
+  background-size: 240px 80px;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.story-card__title {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.story-card__text {
+  margin: 0;
+  color: #d3dcd4;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+/* Frames couldn't load - the stages as plain cards, one under another. */
+.story--plain {
+  display: grid;
+  gap: 16px;
+  height: auto;
+  margin: 0;
+}
+.story--plain .story-card {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  width: auto;
+  opacity: 1;
+  transform: none;
+}
+.story--plain .story-card > * {
+  opacity: 1;
+  transform: none;
+}
+
+.about-closing {
+  max-width: 640px;
+  margin: clamp(40px, 8vh, 80px) auto clamp(8px, 3vh, 24px);
+  text-align: center;
+}
+.about-closing__title {
+  margin: 0 0 8px;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+.about-closing__text {
+  margin: 0 0 22px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.about-closing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Phones: the picture on top, the timeline, then the card under it. */
+@media (max-width: 720px) {
+  .story {
+    margin: 0 -16px;
+  }
+  /* Any spare height ends up under the card, where the chat button sits. */
+  .story__sticky {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Up to a square picture (the stage's focusX picks what stays in it),
+     giving way on short phones so the card always fits. */
+  .story__screen {
+    position: relative;
+    inset: auto;
+    flex: 0 1 100vw;
+    width: 100%;
+    min-height: 30%;
+  }
+  .story__shade {
+    background: linear-gradient(to bottom, rgba(var(--bg-rgb), 0.45), rgba(var(--bg-rgb), 0) 18%, rgba(var(--bg-rgb), 0) 72%, var(--bg));
+  }
+  .story__hint {
+    bottom: 14px;
+  }
+  .story__rail {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: auto;
+    margin: 4px 16px 0;
+    transform: none;
+  }
+  .story__rail button {
+    gap: 0;
+  }
+  .story__rail-label {
+    display: none;
+  }
+  /* All five cards share one grid cell - as tall as the tallest, so the
+     layout never jumps from stage to stage. */
+  .story__cards {
+    position: relative;
+    inset: auto;
+    display: grid;
+    flex: none;
+    margin: 8px 16px 0;
+  }
+  .story-card,
+  .story-card--left,
+  .story-card--right {
+    position: relative;
+    grid-area: 1 / 1;
+    top: auto;
+    left: auto;
+    right: auto;
+    width: auto;
+    padding: 20px 18px 22px;
+    background: linear-gradient(155deg, rgba(var(--bg-elevated-rgb), 0.9), rgba(12, 28, 19, 0.95));
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transform: translate3d(0, 16px, 0);
+    /* The two cards share a spot here - the old one is gone before the
+       new one rises, so their words never overlap. */
+    transition: opacity 0.22s ease, transform 0.3s ease;
+  }
+  .story-card.is-active {
+    transform: none;
+    transition: opacity 0.55s var(--grow-ease) 0.2s, transform 0.75s var(--grow-ease) 0.2s;
+  }
+  .story-card.is-active > :nth-child(1) {
+    transition-delay: 0.28s;
+  }
+  .story-card.is-active > :nth-child(2) {
+    transition-delay: 0.36s;
+  }
+  .story-card.is-active > :nth-child(3) {
+    transition-delay: 0.44s;
+  }
+  .story-card::before {
+    left: 18px;
+  }
+  .story-card__number {
+    font-size: 1.7rem;
+  }
+  .story-card__title {
+    font-size: 1.15rem;
+  }
+  .story-card__text {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  .story--plain {
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-hero > *,
+  .story__rail li.is-active .story__rail-dot::after {
+    animation: none;
+  }
+  /* Cards still fade, but nothing slides. */
+  .story-card {
+    --from: 0px;
+  }
+  .story-card > * {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) and (max-width: 720px) {
+  .story-card {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Chat button nudges (ChatNudgeContext.jsx): at a helpful moment the log
+   end sends out one growth ring, and once a visit a short label appears
+   beside it ("Questions about Rose Wood?") - tap it to ask, x to say no
+   thanks. In the chat, an "Asking about ..." line with one-tap questions.
+   ------------------------------------------------------------------ */
+.help-widget__nudge-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(235, 154, 75, 0.75);
+  opacity: 0;
+  pointer-events: none;
+  animation: growth-ring 2.4s ease-out 0.1s 1;
+}
+.chat-nudge {
+  position: fixed;
+  right: 88px;
+  bottom: 28px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: min(320px, calc(100vw - 120px));
+  padding: 3px 4px 3px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(235, 154, 75, 0.45);
+  background: var(--bg-elevated);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  /* Unseen until it's checked it isn't covering the page's own buttons. */
+  visibility: hidden;
+}
+.chat-nudge--shown {
+  visibility: visible;
+  animation: forest-rise 0.45s var(--grow-ease) backwards;
+}
+/* The other spot, when the first would cover a button: above the chat button. */
+.chat-nudge--moved {
+  right: 20px;
+  bottom: 88px;
+  max-width: min(320px, calc(100vw - 40px));
+}
+.chat-nudge__text {
+  padding: 7px 4px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.chat-nudge__text:hover,
+.chat-nudge__text:focus-visible {
+  color: var(--wood-tone);
+}
+.chat-nudge__close {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.chat-nudge__close:hover,
+.chat-nudge__close:focus-visible {
+  background: rgba(var(--ink-rgb), 0.08);
+  color: var(--text);
+}
+/* Phones: above the button first, beside it if that covers a button. */
+@media (max-width: 520px) {
+  .chat-nudge {
+    right: 16px;
+    bottom: 88px;
+    max-width: calc(100vw - 32px);
+  }
+  .chat-nudge--moved {
+    right: 84px;
+    bottom: 22px;
+    max-width: calc(100vw - 100px);
+  }
+}
+
+.chat-context {
+  display: grid;
+  gap: 8px;
+  padding: 10px 2px 2px;
+  border-top: 1px solid rgba(var(--ink-rgb), 0.08);
+}
+.chat-context__about {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+.chat-context__about strong {
+  color: var(--text);
+}
+.chat-context__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chat-context__chip {
+  padding: 6px 12px;
+  border: 1px solid rgba(235, 154, 75, 0.45);
+  border-radius: 999px;
+  background: rgba(235, 154, 75, 0.08);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.chat-context__chip:hover,
+.chat-context__chip:focus-visible {
+  border-color: var(--wood-tone);
+  background: rgba(235, 154, 75, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No ring for visitors who turned motion off - the label still says it. */
+  .help-widget__nudge-ring {
+    display: none;
+  }
+  .chat-nudge--shown {
+    animation: none;
+  }
+}

@@ -1,0 +1,25 @@
+# The backend (Spring Boot) on the hosted server. Installed into
+# /etc/systemd/system by install-release.sh; settings in
+# /etc/dateroem/backend.env (Hosting and Deployment Guide, DWS-CFG-03).
+[Unit]
+Description=Dateroem backend (Spring Boot, port 8080)
+After=network-online.target mysql.service
+Wants=network-online.target mysql.service
+
+[Service]
+User=dateroem
+Group=dateroem
+WorkingDirectory=/srv/dateroem/backend
+EnvironmentFile=/etc/dateroem/backend.env
+ExecStart=/usr/bin/java -Djava.net.preferIPv4Stack=true -Xms256m -Xmx768m -jar /srv/dateroem/backend/backend.jar
+# 143 = stopped by systemd (SIGTERM), a normal stop for Java.
+SuccessExitStatus=143
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

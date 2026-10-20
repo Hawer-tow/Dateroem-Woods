@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Forest/nature palette, matching the splash and login screens -->
+    <color name="forest_darkest">#07080A</color>
+    <color name="forest_dark">#0F241B</color>
+    <color name="forest_mid">#1D4232</color>
+    <color name="forest_trunk">#4A3320</color>
+    <color name="forest_canopy_light">#3D8A4F</color>
+    <color name="amber_accent">#C9832A</color>
+    <color name="amber_gold">#D99A3F</color>
+    <color name="text_light">#F5F5F1</color>
+    <!-- The dark of the company emblem (frontend/website/src/brand/emblem.js NIGHT). -->
+    <color name="emblem_night">#1E1712</color>
+</resources>

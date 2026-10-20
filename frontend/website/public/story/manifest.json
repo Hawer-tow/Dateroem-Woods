@@ -1,0 +1,40 @@
+{
+  "count": 305,
+  "aspect": 1.7778,
+  "sets": {
+    "lg": {
+      "width": 1152,
+      "ext": "avif"
+    },
+    "sm": {
+      "width": 720,
+      "ext": "avif"
+    },
+    "fb": {
+      "width": 720,
+      "ext": "webp"
+    }
+  },
+  "stages": [
+    {
+      "start": 0,
+      "end": 60
+    },
+    {
+      "start": 61,
+      "end": 121
+    },
+    {
+      "start": 122,
+      "end": 182
+    },
+    {
+      "start": 183,
+      "end": 243
+    },
+    {
+      "start": 244,
+      "end": 304
+    }
+  ]
+}

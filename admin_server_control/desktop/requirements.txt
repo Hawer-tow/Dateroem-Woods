@@ -1,0 +1,21 @@
+# The full "PySide6" meta-package (which also pulls in PySide6-Addons -
+# multimedia/3D/charts, none of which this app uses) repeatedly failed to
+# download on this machine - pip's own network/TLS stack was getting
+# reset even on tiny index-page fetches, while curl.exe and PowerShell
+# reached the same URLs fine, pointing at something specific to Python's
+# HTTP client rather than a real connectivity problem. Worked around by
+# fetching PySide6-Essentials/shiboken6 directly via curl.exe and
+# installing the local wheel files - PySide6-Essentials alone covers
+# QtWidgets/QtCore/QtGui, which is everything this app touches.
+PySide6-Essentials
+shiboken6
+requests
+
+# "voice control to add data" - Windows' own built-in speech recognizer
+# (SAPI) via pywin32, not a downloaded model - no API key/subscription
+# needed, and a ~7MB prebuilt wheel instead of the several-hundred-MB
+# torch install a local Whisper setup would need (this machine's network
+# repeatedly reset pip's own large-file downloads - see the PySide6 note
+# above; pywin32 was small enough to work around via curl.exe + a local
+# wheel install, same technique).
+pywin32

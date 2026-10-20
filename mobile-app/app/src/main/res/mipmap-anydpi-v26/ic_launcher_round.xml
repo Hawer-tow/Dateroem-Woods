@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The company emblem - the website's own icon - since 18 October 2026 ("the
+  one we have as the website icon will be used in the mobile app as its icon
+  replacing the tree like one"). The pictures are written by the website's
+  "npm run brand:export" (given this project's res folder as its mobile option)
+  (fathersProject/frontend/website/scripts/export-brand.mjs); change the
+  logo there, never here.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@mipmap/ic_launcher_monochrome" />
+</adaptive-icon>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dateroem Wood Sales</title>
+    <!-- The company emblem (src/brand/emblem.js; npm run brand:export).
+         Browsers keep tab icons a long time: raise ?v= when they change. -->
+    <link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0f241b" />
+    <!-- The visitor's colour theme (src/context/ThemeContext.jsx), set before
+         the first frame so a Dark or Light page never flashes green first. -->
+    <script>
+      try {
+        var t = localStorage.getItem('dateroem_theme')
+        if (t === 'dark' || t === 'light') {
+          document.documentElement.dataset.theme = t
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#121417' : '#f4f1ea')
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,47 @@
+# What stays on this computer and never goes to GitHub (20 October 2026).
+# The repository on GitHub is PUBLIC - anything committed can be read by anyone.
+
+# --- Secrets (real keys and passwords live in these files) -------------------
+# Templates without the values are committed instead (*.example).
+backend/src/main/resources/application.properties
+backend/keys_paths.tex
+admin_server_control/desktop/app/core/server_manager.py
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.jks
+*.keystore
+*.p12
+
+# --- Private data ---------------------------------------------------------------
+db_backups/
+downloads/
+other details.text
+documentation/Business Profile.docx
+documentation/~$*
+*.log
+.claude/
+
+# --- Dependencies and build output (rebuilt from the sources) ------------------
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+target/
+dist/
+build/
+.gradle/
+.kotlin/
+.idea/
+local.properties
+*.apk
+*.aab
+
+# --- Clutter ------------------------------------------------------------------------
+*:Zone.Identifier
+.DS_Store
+Thumbs.db
+desktop.ini

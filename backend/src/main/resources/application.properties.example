@@ -1,0 +1,182 @@
+# Template of application.properties without its secret values (20 October 2026).
+# Copy to application.properties and fill in the CHANGE_ME values - the real file
+# stays on the server and is never committed (see .gitignore).
+spring.application.name=dateroem-backend
+server.port=8080
+# Without this, Tomcat binds IPv6-only by default in this environment -
+# MAVEN_OPTS=-Djava.net.preferIPv4Stack=true (set at launch) only reaches
+# Maven's own JVM, not the child JVM spring-boot:run actually forks for
+# the app, so it never took effect here. WSL2's own localhost/127.0.0.1
+# port-forwarding to Windows doesn't reliably pick up IPv6-only listeners
+# ("the servers seem to have a problem ... from the database end" traced
+# back to this - 127.0.0.1:8080 was unreachable from Windows even though
+# the backend itself was completely healthy).
+server.address=0.0.0.0
+
+# What an error answer may carry (18 October 2026, "the user ... never gets
+# the whole details but what is necessary and presentable"): never a stack
+# trace or exception name - the development tools switch those on, so they
+# are switched off here. The message stays: the servers in front pass on a
+# 4xx reason written for people ("Not enough stock ...") and replace any
+# 500 with a calm sentence, logging the real one.
+server.error.include-stacktrace=never
+server.error.include-exception=false
+server.error.include-binding-errors=never
+server.error.include-message=always
+
+spring.datasource.url=CHANGE_ME
+spring.datasource.username=CHANGE_ME
+spring.datasource.password=CHANGE_ME
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# PRODUCTS.Image stores only a relative key (e.g. products/eucalyptus-poles.jpg).
+# This prefix turns it into a full URL. In production, point this at the CDN
+# fronting object storage instead - no code or database change needed.
+#
+# "not been able to see the products image in the mobile" - root cause:
+# the mobile app's network security config only allows cleartext HTTP to
+# 127.0.0.1/10.0.2.2 (the exact loopback addresses it's actually reached
+# through over adb reverse/the emulator alias) - "localhost" is a
+# different hostname string as far as that allowlist is concerned, so
+# every image/video request was silently blocked before it ever reached
+# the tunnel. 127.0.0.1 here matches RetrofitClient's own
+# MOBILE_SERVER_BASE_URL convention; a browser on this same machine
+# (website, desktop) treats 127.0.0.1 and localhost identically, so this
+# fixes mobile with no impact anywhere else.
+app.media.base-url=${MEDIA_BASE_URL:CHANGE_ME}
+
+# HS256 needs a secret >= 256 bits. The default below is dev-only - always
+# override with a real secret via env var before deploying anywhere real.
+app.auth.jwt-secret=${AUTH_JWT_SECRET:CHANGE_ME}
+app.auth.jwt-expiry-hours=${AUTH_JWT_EXPIRY_HOURS:CHANGE_ME}
+# Desktop-app sign-ins (approved computers only, see DesktopClientFilter)
+# last a working day instead of a month - the desktop app signs in again
+# every time it opens anyway.
+app.auth.desktop-jwt-expiry-hours=${AUTH_DESKTOP_JWT_EXPIRY_HOURS:CHANGE_ME}
+
+# "can my website have both the manual logging in and the google assisted
+# one" - the Web application client ID from Google Cloud Console
+# (APIs & Services > Credentials). Not a secret: it sits in every page that
+# shows the Google button. Empty = the website offers username/password only.
+# Dateroem's own client (Google Cloud project "Dateroem", business Gmail),
+# set 3 October 2026; a GOOGLE_CLIENT_ID environment variable still wins.
+app.google.client-id=${GOOGLE_CLIENT_ID:388573673002-d5b2g10ev93l6aka8e2m9nhh8igo6pk4.apps.googleusercontent.com}
+# Google's public signing keys, used to check each sign-in token.
+app.google.jwks-uri=${GOOGLE_JWKS_URI:https://www.googleapis.com/oauth2/v3/certs}
+
+# "an ai feature to voice scan to also scan handwritten text and add in
+# the bulk delivery description table" - AnthropicClient.isConfigured()
+# gates every caller the same way MpesaClient's blank-by-default
+# credentials do, so this is a no-op (a clear 503, not a crash) until a
+# real key is set. "use the claude api ... then later i can use another
+# api key from another model" - started on OpenAI, switched here since
+# that account's project only had a text-only legacy model available.
+app.anthropic.api-key=${ANTHROPIC_API_KEY:CHANGE_ME}
+app.anthropic.model=${ANTHROPIC_MODEL:claude-haiku-4-5-20251001}
+# "make the inbuild ai more stroneger" - the chat assistant gets its own,
+# stronger model than the narrow image-scan task above (a real
+# conversation benefits from more reasoning than structured extraction
+# does).
+app.anthropic.chat-model=${ANTHROPIC_CHAT_MODEL:claude-sonnet-5}
+
+# "before i pay i want to ensure the chat bot is ok and answers ok then i
+# can proceed to the paying ones" - AiChatService.activeClient() picks
+# GroqClient while this is "groq" (Groq Cloud's free tier - no billing/
+# card needed, sign up at console.groq.com for a key) and AnthropicClient
+# once switched to "anthropic". The handwriting-scan feature always uses
+# AnthropicClient directly regardless of this setting - it's unaffected.
+app.ai.chat-provider=${AI_CHAT_PROVIDER:groq}
+app.groq.api-key=${GROQ_API_KEY:CHANGE_ME}
+app.groq.chat-model=${GROQ_CHAT_MODEL:openai/gpt-oss-120b}
+# Groq's free tier gives every model its own 8,000 tokens/minute allowance -
+# when the model above is at its limit, these answer instead (in order).
+app.groq.fallback-chat-models=${GROQ_FALLBACK_CHAT_MODELS:openai/gpt-oss-20b,qwen/qwen3.8-27b}
+# "is it a must to use the ai ... if ai is available use it if not then use
+# the inbuilt system" - long product descriptions get an AI-arranged copy
+# for the website (DescriptionFormatter) while this is true; false (or the
+# AI unavailable) leaves the website's own built-in tidy-up to lay them out.
+app.descriptions.ai-tidy-up=${DESCRIPTION_AI_TIDY_UP:true}
+
+# M-Pesa Daraja STK push - sandbox pathway now, production later ("now we
+# do the sandbox testing then later we go production"). All blank by
+# default: MpesaClient.isConfigured() checks this and TransactionService
+# falls back to the existing manual-confirm flow (stkPush/confirm) when
+# it's not set up yet, so nothing breaks before real credentials exist.
+# base-url switches to https://api.safaricom.co.ke for production.
+# LIVE since 16 October 2026 (till 1804074 under store 1334200): base-url is
+# the live host and the keys below are the live app's. Do not export
+# MPESA_CONSUMER_KEY / MPESA_CONSUMER_SECRET in a start command - an exported
+# value wins over this file (that is what kept the old sandbox keys in use).
+# Callbacks use /api/dateroem-payments: live Daraja refuses addresses with
+# "mpesa" in them.
+app.mpesa.base-url=${MPESA_BASE_URL:CHANGE_ME}
+app.mpesa.consumer-key=${MPESA_CONSUMER_KEY:CHANGE_ME}
+app.mpesa.consumer-secret=${MPESA_CONSUMER_SECRET:CHANGE_ME}
+# Daraja sandbox's published test paybill/till shortcode - safe as a
+# default since it's not a secret, only meaningful paired with a real
+# passkey from your own sandbox app on the Daraja portal.
+app.mpesa.shortcode=${MPESA_SHORTCODE:CHANGE_ME}
+# Paybill (the default) or till. For a till ("Buy Goods") set
+# MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline, MPESA_SHORTCODE to the
+# store (head office) number Safaricom issues the passkey for, and
+# MPESA_PARTY_B to the till number customers pay into. Left empty, the
+# payment goes to MPESA_SHORTCODE itself - the paybill case.
+app.mpesa.transaction-type=${MPESA_TRANSACTION_TYPE:CustomerBuyGoodsOnline}
+app.mpesa.party-b=${MPESA_PARTY_B:1804074}
+# Safaricom's own published sandbox passkey (same one shown to every Daraja
+# developer on the Test Credentials page) - not a secret specific to this
+# app, safe as a default the same way the shortcode above is.
+app.mpesa.passkey=${MPESA_PASSKEY:CHANGE_ME}
+# Must be a public HTTPS URL Safaricom's servers can reach - localhost
+# won't work even in sandbox. Currently an ngrok tunnel to this backend's
+# port 8080 (ngrok free-tier URLs are ephemeral - this needs updating to
+# match whenever the tunnel is restarted with a fresh random subdomain).
+app.mpesa.callback-url=${MPESA_CALLBACK_URL:CHANGE_ME}
+
+# B2C ("Send Money") - the outgoing-payment half, used for expenses paid
+# to partners/vendors and loan repayments, never STK (business owner
+# correction: "expenses ... i dont think its an stk push but rather a send
+# money option"). Needs Safaricom's public certificate file (per Daraja
+# environment) to encrypt the security credential - isB2CConfigured()
+# checks that file actually exists before ever attempting a real payout.
+app.mpesa.b2c-initiator-name=${MPESA_B2C_INITIATOR_NAME:CHANGE_ME}
+app.mpesa.b2c-initiator-password=${MPESA_B2C_INITIATOR_PASSWORD:CHANGE_ME}
+# Party A - the payout wallet Daraja assigned to the "Dateroem" sandbox app
+# (Simulator / Test Credentials: "Party A: 600426"). Each sandbox app gets its
+# own; the docs' example 600997 and another app's number will not do: the
+# initiator is checked against this number, and repeated mismatches lock the
+# security credential ("ResultCode 8006").
+app.mpesa.b2c-shortcode=${MPESA_B2C_SHORTCODE:CHANGE_ME}
+# Safaricom's own sandbox encryption certificate (subject
+# apicrypt.safaricom.co.ke, issued by Safaricom's internal CA) - fetched
+# from Safaricom's official safaricom/mpesa-node-library GitHub repo since
+# the Daraja portal's own docs-hosted copy is broken (a known, reported
+# issue - the wrong/stale file at that URL causes "Initiator Information
+# is invalid"). It's a public key, not a secret, and technically expired
+# (2016) but still works: we only ever extract its public key for RSA
+# encryption, never check certificate validity dates.
+app.mpesa.b2c-cert-path=${MPESA_B2C_CERT_PATH:src/main/resources/mpesa/SandboxCertificate.cer}
+app.mpesa.b2c-result-url=${MPESA_B2C_RESULT_URL:CHANGE_ME}
+app.mpesa.b2c-queue-timeout-url=${MPESA_B2C_QUEUE_TIMEOUT_URL:CHANGE_ME}
+
+# --- SMS codes that confirm a customer's phone number (migration 036) ------
+# "push a code to the phone number they placed so that its verified" - see
+# SmsSender and PhoneVerificationService. Provider:
+#   off            - (default) no codes; numbers are taken as typed, as before.
+#   africastalking - Africa's Talking: the account's username and API key
+#                    (username "sandbox" = their sandbox, no real SMS).
+#   test           - this machine only: messages go to the test outbox file.
+# Codes are asked for only when the provider is test, or africastalking with
+# both the username and API key set. SMS_SENDER_ID: the sender name registered
+# with Africa's Talking (empty = their shared sender).
+app.sms.provider=${SMS_PROVIDER:africastalking}
+app.sms.username=${SMS_USERNAME:CHANGE_ME}
+app.sms.api-key=${SMS_API_KEY:CHANGE_ME}
+app.sms.sender-id=${SMS_SENDER_ID:AFRICASTKNG}
+app.sms.test-outbox=${SMS_TEST_OUTBOX:sms-test-outbox.txt}
+# Which networks' numbers get codes: airtel, safaricom, telkom (comma list) or
+# all. "let it verify for airtel only then we can switch to the safaricom if
+# funds are enough" - Africa's Talking's shared sender (AFRICASTKNG) only
+# reaches Airtel; once Dateroem's own sender ID is approved, set it to all.
+# Other numbers are taken as typed, as before.
+app.sms.networks=${SMS_NETWORKS:airtel}
