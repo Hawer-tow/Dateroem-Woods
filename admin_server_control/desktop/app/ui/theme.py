@@ -129,16 +129,26 @@ STATUS_INFO = "#5b9bd5"
 import os as _os
 
 MODERN = _os.environ.get("DATEROEM_MODERN_UI", "1") == "1"
+# DIALOG_BACKDROP: pop-up windows get the main window's depth too ("so that
+# they don't feel like they are not part of the new structure", 21 October
+# 2026) - the same glow from the top-left corner fading into the darkest
+# shade, as one radial gradient (ui/backdrop.py paints the main window's).
 _MODERN_LAYERS = {
-    "forest": {"LAYER": "rgba(29, 66, 50, 0.55)", "LAYER_BORDER": "rgba(255, 255, 255, 0.08)", "CONSOLE_BG": "rgba(4, 12, 8, 0.45)"},
-    "dark": {"LAYER": "rgba(44, 48, 54, 0.55)", "LAYER_BORDER": "rgba(255, 255, 255, 0.07)", "CONSOLE_BG": "rgba(0, 0, 0, 0.35)"},
-    "light": {"LAYER": "rgba(255, 255, 255, 0.80)", "LAYER_BORDER": "rgba(0, 0, 0, 0.07)", "CONSOLE_BG": "rgba(255, 255, 255, 0.70)"},
+    "forest": {"LAYER": "rgba(29, 66, 50, 0.55)", "LAYER_BORDER": "rgba(255, 255, 255, 0.08)", "CONSOLE_BG": "rgba(4, 12, 8, 0.45)",
+               "DIALOG_BACKDROP": "qradialgradient(cx:0.1, cy:-0.15, radius:1.3, fx:0.1, fy:-0.15, stop:0 #2b6448, stop:0.5 #11291e, stop:1 #0a1610)"},
+    "dark": {"LAYER": "rgba(44, 48, 54, 0.55)", "LAYER_BORDER": "rgba(255, 255, 255, 0.07)", "CONSOLE_BG": "rgba(0, 0, 0, 0.35)",
+             "DIALOG_BACKDROP": "qradialgradient(cx:0.1, cy:-0.15, radius:1.3, fx:0.1, fy:-0.15, stop:0 #30353c, stop:0.5 #17191c, stop:1 #0d0e10)"},
+    "light": {"LAYER": "rgba(255, 255, 255, 0.80)", "LAYER_BORDER": "rgba(0, 0, 0, 0.07)", "CONSOLE_BG": "rgba(255, 255, 255, 0.70)",
+              "DIALOG_BACKDROP": "qradialgradient(cx:0.1, cy:-0.15, radius:1.3, fx:0.1, fy:-0.15, stop:0 #f4f6ee, stop:0.5 #f6f2e9, stop:1 #ebe5d8)"},
 }
 for _name, _values in _MODERN_LAYERS.items():
     PALETTES[_name].update(_values)
 LAYER = _MODERN_LAYERS["forest"]["LAYER"]
 LAYER_BORDER = _MODERN_LAYERS["forest"]["LAYER_BORDER"]
 CONSOLE_BG = _MODERN_LAYERS["forest"]["CONSOLE_BG"]
+DIALOG_BACKDROP = _MODERN_LAYERS["forest"]["DIALOG_BACKDROP"]
+# The tick drawn in a ticked box (the box is painted wood): dark bark.
+CHECK_MARK = (Path(__file__).resolve().parent / "assets" / "ui" / "check.png").as_posix()
 
 
 def card_style(selector: str = "QFrame", radius: int = 8) -> str:
@@ -160,8 +170,30 @@ QWidget {{
     background-color: transparent;
     font-family: "Segoe UI Variable Text", "Segoe UI";
 }}
-QMainWindow, QDialog, QMessageBox {{
+QMainWindow {{
     background-color: {BACKGROUND};
+}}
+QDialog, QMessageBox {{
+    background-color: {DIALOG_BACKDROP};
+}}
+QCheckBox::indicator, QAbstractItemView::indicator {{
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid rgba({INK}, 0.40);
+    background-color: rgba({INK}, 0.05);
+}}
+QCheckBox::indicator:hover, QAbstractItemView::indicator:hover {{
+    border-color: {ACCENT};
+}}
+QCheckBox::indicator:checked, QAbstractItemView::indicator:checked {{
+    background-color: {WOOD};
+    border-color: {WOOD};
+    image: url({CHECK_MARK});
+}}
+QCheckBox::indicator:disabled {{
+    border-color: rgba({INK}, 0.18);
+    background-color: transparent;
 }}
 QMenu, QToolTip {{
     background-color: {SURFACE};
@@ -213,12 +245,12 @@ QPushButton:hover {{
 QPushButton:pressed {{
     background-color: rgba({INK}, 0.04);
 }}
-QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QDateEdit {{
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QDateEdit, QTextEdit {{
     background-color: rgba({INK}, 0.05);
     border: 1px solid rgba({INK}, 0.12);
     border-radius: 6px;
 }}
-QLineEdit:focus, QComboBox:focus, QDateEdit:focus {{
+QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QTextEdit:focus {{
     border: 1px solid {ACCENT};
     background-color: rgba({INK}, 0.08);
 }}

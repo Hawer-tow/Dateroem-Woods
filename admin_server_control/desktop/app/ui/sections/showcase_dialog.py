@@ -28,11 +28,15 @@ MAX_PICTURES = 12
 MAX_CAPTION = 120
 THUMB = QSize(192, 108)
 
-LIST_STYLE = f"""
+def _list_style() -> str:
+    """The picture list's style in the theme chosen now. (It used to be built
+    once when the app started - always Forest - so in Light or Dark the list
+    stayed green; 21 October 2026.)"""
+    return f"""
 QListWidget {{
-    background-color: {theme.SURFACE};
+    background-color: {theme.LAYER if theme.MODERN else theme.SURFACE};
     border: 1px solid {theme.BORDER};
-    border-radius: 8px;
+    border-radius: {10 if theme.MODERN else 8}px;
     padding: 6px;
 }}
 QListWidget::item {{
@@ -96,7 +100,7 @@ class ShowcaseDialog(QDialog):
         layout.addWidget(intro)
 
         self.list = QListWidget()
-        self.list.setStyleSheet(LIST_STYLE)
+        self.list.setStyleSheet(_list_style())
         self.list.setIconSize(THUMB)
         self.list.setWordWrap(True)
         self.list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)

@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.worker import Worker
+from app.ui import theme
 from app.ui.widgets.busy import set_busy
 from app.ui.widgets.transfer_scene import TransferScene
 
@@ -79,9 +80,12 @@ class ConfirmPaymentDialog(QDialog):
         back.clicked.connect(self.reject)
         row.addWidget(back)
         self.confirm_btn = QPushButton("Confirm && Send")
+        # Money green in every theme; while it waits (a short countdown), a
+        # quiet greyed button in the theme's own shade - it used to be a fixed
+        # dark green, out of place in the Light theme.
         self.confirm_btn.setStyleSheet(
             "QPushButton { background: #4FA35C; color: white; font-weight: 700; border-radius: 6px; padding: 8px 16px; }"
-            "QPushButton:disabled { background: #2c4a33; color: #7c8f81; }"
+            f"QPushButton:disabled {{ background: rgba({theme.INK}, 0.08); color: {theme.TEXT_MUTED}; }}"
         )
         self.confirm_btn.setEnabled(False)
         self.confirm_btn.clicked.connect(self.accept)

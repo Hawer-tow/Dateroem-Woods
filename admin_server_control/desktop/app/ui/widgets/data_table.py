@@ -61,9 +61,11 @@ LIMIT_OPTIONS = [("50", 50), ("100", 100), ("200", 200), ("500", 500), ("All", N
 # low-alpha wash of theme.DANGER, plus strikethrough + danger-colored text
 # so a deleted row still reads clearly without relying on color alone.
 DELETED_FLAG_KEYS = ("Is_Deleted", "isDeleted")
-DELETED_ROW_BACKGROUND = QColor(theme.DANGER)
-DELETED_ROW_BACKGROUND.setAlpha(40)
-DELETED_ROW_FOREGROUND = QColor(theme.DANGER)
+def _deleted_row_colours():
+    """Background and text for a deleted row, in the theme chosen now."""
+    background = QColor(theme.DANGER)
+    background.setAlpha(40)
+    return background, QColor(theme.DANGER)
 
 # Product and campaign pictures already fetched, by address - a re-filter
 # (each letter typed into a search box) or a refresh shows them at once
@@ -602,8 +604,9 @@ class DataTable(QWidget):
                     font.setBold(True)
                     item.setFont(font)
                 if deleted:
-                    item.setBackground(DELETED_ROW_BACKGROUND)
-                    item.setForeground(DELETED_ROW_FOREGROUND)
+                    deleted_background, deleted_text = _deleted_row_colours()
+                    item.setBackground(deleted_background)
+                    item.setForeground(deleted_text)
                     font = item.font()
                     font.setStrikeOut(True)
                     item.setFont(font)
