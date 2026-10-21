@@ -190,13 +190,15 @@ class StatusPillDelegate(QStyledItemDelegate):
         left = opt.rect.x() + ((opt.rect.width() - width) // 2 if centered else 10)
         pill = QRectF(left, opt.rect.y() + (opt.rect.height() - height) / 2, width, height)
         fill = QColor(color)
-        fill.setAlpha(46)
+        fill.setAlpha(34 if theme.IS_LIGHT else 46)
         edge = QColor(color)
         edge.setAlpha(150)
         painter.setPen(QPen(edge, 1))
         painter.setBrush(fill)
         painter.drawRoundedRect(pill, height / 2, height / 2)
-        painter.setPen(QColor(color).lighter(125))
+        # Pale text on the dark themes; on Light the same colour darkened, or
+        # the words all but disappear on white.
+        painter.setPen(QColor(color).darker(165) if theme.IS_LIGHT else QColor(color).lighter(125))
         painter.drawText(pill, int(Qt.AlignmentFlag.AlignCenter), metrics.elidedText(text, Qt.TextElideMode.ElideRight, int(width) - 12))
         painter.restore()
 

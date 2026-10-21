@@ -119,6 +119,169 @@ STATUS_WAIT = "#e0a03a"
 STATUS_BAD = "#e5484d"
 STATUS_INFO = "#5b9bd5"
 
+# The modern look (21 October 2026): "the green doesn't feel like one color
+# ... make it look modern" - the main window stands on a painted backdrop with
+# depth (ui/backdrop.py: a glow fading into the theme's darkest shade, with a
+# fine grain; rain on glass behind the Dark theme's menu), the menu floats on
+# it without a panel and can fold down to icons, and content sits on slightly
+# see-through cards. Approved by the owner on 21 October 2026 ("they look
+# good proceed"); DATEROEM_MODERN_UI=0 brings back the earlier flat look.
+import os as _os
+
+MODERN = _os.environ.get("DATEROEM_MODERN_UI", "1") == "1"
+_MODERN_LAYERS = {
+    "forest": {"LAYER": "rgba(29, 66, 50, 0.55)", "LAYER_BORDER": "rgba(255, 255, 255, 0.08)", "CONSOLE_BG": "rgba(4, 12, 8, 0.45)"},
+    "dark": {"LAYER": "rgba(44, 48, 54, 0.55)", "LAYER_BORDER": "rgba(255, 255, 255, 0.07)", "CONSOLE_BG": "rgba(0, 0, 0, 0.35)"},
+    "light": {"LAYER": "rgba(255, 255, 255, 0.80)", "LAYER_BORDER": "rgba(0, 0, 0, 0.07)", "CONSOLE_BG": "rgba(255, 255, 255, 0.70)"},
+}
+for _name, _values in _MODERN_LAYERS.items():
+    PALETTES[_name].update(_values)
+LAYER = _MODERN_LAYERS["forest"]["LAYER"]
+LAYER_BORDER = _MODERN_LAYERS["forest"]["LAYER_BORDER"]
+CONSOLE_BG = _MODERN_LAYERS["forest"]["CONSOLE_BG"]
+
+
+def card_style(selector: str = "QFrame", radius: int = 8) -> str:
+    """Background for a card-like frame that sets its own style (the
+    dashboard's figures, for instance): a see-through layer in the modern
+    look, the solid surface otherwise."""
+    if MODERN:
+        return f"{selector} {{ background-color: {LAYER}; border: 1px solid {LAYER_BORDER}; border-radius: 12px; }}"
+    return f"{selector} {{ background-color: {SURFACE}; border-radius: {radius}px; }}"
+
+
+def build_modern_stylesheet() -> str:
+    """What the modern look changes, on top of build_stylesheet(): see-through
+    containers over the backdrop, layered cards, quieter controls, underlined
+    tabs, larger titles in Windows 11's own font. Windows of their own
+    (dialogs, menus, drop-down lists) stay solid."""
+    return f"""
+QWidget {{
+    background-color: transparent;
+    font-family: "Segoe UI Variable Text", "Segoe UI";
+}}
+QMainWindow, QDialog, QMessageBox {{
+    background-color: {BACKGROUND};
+}}
+QMenu, QToolTip {{
+    background-color: {SURFACE};
+    color: {TEXT};
+    border: 1px solid {BORDER};
+    border-radius: 6px;
+}}
+QComboBox QAbstractItemView {{
+    background-color: {SURFACE};
+    border: 1px solid {BORDER};
+    selection-background-color: rgba(235, 154, 75, 0.28);
+}}
+QCalendarWidget QWidget#qt_calendar_navigationbar, QCalendarWidget QAbstractItemView {{
+    background-color: {SURFACE};
+}}
+QLabel[role="title"] {{
+    font-family: "Segoe UI Variable Display", "Segoe UI";
+    font-size: 22px;
+    font-weight: 600;
+}}
+QFrame[role="card"], QFrame#tableCard {{
+    background-color: {LAYER};
+    border: 1px solid {LAYER_BORDER};
+    border-radius: 12px;
+}}
+QFrame[role="card"] {{
+    border-top: 2px solid {WOOD_SWEEP};
+}}
+QTableWidget {{
+    background-color: transparent;
+    alternate-background-color: rgba({INK}, 0.035);
+}}
+QTableWidget::item:hover {{
+    background-color: rgba({INK}, 0.05);
+}}
+QHeaderView::section, QTableCornerButton::section {{
+    background-color: transparent;
+}}
+QPushButton {{
+    background-color: rgba({INK}, 0.06);
+    border: 1px solid rgba({INK}, 0.10);
+    border-radius: 6px;
+    padding: 6px 14px;
+}}
+QPushButton:hover {{
+    background-color: rgba({INK}, 0.11);
+    border-color: rgba({INK}, 0.18);
+}}
+QPushButton:pressed {{
+    background-color: rgba({INK}, 0.04);
+}}
+QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QDateEdit {{
+    background-color: rgba({INK}, 0.05);
+    border: 1px solid rgba({INK}, 0.12);
+    border-radius: 6px;
+}}
+QLineEdit:focus, QComboBox:focus, QDateEdit:focus {{
+    border: 1px solid {ACCENT};
+    background-color: rgba({INK}, 0.08);
+}}
+QTabWidget::pane {{
+    background-color: {LAYER};
+    border: 1px solid {LAYER_BORDER};
+    border-radius: 10px;
+    top: -1px;
+}}
+QTabBar::tab {{
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 14px;
+    margin-right: 2px;
+}}
+QTabBar::tab:selected {{
+    background-color: transparent;
+    color: {TEXT};
+    border: none;
+    border-bottom: 2px solid {WOOD};
+}}
+QTabBar::tab:hover:!selected {{
+    background-color: rgba({INK}, 0.05);
+    border-radius: 6px;
+}}
+QPlainTextEdit {{
+    background-color: {CONSOLE_BG};
+    border: 1px solid {LAYER_BORDER};
+    border-radius: 8px;
+}}
+QStatusBar {{
+    background-color: transparent;
+}}
+QScrollBar:vertical {{
+    width: 8px;
+}}
+QScrollBar:horizontal {{
+    height: 8px;
+}}
+QListWidget#navList {{
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}}
+QPushButton#navAction, QPushButton#navToggle {{
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    color: {TEXT_MUTED};
+    text-align: left;
+    padding: 9px 12px;
+}}
+QPushButton#navAction:hover, QPushButton#navToggle:hover {{
+    background-color: rgba({INK}, 0.07);
+    color: {TEXT};
+}}
+"""
+
+
+def full_stylesheet() -> str:
+    return build_stylesheet() + (build_modern_stylesheet() if MODERN else "")
+
 def build_stylesheet() -> str:
     """The app's stylesheet in the current theme's colours."""
     return f"""
@@ -381,7 +544,7 @@ QScrollBar::add-page, QScrollBar::sub-page {{
 """
 
 
-STYLESHEET = build_stylesheet()
+STYLESHEET = full_stylesheet()
 
 
 def set_theme(name: str | None) -> str:
@@ -395,7 +558,7 @@ def set_theme(name: str | None) -> str:
     globals().update(PALETTES[name])
     BORDER = f"rgba({INK}, 0.12)"
     ROW_LINE = f"rgba({INK}, 0.06)"
-    STYLESHEET = build_stylesheet()
+    STYLESHEET = full_stylesheet()
     try:
         from PySide6.QtWidgets import QApplication
 

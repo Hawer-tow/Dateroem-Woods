@@ -23,13 +23,18 @@ from app.ui.sections.products_section import ProductsSection
 from app.ui.sections.reviews_section import ReviewsSection
 from app.ui.sections.trips_section import TripsSection
 from app.ui.sections.users_section import UsersSection
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSettings, QSize, Qt
 from app.core import server_address
 from app.ui import theme
+from app.ui.backdrop import Backdrop, NavDelegate, NavPane
 from app.ui.icons import icon
 
 # Screens that keep what they show until asked (no reload on coming back).
 NO_AUTO_RELOAD = {"Database Browser", "Servers"}
+
+# The menu's width in the modern look: open (icon and name) and folded (icons).
+MENU_WIDTH = 188
+MENU_WIDTH_FOLDED = 62
 
 
 def _server_panel(server_manager, session):
@@ -60,35 +65,64 @@ class MainWindow(QMainWindow):
         # explicit "Dateroem Admin Control" here would double up.
         self.resize(1150, 740)
 
-        central = QWidget()
+        # The modern look (theme.MODERN, ui/backdrop.py): the window stands on
+        # a painted backdrop and the menu floats on it - narrower, without a
+        # panel, and able to fold down to its icons.
+        central = Backdrop() if theme.MODERN else QWidget()
         self.setCentralWidget(central)
         root_layout = QHBoxLayout(central)
+        if theme.MODERN:
+            root_layout.setContentsMargins(6, 6, 10, 4)
 
         sidebar_container = QVBoxLayout()
+        if theme.MODERN:
+            sidebar_container.setContentsMargins(10, 10, 8, 10)
+            sidebar_container.setSpacing(2)
+            self.nav_toggle = QPushButton()
+            self.nav_toggle.setObjectName("navToggle")
+            self.nav_toggle.setIcon(icon("menu"))
+            self.nav_toggle.setIconSize(QSize(18, 18))
+            self.nav_toggle.setFixedSize(40, 36)
+            self.nav_toggle.clicked.connect(lambda: self._fold_menu(not self._menu_folded))
+            sidebar_container.addWidget(self.nav_toggle)
+            sidebar_container.addSpacing(6)
         self.sidebar = QListWidget()
         self.sidebar.setIconSize(QSize(18, 18))
+        if theme.MODERN:
+            self.sidebar.setObjectName("navList")
+            self._nav_delegate = NavDelegate(self.sidebar)
+            self.sidebar.setItemDelegate(self._nav_delegate)
+            self.sidebar.setMouseTracking(True)
+            self.sidebar.setFrameShape(QListWidget.Shape.NoFrame)
+            self.sidebar.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sidebar_container.addWidget(self.sidebar, 1)
 
         # Settings sits with Sign Out at the foot of the sidebar - always in
         # view, below however many sections there are (20 October 2026).
         self.settings_btn = QPushButton("Settings")
-        self.settings_btn.setIcon(icon("settings"))
+        self.settings_btn.setIcon(icon("settings", theme.TEXT_MUTED) if theme.MODERN else icon("settings"))
         self.settings_btn.clicked.connect(self._open_settings)
         sidebar_container.addWidget(self.settings_btn)
 
         self.logout_btn = QPushButton("Sign Out")
         self.logout_btn.clicked.connect(self._sign_out)
         sidebar_container.addWidget(self.logout_btn)
+        if theme.MODERN:
+            for button in (self.settings_btn, self.logout_btn):
+                button.setObjectName("navAction")
+                button.setIconSize(QSize(18, 18))
+            self.logout_btn.setText("Sign out")
+            self.logout_btn.setIcon(icon("logout", theme.TEXT_MUTED))
 
-        sidebar_widget = QWidget()
-        sidebar_widget.setFixedWidth(210)
-        sidebar_widget.setLayout(sidebar_container)
-        root_layout.addWidget(sidebar_widget)
+        self.sidebar_widget = NavPane() if theme.MODERN else QWidget()
+        self.sidebar_widget.setFixedWidth(MENU_WIDTH if theme.MODERN else 210)
+        self.sidebar_widget.setLayout(sidebar_container)
+        root_layout.addWidget(self.sidebar_widget)
 
         # "placing distance from the left side so it doesn't feel like it's
         # connected to it" - breathing room between the menu and whatever
         # section is open, and around its edges.
-        root_layout.addSpacing(18)
+        root_layout.addSpacing(10 if theme.MODERN else 18)
         self.stack = QStackedWidget()
         self.stack.setContentsMargins(4, 10, 12, 8)
         root_layout.addWidget(self.stack, 1)
@@ -121,11 +155,22 @@ class MainWindow(QMainWindow):
         self._section_widgets: dict[int, QWidget] = {}
         self._last_loaded: dict[int, float] = {}
         for icon_name, label, _factory in self._section_factories:
-            self.sidebar.addItem(QListWidgetItem(icon(icon_name, theme.WOOD, selected=theme.WOOD_ON), label))
+            if theme.MODERN:
+                # Quiet icons in the text colour; the chosen one turns wood.
+                entry_icon = icon(icon_name, theme.TEXT_MUTED, selected=theme.ACCENT if theme.IS_LIGHT else theme.WOOD)
+            else:
+                entry_icon = icon(icon_name, theme.WOOD, selected=theme.WOOD_ON)
+            item = QListWidgetItem(entry_icon, label)
+            item.setToolTip(label)
+            self.sidebar.addItem(item)
             self.stack.addWidget(QWidget())  # placeholder, replaced on first visit
 
         self.sidebar.currentRowChanged.connect(self._show_section)
         self.sidebar.setCurrentRow(start_section if 0 <= start_section < self.sidebar.count() else 0)
+
+        self._menu_folded = False
+        if theme.MODERN:
+            self._fold_menu(QSettings("Dateroem", "AdminControl").value("menu/folded", False, type=bool), save=False)
 
         status = QStatusBar()
         status.showMessage(f"Signed in as {session.name} ({session.role_name})")
@@ -162,6 +207,20 @@ class MainWindow(QMainWindow):
             return
         for table in widget.findChildren(DataTable):
             table.refresh_requested.emit(table.current_limit())
+
+    def _fold_menu(self, folded: bool, save: bool = True):
+        """Folds the menu down to its icons (names on hover) or opens it
+        again; remembered on this computer."""
+        self._menu_folded = folded
+        self._nav_delegate.folded = folded
+        self.sidebar_widget.setFixedWidth(MENU_WIDTH_FOLDED if folded else MENU_WIDTH)
+        self.nav_toggle.setToolTip("Open the menu" if folded else "Fold the menu to icons")
+        for button, label in ((self.settings_btn, "Settings"), (self.logout_btn, "Sign out")):
+            button.setText("" if folded else label)
+            button.setToolTip(label if folded else "")
+        self.sidebar.viewport().update()
+        if save:
+            QSettings("Dateroem", "AdminControl").setValue("menu/folded", folded)
 
     def _open_settings(self):
         from app.ui.settings_dialog import SettingsDialog
