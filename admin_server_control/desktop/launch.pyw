@@ -29,27 +29,91 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 # The Qt modules the app uses are loaded here, on the main thread; only
 # the app's own modules load on the helper thread.
 from PySide6 import QtGui, QtNetwork, QtSvg  # noqa: E402,F401
-from PySide6.QtCore import QEventLoop, Qt  # noqa: E402
-from PySide6.QtWidgets import QApplication, QLabel  # noqa: E402
+from PySide6.QtCore import QEventLoop, QRectF, Qt, QTimer  # noqa: E402
+from PySide6.QtGui import QColor, QFont, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap  # noqa: E402
+from PySide6.QtWidgets import QApplication, QWidget  # noqa: E402
 
 from app.core.single_instance import SingleInstanceGuard  # noqa: E402
 from app.core.windows_app_id import set_windows_app_id  # noqa: E402
 from app.ui import theme  # noqa: E402
 
 
-def _boot_window() -> QLabel:
-    label = QLabel("Dateroem Admin Control\n\nStarting...")
-    label.setWindowTitle("Dateroem Admin Control")
-    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    label.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-    label.setStyleSheet(
-        f"background:{theme.BACKGROUND}; color:{theme.TEXT}; font-size:18px; "
-        f"border:2px solid {theme.ACCENT}; padding:32px;"
-    )
-    label.setFixedSize(360, 180)
-    screen = QApplication.primaryScreen().availableGeometry()
-    label.move(screen.center().x() - 180, screen.center().y() - 90)
-    return label
+class _BootCard(QWidget):
+    """The "Starting" window, styled as the door to the forest intro that
+    follows ("can it have the forest background image", 21 October 2026): one
+    small ready-made picture (the misty forest in the app's greens with the
+    emblem, the wordmark and ADMIN CONTROL - app/ui/assets/entrance/
+    boot_card.jpg, 30 KB, made by make_boot_card.py) so it is up as quickly as
+    before, "Starting..." and a slim wood bar that keeps moving while the app
+    loads behind it."""
+
+    W, H = 440, 250
+
+    def __init__(self):
+        super().__init__(None, Qt.WindowType.FramelessWindowHint)
+        self.setWindowTitle("Dateroem Admin Control")
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setFixedSize(self.W, self.H)
+        self.card = QPixmap(str(Path(theme.ENTRANCE_FOREST).with_name("boot_card.jpg")))
+        if not self.card.isNull():
+            self.card.setDevicePixelRatio(self.card.width() / self.W)
+        self.phase = 0.0
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self._tick)
+        self.timer.start(33)
+        screen = QApplication.primaryScreen().availableGeometry()
+        self.move(screen.center().x() - self.W // 2, screen.center().y() - self.H // 2)
+
+    def _tick(self):
+        self.phase = (self.phase + 0.014) % 1.0
+        self.update(0, 196, self.W, 16)
+
+    def closeEvent(self, event):
+        # main() closes this once the intro is up; the bar stops with it.
+        self.timer.stop()
+        super().closeEvent(event)
+
+    def paintEvent(self, _event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        outline = QPainterPath()
+        outline.addRoundedRect(QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), 14, 14)
+        p.setClipPath(outline)
+        if self.card.isNull():
+            p.fillRect(self.rect(), QColor(theme.BACKGROUND))
+        else:
+            p.drawPixmap(self.rect(), self.card)
+        font = QFont("Segoe UI")
+        font.setPixelSize(14)
+        p.setFont(font)
+        p.setPen(QColor(245, 245, 241, 215))
+        p.drawText(QRectF(0, 166, self.W, 24), Qt.AlignmentFlag.AlignCenter, "Starting...")
+        # A slim track with a short stretch of wood gliding along it.
+        track = QRectF(self.W / 2 - 90, 203, 180, 3)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(255, 255, 255, 34))
+        p.drawRoundedRect(track, 1.5, 1.5)
+        span = 64
+        x = track.left() - span + (track.width() + span) * self.phase
+        wood = QLinearGradient(x, 0, x + span, 0)
+        wood.setColorAt(0.0, QColor(244, 181, 102, 0))
+        wood.setColorAt(0.5, QColor(244, 181, 102, 255))
+        wood.setColorAt(1.0, QColor(232, 137, 47, 0))
+        p.save()
+        p.setClipRect(track)
+        p.setBrush(wood)
+        p.drawRoundedRect(QRectF(x, track.top(), span, track.height()), 1.5, 1.5)
+        p.restore()
+        p.setClipping(False)
+        p.setPen(QPen(QColor(235, 154, 75, 110), 1))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawPath(outline)
+        p.end()
+
+
+def _boot_window() -> QWidget:
+    return _BootCard()
 
 
 def _load_app(qt_app: QApplication):
