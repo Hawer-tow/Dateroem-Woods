@@ -11,6 +11,27 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#0f241b" />
+    <!-- Who runs this site, for search engines and payment-provider checks
+         (the same facts as the About page; 23 October 2026). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Dateroem Woods",
+        "url": "https://dateroemwoods.co.ke",
+        "logo": "https://dateroemwoods.co.ke/brand/emblem.svg",
+        "description": "Kenyan timber business selling native African hardwoods - sourcing, milling, finishing and nationwide delivery.",
+        "founder": { "@type": "Person", "name": "Charles Mwangi Kimundu" },
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Ebenezar Plot, Old Nairobi Road",
+          "addressLocality": "Nakuru",
+          "addressCountry": "KE"
+        },
+        "telephone": "+254182995011",
+        "sameAs": ["https://www.tiktok.com/@dateroem.woods", "https://www.instagram.com/dateroem.woods"]
+      }
+    </script>
     <!-- The visitor's colour theme (src/context/ThemeContext.jsx), set before
          the first frame so a Dark or Light page never flashes green first. -->
     <script>
