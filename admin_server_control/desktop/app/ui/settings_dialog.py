@@ -9,7 +9,7 @@ on the same section, without signing in again.
 """
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QSpinBox, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QVBoxLayout, QWidget
 
 from app.core.api_client import ApiError
 from app.ui import theme
@@ -161,6 +161,45 @@ class SettingsDialog(QDialog):
         self.lock_message.setProperty("role", "muted")
         lock_layout.addWidget(self.lock_message)
 
+        # The company card on the phone app's Home - one copy on the server,
+        # "only superadmin edits ... others see the motto" (24 October 2026).
+        self.company_card = None
+        if session.role_name == "SuperAdmin":
+            self.company_card = QFrame()
+            self.company_card.setProperty("role", "card")
+            company_layout = QVBoxLayout(self.company_card)
+            company_layout.setContentsMargins(22, 16, 22, 18)
+            company_layout.setSpacing(6)
+            company_title = QLabel("Company card")
+            company_title.setProperty("role", "title")
+            company_layout.addWidget(company_title)
+            company_hint = QLabel("Shown at the top of Home on every phone.")
+            company_hint.setProperty("role", "muted")
+            company_layout.addWidget(company_hint)
+            self.company_name_input = QLineEdit()
+            self.company_name_input.setPlaceholderText("Company name")
+            self.company_motto_input = QLineEdit()
+            self.company_motto_input.setPlaceholderText("Motto")
+            self.company_code_input = QLineEdit()
+            self.company_code_input.setPlaceholderText("Company code")
+            for field in (self.company_name_input, self.company_motto_input, self.company_code_input):
+                company_layout.addWidget(field)
+            company_row = QHBoxLayout()
+            self.company_message = QLabel("")
+            self.company_message.setProperty("role", "muted")
+            company_row.addWidget(self.company_message, 1)
+            save_company = QPushButton("Save")
+            save_company.clicked.connect(self._save_company)
+            company_row.addWidget(save_company)
+            company_layout.addLayout(company_row)
+            try:
+                company = self.api_client.get("/auth/company") or {}
+                self.company_name_input.setText(company.get("name") or "")
+                self.company_motto_input.setText(company.get("motto") or "")
+                self.company_code_input.setText(company.get("code") or "")
+            except ApiError as exc:
+                self.company_message.setText(f"Couldn't load it: {exc}")
+
         close = QPushButton("Close")
         close.clicked.connect(self.reject)
         buttons = QHBoxLayout()
@@ -171,6 +210,8 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(18, 18, 18, 16)
         layout.addWidget(card)
         layout.addWidget(lock_card)
+        if self.company_card is not None:
+            layout.addWidget(self.company_card)
         layout.addLayout(buttons)
 
     def _save_lock_minutes(self):
@@ -182,6 +223,19 @@ class SettingsDialog(QDialog):
             return
         self.session.idle_lock_minutes = minutes
         self.lock_message.setText(f"Saved: {minutes} minutes.")
+
+    def _save_company(self):
+        body = {
+            "name": self.company_name_input.text(),
+            "motto": self.company_motto_input.text(),
+            "code": self.company_code_input.text(),
+        }
+        try:
+            self.api_client.put("/auth/company", json=body)
+        except ApiError as exc:
+            self.company_message.setText(f"Couldn't save it: {exc}")
+            return
+        self.company_message.setText("Saved - phones show it the next time Home opens.")
 
     def _pick(self, name: str):
         if name == theme.CURRENT:

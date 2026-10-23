@@ -90,6 +90,18 @@ interface ApiService {
     // The person's own profile (migration 039): name and email (the password
     // only when the email changes), password - answers a new {token}, every
     // other sign-in of the account ends - and the photo.
+    // Home (24 October 2026): the business at a glance for Admins and the
+    // SuperAdmin, and the company card - one copy on the server, which only
+    // the SuperAdmin changes.
+    @GET("insights/overview")
+    suspend fun overview(): JsonMap
+
+    @GET("settings/company")
+    suspend fun companyCard(): JsonMap
+
+    @PUT("settings/company")
+    suspend fun saveCompanyCard(@Body body: Map<String, String>): JsonMap
+
     @PUT("auth/me/profile")
     suspend fun updateProfile(@Body body: ProfileUpdateRequest): JsonMap
 

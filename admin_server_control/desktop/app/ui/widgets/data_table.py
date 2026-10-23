@@ -167,11 +167,30 @@ def _money_text(number) -> str:
     return f"{number:,.0f}" if float(number).is_integer() else f"{number:,.2f}"
 
 
+def _paint_tint(painter: QPainter, option: QStyleOptionViewItem, index):
+    """A row's tint (set_rows' row_color, deleted rows): the table's style
+    sheet styles every cell, which makes Qt skip a cell's own background - so
+    the tints for late, reassign-first, assigned and deleted rows never showed
+    in the modern look. Painted here, under the cell (24 October 2026)."""
+    brush = index.data(Qt.ItemDataRole.BackgroundRole)
+    if brush is not None:
+        painter.fillRect(option.rect, brush)
+
+
+class TintedDelegate(QStyledItemDelegate):
+    """An ordinary cell, with its row's tint underneath."""
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
+        _paint_tint(painter, option, index)
+        super().paint(painter, option, index)
+
+
 class StatusPillDelegate(QStyledItemDelegate):
     """Paints a status cell as a rounded pill: a soft wash of its colour, a
     thin outline and the text in that colour."""
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
+        _paint_tint(painter, option, index)
         text = index.data(Qt.ItemDataRole.DisplayRole) or ""
         color = _status_color(text)
         opt = QStyleOptionViewItem(option)
@@ -342,7 +361,7 @@ class DataTable(QWidget):
         self.table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
         self.table.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
         self._pill_delegate = StatusPillDelegate(self.table)
-        self._plain_delegate = QStyledItemDelegate(self.table)
+        self._plain_delegate = TintedDelegate(self.table)
         self.table.cellDoubleClicked.connect(self._on_cell_double_clicked)
         self.table.cellClicked.connect(self._on_cell_clicked)
 

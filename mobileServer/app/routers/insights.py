@@ -12,3 +12,11 @@ router = APIRouter(prefix="/insights", tags=["insights"])
 @router.get("/expenses/breakdown")
 async def expense_breakdown():
     return await backend_client.get("/api/insights/expenses/breakdown")
+
+
+# The business at a glance on Home for Admins and the SuperAdmin (24 October
+# 2026): users, products, campaigns, trips and the orders waiting - the same
+# figures as the desktop dashboard, in one answer.
+@router.get("/overview")
+async def overview():
+    return await backend_client.get("/api/insights/overview")

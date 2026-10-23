@@ -99,7 +99,10 @@ public class DeliveryService {
         // they were actually placed in), so the desktop can number them
         // 1..N as a fair pick order. Needs_Reassignment marks orders that
         // missed a delivery, for the UI to highlight as high priority.
-        return JsonKeys.camelCaseKeys(jdbcTemplate.queryForList(
+        // Each with its promised date's risk (DeliveryDeadline): close to or
+        // past the date the customer was given.
+        java.time.LocalDate today = java.time.LocalDate.now();
+        List<Map<String, Object>> pool = JsonKeys.camelCaseKeys(jdbcTemplate.queryForList(
             "SELECT ld.Light_Delivery_ID, ld.Order_ID, o.Ticket_Code, ld.Status, ld.Estimated_Delivery_Date, " +
             "ld.Needs_Reassignment, ld.Undelivered_Reason, " +
             "o.Total, o.Created_At, da.Area_Name, da.City AS Delivery_City, u.Name AS Customer, " +
@@ -113,6 +116,10 @@ public class DeliveryService {
             "WHERE ld.Trip_ID IS NULL AND ld.Status = 'PENDING' AND ld.Is_Deleted = FALSE " +
             "ORDER BY o.Order_ID"
         ));
+        for (Map<String, Object> row : pool) {
+            row.putAll(DeliveryDeadline.of(row.get("createdAt"), row.get("estimatedDeliveryDate"), today));
+        }
+        return pool;
     }
 
     // The M-Pesa receipt of the order's completed website payment (migration
@@ -139,7 +146,7 @@ public class DeliveryService {
      */
     public List<Map<String, Object>> pendingOrderGroups() {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-            "SELECT ld.Light_Delivery_ID, ld.Order_ID, ld.Needs_Reassignment, ld.Undelivered_Reason, " +
+            "SELECT ld.Light_Delivery_ID, ld.Order_ID, ld.Needs_Reassignment, ld.Undelivered_Reason, ld.Estimated_Delivery_Date, " +
             "o.Ticket_Code, o.Total, o.Created_At, o.User_ID, o.Delivery_Area_ID, da.Area_Name, da.City, " +
             "u.Name AS Customer, u.Phone_NO AS Phone, " + PAID_RECEIPT_COLUMN +
             "FROM LIGHT_DELIVERIES ld " +
@@ -160,6 +167,7 @@ public class DeliveryService {
         }
 
         Map<String, Map<String, Object>> groups = new java.util.LinkedHashMap<>();
+        java.time.LocalDate today = java.time.LocalDate.now();
         for (Map<String, Object> row : rows) {
             int orderId = ((Number) row.get("Order_ID")).intValue();
             Object userId = row.get("User_ID");
@@ -205,6 +213,9 @@ public class DeliveryService {
             order.put("needsReassignment", Boolean.TRUE.equals(row.get("Needs_Reassignment")) || Long.valueOf(1).equals(row.get("Needs_Reassignment")));
             order.put("undeliveredReason", row.get("Undelivered_Reason"));
             order.put("mpesaReceipt", row.get("Mpesa_Receipt"));
+            // "treated as a risky product ... so the admins can assign it ...
+            // before deadline date" - promisedOn, daysLeft, deadlineRisk.
+            order.putAll(DeliveryDeadline.of(row.get("Created_At"), row.get("Estimated_Delivery_Date"), today));
 
             Map<String, Object> group = groups.get(key);
             if (group == null) {
@@ -233,8 +244,16 @@ public class DeliveryService {
             int largeOrders = 0;
             boolean priority = false;
             boolean unmeasured = false;
+            String deadlineRisk = null;
+            Long soonestDaysLeft = null;
+            Object soonestPromisedOn = null;
             List<String> itemsText = new java.util.ArrayList<>();
             for (Map<String, Object> order : orders) {
+                deadlineRisk = DeliveryDeadline.worse(deadlineRisk, (String) order.get("deadlineRisk"));
+                if (order.get("daysLeft") instanceof Long days && (soonestDaysLeft == null || days < soonestDaysLeft)) {
+                    soonestDaysLeft = days;
+                    soonestPromisedOn = order.get("promisedOn");
+                }
                 total += order.get("total") == null ? 0 : ((Number) order.get("total")).longValue();
                 bodyFeet = bodyFeet.add((java.math.BigDecimal) order.get("bodyFeet"));
                 if (Boolean.TRUE.equals(order.get("large"))) {
@@ -250,6 +269,9 @@ public class DeliveryService {
             group.put("largeOrders", largeOrders);
             group.put("kind", largeOrders == 0 ? "LIGHT" : (largeOrders == orders.size() ? "BULK" : "COMBINED"));
             group.put("needsReassignment", priority);
+            group.put("deadlineRisk", deadlineRisk);
+            group.put("soonestDaysLeft", soonestDaysLeft);
+            group.put("soonestPromisedOn", soonestPromisedOn);
             group.put("unmeasured", unmeasured);
             group.put("itemsText", String.join(" | ", itemsText));
             group.put("firstOrderId", orders.get(0).get("orderId"));

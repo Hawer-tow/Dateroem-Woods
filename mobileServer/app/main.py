@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.backend_client import PROBLEM
 from app.core.request_context import incoming_authorization
-from app.routers import ai_chat, auth, bulk_orders, deliveries, expenses, finance, health, insights, machines_vehicles, marketing, orders, products, shipping, showcase, sms_queue, transactions, trees, trips, uploads, users
+from app.routers import ai_chat, auth, bulk_orders, deliveries, expenses, finance, health, insights, machines_vehicles, marketing, orders, products, settings, shipping, showcase, sms_queue, transactions, trees, trips, uploads, users
 
 # The automatic API description pages (/docs, /redoc, /openapi.json) are
 # turned off: this server is reachable from the internet, and those pages
@@ -81,3 +81,4 @@ app.include_router(sms_queue.router)
 app.include_router(orders.router)
 app.include_router(users.router)
 app.include_router(showcase.router)
+app.include_router(settings.router)

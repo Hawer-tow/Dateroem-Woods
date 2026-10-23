@@ -34,6 +34,33 @@ from app.ui.widgets.record_form_dialog import FieldSpec, RecordFormDialog
 PRIORITY_TINT = QColor("#8e44ad")
 PRIORITY_TINT.setAlpha(120)
 
+# "if an order has not been assigned yet and the time is near let it be
+# treated as a risky product ... indicated differently" (24 October 2026):
+# past the date the customer was promised, and close to it (the backend's
+# DeliveryDeadline decides which).
+LATE_TINT = QColor("#c62828")
+LATE_TINT.setAlpha(120)
+DUE_SOON_TINT = QColor("#ef6c00")
+DUE_SOON_TINT.setAlpha(95)
+
+
+def deadline_text(order: dict) -> str:
+    """"2 days late", "due today", "3 days left" - or nothing for an order
+    with time to spare."""
+    risk = order.get("deadlineRisk")
+    days = order.get("daysLeft")
+    if risk is None or days is None:
+        return ""
+    if risk == "LATE":
+        return f"LATE - {-days} day{'s' if -days != 1 else ''} past the promised date"
+    if days == 0:
+        return "DUE TODAY"
+    return f"DUE SOON - {days} day{'s' if days != 1 else ''} left"
+
+
+def deadline_tint(order: dict):
+    return {"LATE": LATE_TINT, "DUE_SOON": DUE_SOON_TINT}.get(order.get("deadlineRisk"))
+
 LIGHT_STATUS_OPTIONS = [("Pending", "PENDING"), ("Delivered", "DELIVERED"), ("Cancelled", "CANCELLED")]
 
 
@@ -1052,6 +1079,7 @@ class TripDetailDialog(QDialog):
         dialog_layout.addWidget(hint)
 
         table = DataTable("Unassigned Orders", show_limit_selector=False)
+        table.hidden_columns = {"deadlineRisk"}
         dialog_layout.addWidget(table)
         table.refresh_requested.connect(lambda _limit: load())
 
@@ -1062,6 +1090,8 @@ class TripDetailDialog(QDialog):
                 {
                     "#": i,
                     "ticket": r.get("ticketCode") or f"#{r.get('orderId')}",
+                    "deadline": deadline_text(r),
+                    "promised": r.get("promisedOn") or "",
                     "orderId": r.get("orderId"),
                     "customer": r.get("customer"),
                     "items": r.get("items"),
@@ -1069,12 +1099,13 @@ class TripDetailDialog(QDialog):
                     "total": r.get("total"),
                     "ordered": r.get("createdAt"),
                     "priority": "REASSIGN FIRST" if r.get("needsReassignment") else "",
+                    "deadlineRisk": r.get("deadlineRisk"),
                     "reason": r.get("undeliveredReason"),
                     "lightDeliveryId": r.get("lightDeliveryId"),
                 }
                 for i, r in enumerate(rows or [], start=1)
             ]
-            table.set_rows(shaped, row_color=lambda row: PRIORITY_TINT if row.get("priority") else None)
+            table.set_rows(shaped, row_color=lambda row: deadline_tint(row) or (PRIORITY_TINT if row.get("priority") else None))
 
         def load():
             table.set_loading()

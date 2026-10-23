@@ -152,3 +152,21 @@ async def idle_lock(authorization: str | None = Header(default=None)):
 async def set_idle_lock(request: IdleLockRequest, authorization: str | None = Header(default=None)):
     """SuperAdmin only (the backend checks)."""
     return await backend_client.put("/api/settings/idle-lock", json=request.model_dump(), headers=auth_header(authorization))
+
+
+class CompanyCardRequest(BaseModel):
+    name: str
+    motto: str | None = None
+    code: str | None = None
+
+
+# The company card the phone app shows on Home (24 October 2026): the
+# SuperAdmin edits it in Settings; the backend checks.
+@router.get("/company")
+async def company(authorization: str | None = Header(default=None)):
+    return await backend_client.get("/api/settings/company", headers=auth_header(authorization))
+
+
+@router.put("/company")
+async def set_company(request: CompanyCardRequest, authorization: str | None = Header(default=None)):
+    return await backend_client.put("/api/settings/company", json=request.model_dump(), headers=auth_header(authorization))

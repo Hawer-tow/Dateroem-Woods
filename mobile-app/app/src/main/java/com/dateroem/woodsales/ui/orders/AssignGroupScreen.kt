@@ -207,6 +207,11 @@ fun AssignGroupScreen(viewModel: AssignGroupViewModel, onDone: () -> Unit, onCan
                                     "${o.feet()} body ft · ${if (o.flag("large")) "LARGE" else "small"} · KES ${o.money("total")}",
                                     color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall
                                 )
+                                // Close to or past the date the customer was promised.
+                                deadlineText(o.text("deadlineRisk"), o.int("daysLeft"))?.let { text ->
+                                    Text(text, color = deadlineColor(o.text("deadlineRisk")) ?: DateroemTextMuted,
+                                        fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                             // Still pending by definition on this screen -
                             // safe to offer here without re-checking trip

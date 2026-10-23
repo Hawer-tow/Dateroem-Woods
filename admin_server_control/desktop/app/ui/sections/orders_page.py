@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.worker import Worker
-from app.ui.sections.trip_detail_dialog import PRIORITY_TINT
+from app.ui.sections.trip_detail_dialog import PRIORITY_TINT, deadline_text, deadline_tint
 from app.ui.widgets.busy import set_busy
 from app.ui.widgets.data_table import DataTable
 from app.ui.widgets.date_picker import DatePickerField
@@ -96,7 +96,7 @@ class OrdersPage(QWidget):
         layout.addWidget(self.splitter, 1)
 
         self.groups_table = DataTable("Pending Orders by Customer", show_limit_selector=False, searchable=True, search_placeholder="Search by customer, phone, area or ticket")
-        self.groups_table.hidden_columns = {"idx"}
+        self.groups_table.hidden_columns = {"idx", "deadlineRisk"}
         self.groups_table.setMinimumHeight(140)
         self.groups_table.refresh_requested.connect(lambda _limit: self.load())
         self.groups_table.row_clicked.connect(self._on_group_selected)
@@ -113,7 +113,7 @@ class OrdersPage(QWidget):
         detail_layout.addWidget(self.gauge_label)
 
         self.orders_table = DataTable("Orders in this group", show_limit_selector=False)
-        self.orders_table.hidden_columns = {"lightDeliveryId", "orderId"}
+        self.orders_table.hidden_columns = {"lightDeliveryId", "orderId", "deadlineRisk"}
         self.orders_table.setMinimumHeight(160)
         self.orders_table.refresh_requested.connect(lambda _limit: self.load())
         self.orders_table.row_clicked.connect(self._on_order_selected)
@@ -181,6 +181,8 @@ class OrdersPage(QWidget):
             {
                 "#": i,
                 "customer": g.get("customer") or "(unknown)",
+                # The group's most urgent order against the date promised.
+                "deadline": deadline_text({"deadlineRisk": g.get("deadlineRisk"), "daysLeft": g.get("soonestDaysLeft")}),
                 "area": g.get("area"),
                 "tickets": ", ".join(_ticket(o) for o in g.get("orders") or []),
                 "new orders": g.get("orderCount"),
@@ -190,11 +192,14 @@ class OrdersPage(QWidget):
                 "body feet": _fmt_feet(g.get("bodyFeet")),
                 "type": g.get("kind"),
                 "priority": "REASSIGN FIRST" if g.get("needsReassignment") else "",
+                "deadlineRisk": g.get("deadlineRisk"),
                 "idx": i - 1,
             }
             for i, g in enumerate(self._groups, start=1)
         ]
-        self.groups_table.set_rows(shaped, row_color=lambda row: PRIORITY_TINT if row.get("priority") else None)
+        self.groups_table.set_rows(
+            shaped, row_color=lambda row: deadline_tint(row) or (PRIORITY_TINT if row.get("priority") else None)
+        )
 
         # Keep the same customer selected across a reload where possible.
         if self.selected_group is not None:
@@ -243,6 +248,14 @@ class OrdersPage(QWidget):
             lines.append("Some products have no size set yet, so they're counted as small.")
         if group.get("needsReassignment"):
             lines.append("Includes orders that missed an earlier delivery - reassign these first.")
+        late = sum(1 for o in orders if o.get("deadlineRisk") == "LATE")
+        soon = sum(1 for o in orders if o.get("deadlineRisk") == "DUE_SOON")
+        if late:
+            lines.append(f"{late} order{'s are' if late != 1 else ' is'} past the date the customer was promised - put "
+                         f"{'them' if late != 1 else 'it'} on a delivery first.")
+        if soon:
+            lines.append(f"{soon} order{'s are' if soon != 1 else ' is'} close to the promised date - assign "
+                         f"{'them' if soon != 1 else 'it'} to a delivery that arrives by then.")
         self.gauge_label.setText("\n".join(line for line in lines if line))
 
         batches = group.get("assignedBatches") or []
@@ -287,6 +300,8 @@ class OrdersPage(QWidget):
         for o in orders:
             shaped.append({
                 "ticket": _ticket(o),
+                "deadline": deadline_text(o),
+                "promised": o.get("promisedOn") or "",
                 "orderId": o.get("orderId"),
                 "area": area,
                 "goods": o.get("itemsText"),
@@ -299,12 +314,15 @@ class OrdersPage(QWidget):
                 "ordered": o.get("orderedAt"),
                 "status": "NEW - not assigned yet",
                 "priority": "REASSIGN FIRST" if o.get("needsReassignment") else "",
+                "deadlineRisk": o.get("deadlineRisk"),
                 "reason": o.get("undeliveredReason"),
                 "lightDeliveryId": o.get("lightDeliveryId"),
             })
         shaped = [{"#": i, **row} for i, row in enumerate(shaped, start=1)]
 
         def tint(row):
+            if deadline_tint(row):
+                return deadline_tint(row)
             if row.get("priority"):
                 return PRIORITY_TINT
             return ASSIGNED_TINT if str(row.get("status", "")).startswith("ASSIGNED") else None

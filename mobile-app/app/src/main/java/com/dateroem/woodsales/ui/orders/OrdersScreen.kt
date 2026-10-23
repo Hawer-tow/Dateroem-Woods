@@ -201,6 +201,10 @@ private fun GroupCard(number: Int, group: JsonMap, onAddToBatch: () -> Unit, onA
                 Pill("KES ${group.money("total")}", DateroemTextMuted)
                 Pill("${group.feet()} body ft", DateroemTextMuted)
                 if (priority) Pill("REASSIGN FIRST", PriorityPurple)
+                val risk = group.text("deadlineRisk")
+                val color = deadlineColor(risk)
+                val text = deadlineText(risk, group.int("soonestDaysLeft"))
+                if (color != null && text != null) Pill(text, color)
             }
 
             Text(gaugeText(group, kind, orders.size), color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp))
@@ -227,10 +231,12 @@ private fun GroupCard(number: Int, group: JsonMap, onAddToBatch: () -> Unit, onA
                 )
                 orders.forEach { o ->
                     val urgent = o.flag("needsReassignment")
+                    val deadline = deadlineColor(o.text("deadlineRisk"))
+                    val tint = deadline ?: if (urgent) PriorityPurple else null
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                            .background(if (urgent) PriorityPurple.copy(alpha = 0.22f) else Color.Transparent, RoundedCornerShape(8.dp))
-                            .padding(if (urgent) 8.dp else 0.dp)
+                            .background(tint?.copy(alpha = 0.22f) ?: Color.Transparent, RoundedCornerShape(8.dp))
+                            .padding(if (tint != null) 8.dp else 0.dp)
                     ) {
                         Text(
                             "Order ${o.ticket()} · ${o.text("itemsText") ?: "no items"}",
@@ -241,6 +247,10 @@ private fun GroupCard(number: Int, group: JsonMap, onAddToBatch: () -> Unit, onA
                             color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall
                         )
                         if (urgent) Text("Missed an earlier delivery: ${o.text("undeliveredReason") ?: ""}", color = PriorityPurple, style = MaterialTheme.typography.bodySmall)
+                        deadlineText(o.text("deadlineRisk"), o.int("daysLeft"))?.let { text ->
+                            Text("$text (promised ${o.date("promisedOn") ?: "-"})", color = deadline ?: DateroemTextMuted,
+                                fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }

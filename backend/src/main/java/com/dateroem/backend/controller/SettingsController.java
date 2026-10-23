@@ -40,6 +40,22 @@ public class SettingsController {
             "min", AppSettings.MIN_IDLE_LOCK_MINUTES, "max", AppSettings.MAX_IDLE_LOCK_MINUTES);
     }
 
+    // The company card on the phone's Home: any signed-in person reads it,
+    // only the SuperAdmin changes it ({name, motto, code}).
+    @GetMapping("/company")
+    public Map<String, Object> company(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        jwtService.validate(authHeader).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in required"));
+        return appSettings.companyCard();
+    }
+
+    @PutMapping("/company")
+    public Map<String, Object> setCompany(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                          @RequestBody Map<String, String> body) {
+        int actorUserId = adminGuard.requireSuperAdmin(authHeader);
+        Map<String, String> b = body == null ? Map.of() : body;
+        return appSettings.setCompanyCard(b.get("name"), b.get("motto"), b.get("code"), actorUserId);
+    }
+
     @PutMapping("/idle-lock")
     public Map<String, Object> setIdleLock(@RequestHeader(value = "Authorization", required = false) String authHeader,
                                            @RequestBody Map<String, Integer> body) {

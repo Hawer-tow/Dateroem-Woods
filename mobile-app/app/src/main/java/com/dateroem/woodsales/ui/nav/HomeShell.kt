@@ -377,9 +377,11 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
             ) {
                 composable(Section.Dashboard.route) {
                     val vm: DashboardViewModel = viewModel(
-                        factory = DashboardViewModel.Factory(container.api, container.activeTripStore, container.companyInfoStore)
+                        factory = DashboardViewModel.Factory(
+                            container.api, container.activeTripStore, container.companyInfoStore, isAdmin = session.roleName in ADMIN_ROLES
+                        )
                     )
-                    DashboardScreen(vm, isAdmin = session.roleName in ADMIN_ROLES)
+                    DashboardScreen(vm, isAdmin = session.roleName in ADMIN_ROLES, isSuperAdmin = session.roleName == "SuperAdmin")
                 }
                 // From the menu's bottom row; every role has it.
                 composable("settings") {

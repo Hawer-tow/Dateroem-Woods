@@ -67,6 +67,41 @@ public class AppSettings {
         return minutes;
     }
 
+    // The company card on the phone's Home ("only superadmin edits ... others
+    // see the motto", 24 October 2026): one copy here for every phone, where
+    // each phone used to keep its own. The defaults are the phone's old ones.
+    public static final String COMPANY_NAME = "company_name";
+    public static final String COMPANY_MOTTO = "company_motto";
+    public static final String COMPANY_CODE = "company_code";
+
+    public java.util.Map<String, Object> companyCard() {
+        java.util.Map<String, Object> card = new java.util.LinkedHashMap<>();
+        card.put("name", orDefault(get(COMPANY_NAME), "Dateroem Wood Sales"));
+        card.put("motto", orDefault(get(COMPANY_MOTTO), "Quality timber, honest trade."));
+        card.put("code", orDefault(get(COMPANY_CODE), "DWS-001"));
+        return card;
+    }
+
+    public java.util.Map<String, Object> setCompanyCard(String name, String motto, String code, int actorUserId) {
+        String n = name == null ? "" : name.strip();
+        String m = motto == null ? "" : motto.strip();
+        String c = code == null ? "" : code.strip();
+        if (n.length() < 2 || n.length() > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter the company name (2 to 100 characters).");
+        }
+        if (m.length() > 200 || c.length() > 30) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The motto can have up to 200 characters and the code up to 30.");
+        }
+        set(COMPANY_NAME, n, actorUserId);
+        set(COMPANY_MOTTO, m, actorUserId);
+        set(COMPANY_CODE, c, actorUserId);
+        return companyCard();
+    }
+
+    private static String orDefault(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
     private static String truncate(String text) {
         return text.length() <= 250 ? text : text.substring(0, 250);
     }

@@ -1,5 +1,6 @@
 package com.dateroem.woodsales.ui.orders
 
+import androidx.compose.ui.graphics.Color
 import com.dateroem.woodsales.data.network.JsonMap
 
 // The orders endpoints return plain JSON (Gson turns objects into maps and
@@ -30,6 +31,29 @@ fun JsonMap.feet(key: String = "bodyFeet"): String {
 
 // Only dates with a real value: the API sends "2026-09-28" or null.
 fun JsonMap.date(key: String): String? = (this[key] as? String)?.take(10)?.takeIf { it.isNotBlank() }
+
+// "if an order has not been assigned yet and the time is near let it be
+// treated as a risky product ... indicated differently" (24 October 2026):
+// the backend marks a waiting order DUE_SOON close to the date the customer
+// was promised and LATE once it has passed (DeliveryDeadline).
+val LateRed = Color(0xFFE53935)
+val DueSoonOrange = Color(0xFFF57C00)
+
+fun deadlineColor(risk: String?): Color? = when (risk) {
+    "LATE" -> LateRed
+    "DUE_SOON" -> DueSoonOrange
+    else -> null
+}
+
+/** "2 days late", "Due today", "3 days left" - null for an order with time to spare. */
+fun deadlineText(risk: String?, daysLeft: Int?): String? {
+    if (risk == null || daysLeft == null) return null
+    return when {
+        risk == "LATE" -> "LATE · ${-daysLeft} day${if (-daysLeft != 1) "s" else ""} past the promised date"
+        daysLeft == 0 -> "DUE TODAY"
+        else -> "DUE SOON · $daysLeft day${if (daysLeft != 1) "s" else ""} left"
+    }
+}
 
 fun batchLabel(batch: JsonMap): String {
     val word = if (batch.text("kind") == "bulk") "Bulk" else "Light"
