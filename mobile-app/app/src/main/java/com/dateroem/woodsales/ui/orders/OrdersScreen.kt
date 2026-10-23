@@ -212,7 +212,7 @@ private fun GroupCard(number: Int, group: JsonMap, onAddToBatch: () -> Unit, onA
                     Text(batchLabel(batch), color = DateroemText, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 2.dp))
                     batch.maps("orders").forEach { o ->
                         Text(
-                            "Order #${o.int("orderId")} · ${o.text("itemsText") ?: "no items"} · KES ${o.money("total")}",
+                            "Order ${o.ticket()} · ${o.text("itemsText") ?: "no items"} · KES ${o.money("total")}",
                             color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 3.dp)
                         )
                     }
@@ -233,7 +233,7 @@ private fun GroupCard(number: Int, group: JsonMap, onAddToBatch: () -> Unit, onA
                             .padding(if (urgent) 8.dp else 0.dp)
                     ) {
                         Text(
-                            "Order #${o.int("orderId")} · ${o.text("itemsText") ?: "no items"}",
+                            "Order ${o.ticket()} · ${o.text("itemsText") ?: "no items"}",
                             color = DateroemText, style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
@@ -338,7 +338,7 @@ private fun AddToBatchDialog(group: JsonMap, onDismiss: () -> Unit, onConfirm: (
                             checked = id != null && id in ticked,
                             onCheckedChange = { on -> if (id != null) { if (on) ticked.add(id) else ticked.remove(id) } }
                         )
-                        Text("Order #${o.int("orderId")} · ${o.text("itemsText") ?: ""} · KES ${o.money("total")}", style = MaterialTheme.typography.bodySmall)
+                        Text("Order ${o.ticket()} · ${o.text("itemsText") ?: ""} · KES ${o.money("total")}", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

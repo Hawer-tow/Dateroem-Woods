@@ -29,6 +29,7 @@ import com.dateroem.woodsales.data.network.JsonMap
 import com.dateroem.woodsales.ui.orders.int
 import com.dateroem.woodsales.ui.orders.money
 import com.dateroem.woodsales.ui.orders.text
+import com.dateroem.woodsales.ui.orders.ticket
 import com.dateroem.woodsales.ui.theme.DateroemAccent
 import com.dateroem.woodsales.ui.theme.DateroemBackground
 import com.dateroem.woodsales.ui.theme.DateroemSurface
@@ -81,7 +82,7 @@ private fun RefundCard(refund: JsonMap, onPay: (orderId: Int, amount: Double) ->
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Order #$orderId", color = DateroemText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Order ${refund.ticket()}", color = DateroemText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(refund.text("customerName") ?: "(unknown customer)", color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall)
                 Text("KES ${refund.money("refundedAmount")}", color = DateroemAccent, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
                 refund.text("cancelledAt")?.let {

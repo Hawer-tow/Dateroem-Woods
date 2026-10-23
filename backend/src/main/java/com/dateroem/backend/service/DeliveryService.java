@@ -22,10 +22,12 @@ public class DeliveryService {
 
     private final JdbcTemplate jdbcTemplate;
     private final TripService tripService;
+    private final OrderTickets orderTickets;
 
-    public DeliveryService(JdbcTemplate jdbcTemplate, TripService tripService) {
+    public DeliveryService(JdbcTemplate jdbcTemplate, TripService tripService, OrderTickets orderTickets) {
         this.jdbcTemplate = jdbcTemplate;
         this.tripService = tripService;
+        this.orderTickets = orderTickets;
     }
 
     // tripId is optional: unfiltered for admin-side "all deliveries" views,
@@ -39,7 +41,7 @@ public class DeliveryService {
         // the one who ordered" - Customer_Name backs that default on the
         // mobile deliver-confirmation dialog.
         String select =
-            "SELECT ld.*, o.Total, o.Created_At AS Ordered_At, da.Area_Name, da.City AS Delivery_City, u.Name AS Customer_Name " +
+            "SELECT ld.*, o.Ticket_Code, o.Total, o.Created_At AS Ordered_At, da.Area_Name, da.City AS Delivery_City, u.Name AS Customer_Name " +
             "FROM LIGHT_DELIVERIES ld " +
             "LEFT JOIN ORDERS o ON o.Order_ID = ld.Order_ID " +
             "LEFT JOIN DELIVERY_AREAS da ON da.Delivery_Area_ID = o.Delivery_Area_ID " +
@@ -98,7 +100,7 @@ public class DeliveryService {
         // 1..N as a fair pick order. Needs_Reassignment marks orders that
         // missed a delivery, for the UI to highlight as high priority.
         return JsonKeys.camelCaseKeys(jdbcTemplate.queryForList(
-            "SELECT ld.Light_Delivery_ID, ld.Order_ID, ld.Status, ld.Estimated_Delivery_Date, " +
+            "SELECT ld.Light_Delivery_ID, ld.Order_ID, o.Ticket_Code, ld.Status, ld.Estimated_Delivery_Date, " +
             "ld.Needs_Reassignment, ld.Undelivered_Reason, " +
             "o.Total, o.Created_At, da.Area_Name, da.City AS Delivery_City, u.Name AS Customer, " +
             "(SELECT GROUP_CONCAT(CONCAT(p.Name, ' x', oi.Qty) SEPARATOR ', ') FROM ORDER_ITEMS oi " +
@@ -138,7 +140,7 @@ public class DeliveryService {
     public List<Map<String, Object>> pendingOrderGroups() {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
             "SELECT ld.Light_Delivery_ID, ld.Order_ID, ld.Needs_Reassignment, ld.Undelivered_Reason, " +
-            "o.Total, o.Created_At, o.User_ID, o.Delivery_Area_ID, da.Area_Name, da.City, " +
+            "o.Ticket_Code, o.Total, o.Created_At, o.User_ID, o.Delivery_Area_ID, da.Area_Name, da.City, " +
             "u.Name AS Customer, u.Phone_NO AS Phone, " + PAID_RECEIPT_COLUMN +
             "FROM LIGHT_DELIVERIES ld " +
             "JOIN ORDERS o ON o.Order_ID = ld.Order_ID AND o.Is_Deleted = FALSE " +
@@ -192,6 +194,7 @@ public class DeliveryService {
             Map<String, Object> order = new java.util.LinkedHashMap<>();
             order.put("lightDeliveryId", row.get("Light_Delivery_ID"));
             order.put("orderId", orderId);
+            order.put("ticketCode", row.get("Ticket_Code"));
             order.put("total", row.get("Total"));
             order.put("orderedAt", row.get("Created_At"));
             order.put("items", items);
@@ -274,8 +277,8 @@ public class DeliveryService {
         Map<String, Map<String, Map<String, Object>>> batchesByGroup = new java.util.HashMap<>();
         if (!userIds.isEmpty()) {
             List<Map<String, Object>> assigned = jdbcTemplate.queryForList(
-                "SELECT ld.Light_Delivery_ID, ld.Order_ID, ld.Trip_ID, ld.Vehicle_ID, ld.Estimated_Delivery_Date, " +
-                "ld.Bulk_Delivery_ID, ld.Parent_Light_Delivery_ID, o.Total, o.User_ID, o.Delivery_Area_ID, " +
+                "SELECT ld.Light_Delivery_ID, ld.Order_ID, ld.Trip_ID, ld.Vehicle_ID, ld.Estimated_Delivery_Date, ld.Share_Driver, " +
+                "ld.Bulk_Delivery_ID, ld.Parent_Light_Delivery_ID, o.Ticket_Code, o.Total, o.User_ID, o.Delivery_Area_ID, " +
                 "v.Unique_Identifier AS Vehicle, " + PAID_RECEIPT_COLUMN +
                 "FROM LIGHT_DELIVERIES ld " +
                 "JOIN ORDERS o ON o.Order_ID = ld.Order_ID AND o.Is_Deleted = FALSE " +
@@ -315,6 +318,7 @@ public class DeliveryService {
                     batch.put("tripId", row.get("Trip_ID"));
                     batch.put("vehicleId", row.get("Vehicle_ID"));
                     batch.put("vehicle", row.get("Vehicle"));
+                    batch.put("shareDriver", Boolean.TRUE.equals(row.get("Share_Driver")));
                     batch.put("date", row.get("Estimated_Delivery_Date"));
                     batch.put("orders", new java.util.ArrayList<Map<String, Object>>());
                     batches.put(batchKey, batch);
@@ -322,6 +326,7 @@ public class DeliveryService {
                 int orderId = ((Number) row.get("Order_ID")).intValue();
                 Map<String, Object> order = new java.util.LinkedHashMap<>();
                 order.put("orderId", orderId);
+                order.put("ticketCode", row.get("Ticket_Code"));
                 order.put("total", row.get("Total"));
                 order.put("itemsText", String.join(", ", itemTextByOrder.getOrDefault(orderId, List.of())));
                 order.put("mpesaReceipt", row.get("Mpesa_Receipt"));
@@ -349,7 +354,7 @@ public class DeliveryService {
         }
         AssignLightDeliveryRequest single = new AssignLightDeliveryRequest(
             batch.tripId(), batch.vehicleId(), batch.estimatedDeliveryDate(),
-            batch.bulkDeliveryId(), batch.parentLightDeliveryId()
+            batch.bulkDeliveryId(), batch.parentLightDeliveryId(), batch.shareDriver()
         );
         for (int id : batch.lightDeliveryIds()) {
             assignLightDelivery(id, single, actorUserId);
@@ -368,6 +373,7 @@ public class DeliveryService {
         java.time.LocalDate date = request.estimatedDeliveryDate();
         Integer bulkDeliveryId = request.bulkDeliveryId();
         Integer parentId = request.parentLightDeliveryId();
+        boolean shareDriver = Boolean.TRUE.equals(request.shareDriver());
         String target = "trip " + tripId;
 
         if (bulkDeliveryId != null) {
@@ -399,7 +405,7 @@ public class DeliveryService {
             Map<String, Object> parent;
             try {
                 parent = jdbcTemplate.queryForMap(
-                    "SELECT Trip_ID, Vehicle_ID, Estimated_Delivery_Date, Status FROM LIGHT_DELIVERIES " +
+                    "SELECT Trip_ID, Vehicle_ID, Estimated_Delivery_Date, Status, Share_Driver FROM LIGHT_DELIVERIES " +
                     "WHERE Light_Delivery_ID = ? AND Is_Deleted = FALSE", parentId
                 );
             } catch (EmptyResultDataAccessException e) {
@@ -417,6 +423,9 @@ public class DeliveryService {
             if (date == null && parent.get("Estimated_Delivery_Date") != null) {
                 date = ((java.sql.Date) parent.get("Estimated_Delivery_Date")).toLocalDate();
             }
+            // Orders grouped under a delivery travel with its driver, so the
+            // customer sees them only if that delivery shares them.
+            shareDriver = Boolean.TRUE.equals(parent.get("Share_Driver"));
             target = "light delivery " + parentId;
         }
         if (tripId == null) {
@@ -424,10 +433,10 @@ public class DeliveryService {
         }
 
         int updated = jdbcTemplate.update(
-            "UPDATE LIGHT_DELIVERIES SET Trip_ID = ?, Vehicle_ID = ?, Estimated_Delivery_Date = ?, " +
+            "UPDATE LIGHT_DELIVERIES SET Trip_ID = ?, Vehicle_ID = ?, Estimated_Delivery_Date = ?, Share_Driver = ?, " +
             "Bulk_Delivery_ID = ?, Parent_Light_Delivery_ID = ?, Needs_Reassignment = FALSE, Undelivered_Reason = NULL " +
             "WHERE Light_Delivery_ID = ? AND Is_Deleted = FALSE",
-            tripId, vehicleId, date, bulkDeliveryId, parentId, lightDeliveryId
+            tripId, vehicleId, date, shareDriver, bulkDeliveryId, parentId, lightDeliveryId
         );
         if (updated == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Light delivery not found");
@@ -435,7 +444,7 @@ public class DeliveryService {
         jdbcTemplate.update(
             "INSERT INTO AUDIT_LOGS (Target_Table, Target_Id, Payload, Created_At, Actor_ID) VALUES (?, ?, ?, CURDATE(), ?)",
             "LIGHT_DELIVERIES", lightDeliveryId,
-            "Assigned to " + target + ", delivery date " + date,
+            "Assigned to " + target + ", delivery date " + date + (shareDriver ? ", driver shared with the customer" : ""),
             actorUserId
         );
     }
@@ -459,7 +468,7 @@ public class DeliveryService {
         }
         for (int id : undelivered) {
             jdbcTemplate.update(
-                "UPDATE LIGHT_DELIVERIES SET Status = 'PENDING', Trip_ID = NULL, Vehicle_ID = NULL, " +
+                "UPDATE LIGHT_DELIVERIES SET Status = 'PENDING', Trip_ID = NULL, Vehicle_ID = NULL, Share_Driver = FALSE, " +
                 "Estimated_Delivery_Date = NULL, Bulk_Delivery_ID = NULL, Parent_Light_Delivery_ID = NULL, " +
                 "Needs_Reassignment = TRUE, Undelivered_Reason = ? WHERE Light_Delivery_ID = ? AND Is_Deleted = FALSE",
                 request.reason(), id
@@ -500,36 +509,67 @@ public class DeliveryService {
             request.deliveryAreaId(), actorUserId
         );
         int orderId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
+        String ticketCode = orderTickets.assign(orderId);
         jdbcTemplate.update(
-            "INSERT INTO LIGHT_DELIVERIES (Status, Delivery_Name, Order_ID, Trip_ID, Vehicle_ID, Estimated_Delivery_Date) " +
-            "VALUES ('PENDING', ?, ?, ?, ?, ?)",
-            blankToNull(request.deliveryName()), orderId, request.tripId(), request.vehicleId(), request.estimatedDeliveryDate()
+            "INSERT INTO LIGHT_DELIVERIES (Status, Delivery_Name, Order_ID, Trip_ID, Vehicle_ID, Share_Driver, Estimated_Delivery_Date) " +
+            "VALUES ('PENDING', ?, ?, ?, ?, ?, ?)",
+            blankToNull(request.deliveryName()), orderId, request.tripId(), request.vehicleId(),
+            Boolean.TRUE.equals(request.shareDriver()), request.estimatedDeliveryDate()
         );
         int lightDeliveryId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
         jdbcTemplate.update(
             "INSERT INTO AUDIT_LOGS (Target_Table, Target_Id, Payload, Created_At, Actor_ID) VALUES (?, ?, ?, CURDATE(), ?)",
             "LIGHT_DELIVERIES", lightDeliveryId, "Light delivery opened on trip " + request.tripId(), actorUserId
         );
-        return Map.of("orderId", orderId, "lightDeliveryId", lightDeliveryId);
+        return Map.of("orderId", orderId, "lightDeliveryId", lightDeliveryId, "ticketCode", ticketCode);
+    }
+
+    /**
+     * "vehicle visible only to staff ... unless enabled" (migration 038) -
+     * Share driver for one delivery: the customer may then see the driver's
+     * first name and the number plate (and the company phone, from the
+     * website). Applies to the delivery and every order grouped under it.
+     */
+    public void setShareDriver(int lightDeliveryId, boolean share, int actorUserId) {
+        int updated = jdbcTemplate.update(
+            "UPDATE LIGHT_DELIVERIES SET Share_Driver = ? " +
+            "WHERE (Light_Delivery_ID = ? OR Parent_Light_Delivery_ID = ?) AND Is_Deleted = FALSE",
+            share, lightDeliveryId, lightDeliveryId
+        );
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Delivery not found");
+        }
+        jdbcTemplate.update(
+            "INSERT INTO AUDIT_LOGS (Target_Table, Target_Id, Payload, Created_At, Actor_ID) VALUES (?, ?, ?, CURDATE(), ?)",
+            "LIGHT_DELIVERIES", lightDeliveryId,
+            (share ? "Driver and vehicle shared with the customer" : "Driver and vehicle hidden from the customer")
+                + " (" + updated + " order(s))",
+            actorUserId
+        );
     }
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
+    // A bulk order with its order's ticket (migration 038), so staff can find
+    // it by the code the customer quotes.
+    private static final String BULK_WITH_TICKET =
+        "SELECT bd.*, o.Ticket_Code FROM BULK_DELIVERY bd LEFT JOIN ORDERS o ON o.Order_ID = bd.Order_ID ";
+
     public List<Map<String, Object>> bulkDeliveries(Integer tripId) {
         if (tripId != null) {
             return JsonKeys.camelCaseKeys(jdbcTemplate.queryForList(
-                "SELECT * FROM BULK_DELIVERY WHERE Trip_ID = ? AND Is_Deleted = FALSE", tripId
+                BULK_WITH_TICKET + "WHERE bd.Trip_ID = ? AND bd.Is_Deleted = FALSE", tripId
             ));
         }
-        return JsonKeys.camelCaseKeys(jdbcTemplate.queryForList("SELECT * FROM BULK_DELIVERY WHERE Is_Deleted = FALSE"));
+        return JsonKeys.camelCaseKeys(jdbcTemplate.queryForList(BULK_WITH_TICKET + "WHERE bd.Is_Deleted = FALSE"));
     }
 
     public Map<String, Object> getBulkDelivery(int bulkDeliveryId) {
         try {
             return JsonKeys.camelCaseKeys(jdbcTemplate.queryForMap(
-                "SELECT * FROM BULK_DELIVERY WHERE Bulk_Delivery_ID = ? AND Is_Deleted = FALSE", bulkDeliveryId
+                BULK_WITH_TICKET + "WHERE bd.Bulk_Delivery_ID = ? AND bd.Is_Deleted = FALSE", bulkDeliveryId
             ));
         } catch (EmptyResultDataAccessException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bulk order not found");
@@ -612,6 +652,7 @@ public class DeliveryService {
             actorUserId
         );
         int orderId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
+        String ticketCode = orderTickets.assign(orderId);
 
         jdbcTemplate.update(
             "INSERT INTO BULK_DELIVERY (Delivered_To, Created_At, Order_ID, Trip_ID) VALUES (?, NOW(), ?, ?)",
@@ -624,7 +665,7 @@ public class DeliveryService {
             "BULK_DELIVERY", bulkDeliveryId, "Heavy order opened for " + deliveredTo, actorUserId
         );
 
-        return Map.of("orderId", orderId, "bulkDeliveryId", bulkDeliveryId);
+        return Map.of("orderId", orderId, "bulkDeliveryId", bulkDeliveryId, "ticketCode", ticketCode);
     }
 
     /**
@@ -647,7 +688,7 @@ public class DeliveryService {
         // pointing at a deleted delivery and vanish from every list - they go
         // back to the pending pool (no priority: nothing went wrong with them).
         jdbcTemplate.update(
-            "UPDATE LIGHT_DELIVERIES SET Status = 'PENDING', Trip_ID = NULL, Vehicle_ID = NULL, " +
+            "UPDATE LIGHT_DELIVERIES SET Status = 'PENDING', Trip_ID = NULL, Vehicle_ID = NULL, Share_Driver = FALSE, " +
             "Estimated_Delivery_Date = NULL, Bulk_Delivery_ID = NULL, Parent_Light_Delivery_ID = NULL, " +
             "Needs_Reassignment = FALSE, Undelivered_Reason = NULL " +
             "WHERE Bulk_Delivery_ID = ? AND Status <> 'DELIVERED' AND Is_Deleted = FALSE",

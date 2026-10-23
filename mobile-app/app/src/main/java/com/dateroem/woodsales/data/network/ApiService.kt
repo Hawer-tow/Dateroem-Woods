@@ -24,6 +24,7 @@ import com.dateroem.woodsales.data.model.FinalizeTripRequest
 import com.dateroem.woodsales.data.model.DeliverLightDeliveryRequest
 import com.dateroem.woodsales.data.model.LightDeliveryStatusRequest
 import com.dateroem.woodsales.data.model.SettleRequest
+import com.dateroem.woodsales.data.model.ShareDriverRequest
 import com.dateroem.woodsales.data.model.LoanRequest
 import com.dateroem.woodsales.data.model.LoginRequest
 import com.dateroem.woodsales.data.model.PayLoanRequest
@@ -325,6 +326,14 @@ interface ApiService {
         @Body request: CreateLightDeliveryRequest,
         @Header("X-Actor-User-Id") actorUserId: Int
     ): JsonMap
+
+    // "vehicle visible only to staff ... unless enabled" (migration 038).
+    @PATCH("deliveries/light/{lightDeliveryId}/share-driver")
+    suspend fun setShareDriver(
+        @Path("lightDeliveryId") lightDeliveryId: Int,
+        @Body request: ShareDriverRequest,
+        @Header("X-Actor-User-Id") actorUserId: Int
+    )
 
     @PATCH("deliveries/light/{lightDeliveryId}/status")
     suspend fun updateLightDeliveryStatus(

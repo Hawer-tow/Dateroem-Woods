@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dateroem.woodsales.data.model.DeliverLightDeliveryRequest
 import com.dateroem.woodsales.data.model.SettleRequest
+import com.dateroem.woodsales.data.model.ShareDriverRequest
 import com.dateroem.woodsales.data.network.ApiService
 import com.dateroem.woodsales.data.network.JsonMap
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,6 +66,21 @@ class LightDeliveriesViewModel(
                 refresh()
             } catch (e: Exception) {
                 _message.value = friendlyError(e, "Couldn't update the order")
+            } finally {
+                _updatingIds.value = _updatingIds.value - lightDeliveryId
+            }
+        }
+    }
+
+    // Share driver on a delivery (and the orders grouped under it).
+    fun setShareDriver(lightDeliveryId: Int, share: Boolean) {
+        _updatingIds.value = _updatingIds.value + lightDeliveryId
+        viewModelScope.launch {
+            try {
+                api.setShareDriver(lightDeliveryId, ShareDriverRequest(share), actorUserId)
+                refresh()
+            } catch (e: Exception) {
+                _message.value = friendlyError(e, "Couldn't change it")
             } finally {
                 _updatingIds.value = _updatingIds.value - lightDeliveryId
             }

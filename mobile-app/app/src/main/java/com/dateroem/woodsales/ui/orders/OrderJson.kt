@@ -19,6 +19,10 @@ fun JsonMap.money(key: String): String {
     return if (n % 1.0 == 0.0) n.toLong().toString() else "%.2f".format(n)
 }
 
+// The order's ticket (DW-7K3Q9P, migration 038) - what the customer quotes -
+// or its number for an order from before tickets existed.
+fun JsonMap.ticket(): String = text("ticketCode") ?: "#${int("orderId")}"
+
 fun JsonMap.feet(key: String = "bodyFeet"): String {
     val n = (this[key] as? Number)?.toDouble() ?: return "-"
     return "%,.0f".format(n)
@@ -33,7 +37,8 @@ fun batchLabel(batch: JsonMap): String {
         "$word delivery #${batch.int("targetId")}",
         "trip #${batch.int("tripId")}",
         batch.date("date"),
-        batch.text("vehicle")
+        batch.text("vehicle"),
+        if (batch.flag("shareDriver")) "driver shared" else null
     )
     return parts.joinToString(" · ")
 }

@@ -279,6 +279,17 @@ class TripDetailDialog(QDialog):
         self.assign_light_btn.setEnabled(False)
         self.assign_light_btn.clicked.connect(lambda: self._open_assign_pending(parent_light=self.selected_light))
         light_actions.addWidget(self.assign_light_btn)
+        # "vehicle visible only to staff ... unless enabled" (migration 038) -
+        # whether the customers on this delivery see the driver's first name
+        # and the number plate. Off unless switched on here.
+        self.light_share_btn = QPushButton("Share Driver")
+        self.light_share_btn.setEnabled(False)
+        self.light_share_btn.setToolTip(
+            "Customers see only the delivery date unless this is on. On: they also see the driver's first name, "
+            "the number plate and the company phone - never the driver's own number."
+        )
+        self.light_share_btn.clicked.connect(self._toggle_share_driver)
+        light_actions.addWidget(self.light_share_btn)
         light_layout.addLayout(light_actions)
         self.deliveries_stack.addWidget(light_widget)
 
@@ -593,7 +604,7 @@ class TripDetailDialog(QDialog):
             # assigned into a delivery live inside it (panel below), so
             # assigning never looks like it created another delivery.
             heads = [r for r in self.light_rows if not r.get("parentLightDeliveryId") and not r.get("bulkDeliveryId")]
-            self.light_table.set_rows(self._numbered(heads))
+            self.light_table.set_rows(self._numbered([self._shown_light(r) for r in heads]))
             self.bulk_table.set_rows(self._numbered(self.bulk_rows))
             pending_light_ids = {r.get("lightDeliveryId") for r in self.light_rows if r.get("status") != "DELIVERED"}
             if self.selected_light_order and self.selected_light_order.get("lightDeliveryId") not in pending_light_ids:
@@ -606,6 +617,15 @@ class TripDetailDialog(QDialog):
             self._sync_bulk_buttons()
 
         self._run(work, on_done, lambda msg: (self.light_table.set_error(msg), self.bulk_table.set_error(msg)))
+
+    @staticmethod
+    def _shown_light(row: dict) -> dict:
+        """A light delivery row as the tables show it: the order's ticket
+        first, and Share driver as Yes/No rather than 1/0."""
+        shown = {"ticket": row.get("ticketCode") or "", **row}
+        shown.pop("ticketCode", None)
+        shown["shareDriver"] = "Yes" if row.get("shareDriver") else "No"
+        return shown
 
     @staticmethod
     def _numbered(rows: list[dict]) -> list[dict]:
@@ -634,11 +654,11 @@ class TripDetailDialog(QDialog):
 
     def _refresh_light_orders(self):
         children = self._light_children(self.selected_light)
-        self.light_orders_table.set_rows(self._numbered(children))
+        self.light_orders_table.set_rows(self._numbered([self._shown_light(r) for r in children]))
 
     def _refresh_bulk_orders(self):
         children = self._bulk_children(self.selected_bulk)
-        self.bulk_orders_table.set_rows(self._numbered(children))
+        self.bulk_orders_table.set_rows(self._numbered([self._shown_light(r) for r in children]))
 
     # A delivery and one of ITS orders are different targets: with an order
     # highlighted, every button that acts on the whole delivery goes inactive
@@ -659,6 +679,9 @@ class TripDetailDialog(QDialog):
         is_delivered = has_delivery and self.selected_light.get("status") == "DELIVERED"
         self.assign_light_btn.setEnabled(delivery_actions_on and not is_delivered)
         self._set_highlight(self.assign_light_btn, delivery_actions_on and not is_delivered)
+        self.light_share_btn.setEnabled(delivery_actions_on and not is_delivered)
+        shared = has_delivery and self.selected_light.get("shareDriver") == "Yes"
+        self.light_share_btn.setText("Stop Sharing Driver" if shared else "Share Driver")
         self.light_order_delivered_btn.setEnabled(order_mode)
 
     def _sync_bulk_buttons(self):
@@ -884,6 +907,35 @@ class TripDetailDialog(QDialog):
         self._sync_light_buttons()
         self._refresh_light_orders()
 
+    def _toggle_share_driver(self):
+        if not self.selected_light:
+            return
+        delivery_id = self.selected_light.get("lightDeliveryId")
+        share = self.selected_light.get("shareDriver") != "Yes"
+        question = (
+            "Show the customers on this delivery the driver's first name and the number plate?\n\n"
+            "They will also see the company phone number - never the driver's own."
+            if share else
+            "Hide the driver and the number plate from the customers on this delivery again?"
+        )
+        if QMessageBox.question(self, "Share driver", question) != QMessageBox.StandardButton.Yes:
+            return
+        self.light_share_btn.setEnabled(False)
+
+        def done(_result):
+            self.selected_light = {**self.selected_light, "shareDriver": "Yes" if share else "No"}
+            self._load_deliveries()
+
+        def failed(message: str):
+            self._sync_light_buttons()
+            QMessageBox.critical(self, "Couldn't change it", message)
+
+        self._run(
+            lambda: self.api_client.patch(f"/deliveries/light/{delivery_id}/share-driver", json={"share": share}, actor=True),
+            done,
+            failed,
+        )
+
     def _open_light_status(self):
         if not self.selected_light:
             return
@@ -927,6 +979,7 @@ class TripDetailDialog(QDialog):
                 FieldSpec("deliveryAreaId", "Heading to (area)", type="combo", required=True, options=area_options),
                 FieldSpec("vehicleId", "Vehicle", type="combo", options=self._vehicle_options()),
                 FieldSpec("estimatedDeliveryDate", "Delivery date", type="date"),
+                FieldSpec("shareDriver", "Share the driver and number plate with the customers", type="checkbox"),
             ]
             dialog = RecordFormDialog(
                 f"New Light Delivery - Trip #{self.trip_id}",
@@ -1008,6 +1061,7 @@ class TripDetailDialog(QDialog):
             shaped = [
                 {
                     "#": i,
+                    "ticket": r.get("ticketCode") or f"#{r.get('orderId')}",
                     "orderId": r.get("orderId"),
                     "customer": r.get("customer"),
                     "items": r.get("items"),
@@ -1053,7 +1107,7 @@ class TripDetailDialog(QDialog):
                 )
 
             assign_dialog = RecordFormDialog(
-                f"Assign Order #{delivery.get('orderId')} - {title}",
+                f"Assign Order {delivery.get('ticket') or '#' + str(delivery.get('orderId'))} - {title}",
                 fields,
                 save_fn=save,
                 initial_values=initial_values,
@@ -1069,12 +1123,12 @@ class TripDetailDialog(QDialog):
 
     def _on_light_order_selected(self, row: dict):
         self.selected_light_order = row
-        self.light_order_label.setText(f"Selected: Order #{row.get('orderId')} - delivery buttons are off; click the delivery to use them again")
+        self.light_order_label.setText(f"Selected: Order {row.get('ticket') or row.get('ticketCode') or '#' + str(row.get('orderId'))} - delivery buttons are off; click the delivery to use them again")
         self._sync_light_buttons()
 
     def _on_bulk_order_selected(self, row: dict):
         self.selected_bulk_order = row
-        self.bulk_order_label.setText(f"Selected: Order #{row.get('orderId')} - delivery buttons are off; click the delivery to use them again")
+        self.bulk_order_label.setText(f"Selected: Order {row.get('ticket') or row.get('ticketCode') or '#' + str(row.get('orderId'))} - delivery buttons are off; click the delivery to use them again")
         self._sync_bulk_buttons()
 
     def _mark_order_delivered(self, kind: str):
@@ -1089,7 +1143,7 @@ class TripDetailDialog(QDialog):
         answer = QMessageBox.question(
             self,
             "Mark as delivered?",
-            f"Mark {what} #{row.get('orderId')} as delivered?\n\nIt will be removed from this list and the "
+            f"Mark {what} {row.get('ticket') or row.get('ticketCode') or '#' + str(row.get('orderId'))} as delivered?\n\nIt will be removed from this list and the "
             "customer will see it as delivered.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Cancel,
@@ -1182,7 +1236,7 @@ class TripDetailDialog(QDialog):
         checks: list[tuple[QCheckBox, dict]] = []
         for row in items:
             label = (
-                f"Order #{row.get('orderId')}  -  {row.get('deliveryCity') or ''} {row.get('areaName') or ''}"
+                f"Order {row.get('ticket') or row.get('ticketCode') or '#' + str(row.get('orderId'))}  -  {row.get('deliveryCity') or ''} {row.get('areaName') or ''}"
                 f"  -  KES {row.get('total') or 0}"
             )
             box = QCheckBox(label)

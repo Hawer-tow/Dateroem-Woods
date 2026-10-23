@@ -20,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,9 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dateroem.woodsales.data.network.JsonMap
 import com.dateroem.woodsales.ui.orders.date
+import com.dateroem.woodsales.ui.orders.flag
 import com.dateroem.woodsales.ui.orders.int
 import com.dateroem.woodsales.ui.orders.money
 import com.dateroem.woodsales.ui.orders.text
+import com.dateroem.woodsales.ui.orders.ticket
 import com.dateroem.woodsales.ui.theme.DateroemAccent
 import com.dateroem.woodsales.ui.theme.DateroemBackground
 import com.dateroem.woodsales.ui.theme.DateroemSurface
@@ -58,7 +61,7 @@ private class SettleRequestUi(
 )
 
 @Composable
-fun LightDeliveriesScreen(viewModel: LightDeliveriesViewModel) {
+fun LightDeliveriesScreen(viewModel: LightDeliveriesViewModel, canShareDriver: Boolean = false) {
     val state by viewModel.uiState.collectAsState()
     val updatingIds by viewModel.updatingIds.collectAsState()
     val message by viewModel.message.collectAsState()
@@ -102,6 +105,10 @@ fun LightDeliveriesScreen(viewModel: LightDeliveriesViewModel) {
                                     orders = orders,
                                     updatingIds = updatingIds,
                                     footerLabel = if (head.text("status") == "DELIVERED") null else "Complete delivery",
+                                    // Managers and admins decide whether customers see the driver.
+                                    shareDriver = if (canShareDriver && head.text("status") != "DELIVERED") head.flag("shareDriver") else null,
+                                    shareWorking = headId != null && headId in updatingIds,
+                                    onShareDriver = { on -> if (headId != null) viewModel.setShareDriver(headId, on) },
                                     onMarkDelivered = { confirmOrder = it },
                                     onFooter = {
                                         settle = SettleRequestUi("Complete Delivery #$headId", orders, defaultChecked = false, closeDeliveryId = headId)
@@ -148,7 +155,7 @@ fun LightDeliveriesScreen(viewModel: LightDeliveriesViewModel) {
             text = {
                 Column {
                     Text(
-                        "Mark order #${order.int("orderId")} as delivered? It is removed from this list and the customer will see it as delivered.",
+                        "Mark order ${order.ticket()} as delivered? It is removed from this list and the customer will see it as delivered.",
                         color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp)
                     )
                     OutlinedTextField(
@@ -204,7 +211,10 @@ private fun DeliveryCard(
     updatingIds: Set<Int>,
     footerLabel: String?,
     onMarkDelivered: (JsonMap) -> Unit,
-    onFooter: () -> Unit
+    onFooter: () -> Unit,
+    shareDriver: Boolean? = null,
+    shareWorking: Boolean = false,
+    onShareDriver: (Boolean) -> Unit = {}
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = DateroemSurface),
@@ -214,6 +224,20 @@ private fun DeliveryCard(
         Column(modifier = Modifier.padding(14.dp)) {
             Text(title, color = DateroemAccent, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             if (subtitle.isNotBlank()) Text(subtitle, color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall)
+            // "vehicle visible only to staff ... unless enabled" (migration 038).
+            if (shareDriver != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Share driver with customers", color = DateroemText, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            if (shareDriver) "They see the driver's first name and the number plate."
+                            else "Customers see only the delivery date.",
+                            color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Switch(checked = shareDriver, onCheckedChange = onShareDriver, enabled = !shareWorking)
+                }
+            }
 
             if (orders.isEmpty()) {
                 Text("No pending orders on this delivery.", color = DateroemTextMuted, modifier = Modifier.padding(top = 10.dp))
@@ -226,7 +250,7 @@ private fun DeliveryCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Order #${order.int("orderId")}", color = DateroemText, fontWeight = FontWeight.SemiBold)
+                        Text("Order ${order.ticket()}", color = DateroemText, fontWeight = FontWeight.SemiBold)
                         Text(
                             listOfNotNull(
                                 order.text("areaName"), order.text("deliveryCity"), "KES ${order.money("total")}"
@@ -288,7 +312,7 @@ private fun SettleDialog(
                             checked = id != null && id in ticked,
                             onCheckedChange = { on -> if (id != null) { if (on) ticked.add(id) else ticked.remove(id) } }
                         )
-                        Text("Order #${o.int("orderId")} · KES ${o.money("total")}", style = MaterialTheme.typography.bodyMedium)
+                        Text("Order ${o.ticket()} · KES ${o.money("total")}", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
                 if (undelivered.isNotEmpty()) {

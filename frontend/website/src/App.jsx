@@ -21,6 +21,7 @@ import ShippingPage from './pages/ShippingPage.jsx'
 import HelpPage from './pages/HelpPage.jsx'
 import HeavyOrderPage from './pages/HeavyOrderPage.jsx'
 import AboutPage from './pages/AboutPage.jsx'
+import TrackOrderPage from './pages/TrackOrderPage.jsx'
 
 // "remove the splash screen it doesnt feel so professional" - the site
 // opens straight onto its pages (the mobile app keeps its own splash).
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/cart/area" element={<AreaSelectPage />} />
             <Route path="/orders/:orderRef" element={<OrderConfirmationPage />} />
             <Route path="/my-orders" element={<MyOrdersPage />} />
+            <Route path="/track" element={<TrackOrderPage />} />
             <Route path="/shipping" element={<ShippingPage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/heavy-order" element={<HeavyOrderPage />} />

@@ -456,10 +456,11 @@ class InsightsSection(QWidget):
         order_id = refund.get("orderId")
         if order_id is None:
             return
+        ticket = refund.get("ticketCode") or f"#{order_id}"
         dialog = PayoutDialog(
             self.api_client,
-            f"Refund Order #{order_id} - Send Money",
-            purpose=f"Refund for Order #{order_id}",
+            f"Refund Order {ticket} - Send Money",
+            purpose=f"Refund for Order {ticket}",
             recipient_target="ORDER_REFUND",
             recipient_row_id=order_id,
             send_fn=lambda amount, phone: self.api_client.post(
@@ -515,10 +516,10 @@ class InsightsSection(QWidget):
     def _copy_receipt(self, row: dict):
         receipt = row.get("M-Pesa receipt")
         if not receipt:
-            self.payments_status.setText(f"Order #{row.get('order')} has no M-Pesa receipt to copy.")
+            self.payments_status.setText(f"Order {row.get('order')} has no M-Pesa receipt to copy.")
             return
         QGuiApplication.clipboard().setText(receipt)
-        self.payments_status.setText(f"Copied {receipt} (order #{row.get('order')}).")
+        self.payments_status.setText(f"Copied {receipt} (order {row.get('order')}).")
 
 
 def _payment_row(payment: dict) -> dict:
@@ -526,7 +527,8 @@ def _payment_row(payment: dict) -> dict:
     return {
         "date": payment.get("createdAt"),
         "M-Pesa receipt": payment.get("mpesaReceipt") or "",
-        "order": payment.get("orderId"),
+        # The order's ticket (migration 038), what the customer quotes.
+        "order": payment.get("ticketCode") or f"#{payment.get('orderId')}",
         "customer": payment.get("customerName") or payment.get("userName") or "",
         "amount (KES)": payment.get("amount"),
         "payment": payment.get("status"),

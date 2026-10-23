@@ -105,8 +105,12 @@ export default function NavBar() {
             -visible nav tab (not tucked away behind the account menu) so
             it's never one extra click to check on something already paid
             for, only shown once there's an account to have orders under. */}
-        {isAuthenticated && (
+        {/* Signed out, the same place offers Track my order (the ticket and
+            the last 3 digits of the phone, 23 October 2026). */}
+        {isAuthenticated ? (
           <Link to="/my-orders" onClick={closeMobile}>Ordered Goods</Link>
+        ) : (
+          <Link to="/track" onClick={closeMobile}>Track Order</Link>
         )}
         {/* Saved with the account when signed in, so the phone and desktop
             apps open in it too. */}

@@ -191,6 +191,9 @@ public class AiChatService {
         // instruction, since the model already knows from context whether
         // this visitor has an account.
         new NavEntry("/my-orders", "Ordered Goods", Set.of()),
+        // Track my order (23 October 2026): the ticket plus the last 3
+        // digits of the account's phone, no sign-in needed.
+        new NavEntry("/track", "Track my order", Set.of()),
         new NavEntry("/shipping", "Shipping", Set.of()),
         new NavEntry("/help", "Help", Set.of()),
         new NavEntry("/heavy-order", "Bulk Orders", Set.of()),
@@ -229,7 +232,8 @@ public class AiChatService {
 
     private static final String ANONYMOUS_VISITOR_NOTE =
         "This visitor is not signed in, so you can't see any orders. If they ask about an order, " +
-        "tell them to sign in (the account icon at the top right) so you can check it, or to contact the team.";
+        "tell them they can check it on Track my order with their ticket (like DW-7K3Q9P) and the last 3 digits " +
+        "of their phone number, or sign in (the account icon at the top right) so you can check it, or contact the team.";
 
     private static final String SYSTEM_PROMPT_HEADER = """
         You are the Dateroem assistant inside the company's own staff app. \
@@ -316,8 +320,8 @@ public class AiChatService {
         origin, use).
         - Pickup points: one heading per town, one line per point with its \
         collection hours.
-        - Orders: one line each, "- Order #N (date) - items - KES total - \
-        payment status - delivery status".
+        - Orders: one line each, "- Order DW-XXXXXX (date) - items - KES \
+        total - payment status - delivery status", using the order's ticket.
         - Steps or instructions (how to order, how to pay): a numbered list, \
         one step per line ("1. ..."), written out in full. Never end an \
         answer on a colon or promise details you then leave out.
@@ -330,6 +334,7 @@ public class AiChatService {
         Shortcut button (suggestedRoute): the single most useful page for \
         the answer - "/" for products, "/my-orders" for a signed-in \
         customer's own orders (never for a visitor who isn't signed in), \
+        "/track" for checking an order with its ticket without signing in, \
         "/shipping" for pickup points, "/cart" for checkout, "/heavy-order" \
         for bulk orders, "/help" for contacting the team, "/about" for the \
         company and where its timber comes from. Leave it null for \
@@ -1019,11 +1024,11 @@ public class AiChatService {
             "SELECT COUNT(*) FROM ORDERS WHERE User_ID = ? AND Is_Deleted = FALSE", Integer.class, userId
         );
         StringBuilder context = new StringBuilder(who).append(
-            ". Refer to their orders only by these order numbers (their own numbering). " +
+            ". Refer to their orders by their ticket (like DW-7K3Q9P) - never by any other number. " +
             "Their most recent orders, newest first:\n"
         );
         for (Map<String, Object> order : orders) {
-            context.append("- Order #").append(order.get("customerOrderNumber"))
+            context.append("- Order ").append(order.get("ticketCode"))
                 .append(" (placed ").append(datePart(order.get("createdAt"))).append("): ")
                 .append(describeItems(order.get("items")))
                 .append(" - KES ").append(order.get("total") instanceof BigDecimal t ? kes(t) : order.get("total"))

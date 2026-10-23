@@ -153,6 +153,9 @@ class AssignLightDeliveryRequest(BaseModel):
     # grouped under another light delivery - at most one of these.
     bulkDeliveryId: int | None = None
     parentLightDeliveryId: int | None = None
+    # "vehicle visible only to staff" (migration 038): may the customer see
+    # the driver's first name and the number plate? Off unless ticked.
+    shareDriver: bool | None = None
 
 
 class CreateLightDeliveryRequest(BaseModel):
@@ -160,6 +163,9 @@ class CreateLightDeliveryRequest(BaseModel):
     vehicleId: int | None = None
     deliveryAreaId: int | None = None
     estimatedDeliveryDate: str | None = None
+    # "vehicle visible only to staff" (migration 038): may the customer see
+    # the driver's first name and the number plate? Off unless ticked.
+    shareDriver: bool | None = None
 
 
 class AssignLightDeliveriesBatchRequest(BaseModel):
@@ -169,6 +175,13 @@ class AssignLightDeliveriesBatchRequest(BaseModel):
     estimatedDeliveryDate: str | None = None
     bulkDeliveryId: int | None = None
     parentLightDeliveryId: int | None = None
+    # "vehicle visible only to staff" (migration 038): may the customer see
+    # the driver's first name and the number plate? Off unless ticked.
+    shareDriver: bool | None = None
+
+
+class ShareDriverRequest(BaseModel):
+    share: bool
 
 
 class FinalizeTripRequest(BaseModel):

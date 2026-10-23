@@ -11,6 +11,7 @@ from app.schemas.admin import (
     ProductionDescriptionRequest,
     ScanImageRequest,
     SettleLightOrdersRequest,
+    ShareDriverRequest,
 )
 
 router = APIRouter(prefix="/deliveries", tags=["deliveries"])
@@ -93,6 +94,18 @@ async def assign_light_delivery(light_delivery_id: int, request: AssignLightDeli
         headers={"X-Actor-User-Id": str(x_actor_user_id)},
     )
     return {"status": "assigned"}
+
+
+# "vehicle visible only to staff ... unless enabled" (migration 038) - Share
+# driver on one delivery and the orders grouped under it.
+@router.patch("/light/{light_delivery_id}/share-driver")
+async def share_driver(light_delivery_id: int, request: ShareDriverRequest, x_actor_user_id: int = Header(...)):
+    await backend_client.patch(
+        f"/api/deliveries/light/{light_delivery_id}/share-driver",
+        json=request.model_dump(),
+        headers={"X-Actor-User-Id": str(x_actor_user_id)},
+    )
+    return {"status": "shared" if request.share else "hidden"}
 
 
 @router.get("/bulk")

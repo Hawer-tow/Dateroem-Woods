@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useLocation, Link } from 'react-router-dom'
 import { api, apiErrorMessage } from '../api/client.js'
 import { decodeOrderRef } from '../core/orderRef.js'
+import DriverNote from '../components/DriverNote.jsx'
 import Icon from '../components/Icon.jsx'
 
 const POLL_INTERVAL_MS = 4000
@@ -81,11 +82,17 @@ export default function OrderConfirmationPage() {
       <h1>Order placed</h1>
       <p>
         {/* "never allow them to see e.g order 39 that is the system" -
-            this is the customer's own Nth order, not the platform-wide
-            Order_ID, so it's only known once the order itself has
-            loaded (unlike orderRef, which the URL already carries). */}
-        Your order{order ? <> <strong>#{order.customerOrderNumber}</strong></> : ''} has been recorded.
+            the order's ticket (DW-7K3Q9P, migration 038) says nothing
+            about how many orders exist, and is what the customer quotes
+            to us or types into Track my order. */}
+        Your order{order?.ticketCode ? <> <strong className="ticket-code">{order.ticketCode}</strong></> : ''} has been recorded.
       </p>
+      {order?.ticketCode && (
+        <p className="order-confirmation__ticket-hint">
+          Keep this ticket. You can check the order any time on{' '}
+          <Link to={`/track?ticket=${encodeURIComponent(order.ticketCode)}`}>Track my order</Link>, even without signing in.
+        </p>
+      )}
 
       {paymentStatus === 'PENDING' && (
         <p className="order-confirmation__payment order-confirmation__payment--pending">
@@ -152,9 +159,9 @@ export default function OrderConfirmationPage() {
                 const days = Math.ceil((new Date(order.estimatedDeliveryDate) - new Date()) / (1000 * 60 * 60 * 24))
                 return days > 0 ? ` (in ${days} day${days === 1 ? '' : 's'})` : ' (any day now)'
               })()}
-              {order.vehicleIdentifier && ` - vehicle ${order.vehicleIdentifier} assigned`}
             </p>
           )}
+          {!order.deliveredAt && <DriverNote order={order} />}
           <p className="order-confirmation__status-hint">
             You can also ask the AI Help chat "where's my order" any time for the latest status.
           </p>

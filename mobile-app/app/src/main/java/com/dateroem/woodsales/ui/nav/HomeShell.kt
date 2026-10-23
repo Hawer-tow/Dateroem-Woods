@@ -556,7 +556,7 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
                 ) { backStackEntry ->
                     val tripId = backStackEntry.arguments?.getInt("tripId") ?: return@composable
                     val vm: LightDeliveriesViewModel = viewModel(factory = LightDeliveriesViewModel.Factory(container.api, tripId, session.userId))
-                    LightDeliveriesScreen(vm)
+                    LightDeliveriesScreen(vm, canShareDriver = session.roleName in setOf("Manager", "Admin", "SuperAdmin"))
                 }
                 composable(Section.BulkOrders.route) {
                     if (activeTripId != null) {

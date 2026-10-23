@@ -15,7 +15,11 @@ import java.time.LocalDate;
 // delivery), or - the older whole-trip form - just tripId. When a bulk or
 // parent delivery is named, the trip (and, for a parent, the vehicle and
 // date when left blank) come from that delivery itself.
+//
+// shareDriver (migration 038) - whether the customer may see the driver's
+// first name and the number plate. Off unless staff tick it; an order put
+// under a parent delivery follows the parent's choice instead.
 public record AssignLightDeliveryRequest(
     Integer tripId, Integer vehicleId, LocalDate estimatedDeliveryDate,
-    Integer bulkDeliveryId, Integer parentLightDeliveryId
+    Integer bulkDeliveryId, Integer parentLightDeliveryId, Boolean shareDriver
 ) {}

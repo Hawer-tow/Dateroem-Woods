@@ -37,6 +37,10 @@ data class AssignGroupState(
     // delivery maasai allows quick identification" - light-only (bulk
     // already has deliveredTo for the same purpose).
     val deliveryName: String = "",
+    // Share the driver's first name and number plate with the customer
+    // (migration 038). Locked when joining a light delivery, which decided.
+    val shareDriver: Boolean = false,
+    val shareLocked: Boolean = false,
     val ticked: Set<Int> = emptySet(),
     val submitting: Boolean = false,
     val done: Boolean = false,
@@ -47,7 +51,10 @@ data class AssignGroupState(
 
 // isNew = "create a new delivery"; otherwise id is the LIGHT_DELIVERIES id
 // (light) or BULK_DELIVERY id (bulk) to join.
-data class DeliveryChoice(val isNew: Boolean, val id: Int?, val title: String, val subtitle: String, val date: String?, val vehicleId: Int?)
+data class DeliveryChoice(
+    val isNew: Boolean, val id: Int?, val title: String, val subtitle: String, val date: String?, val vehicleId: Int?,
+    val shareDriver: Boolean = false
+)
 
 // "a pops that is one can select a predefined delivery or create a new one
 // and add that group in that delivery" - trip -> delivery (existing or new)
@@ -116,8 +123,10 @@ class AssignGroupViewModel(
                             DeliveryChoice(
                                 false, head.int("lightDeliveryId"),
                                 if (name != null) "Light delivery #${head.int("lightDeliveryId")} - $name" else "Light delivery #${head.int("lightDeliveryId")}",
-                                "${kids + own} order(s) · ${head.date("estimatedDeliveryDate") ?: "no date"} · ${head.text("status") ?: ""}",
-                                head.date("estimatedDeliveryDate"), head.int("vehicleId")
+                                "${kids + own} order(s) · ${head.date("estimatedDeliveryDate") ?: "no date"} · ${head.text("status") ?: ""}" +
+                                    if (head.flag("shareDriver")) " · driver shared" else "",
+                                head.date("estimatedDeliveryDate"), head.int("vehicleId"),
+                                shareDriver = head.flag("shareDriver")
                             )
                         )
                     }
@@ -151,8 +160,16 @@ class AssignGroupViewModel(
         _state.value = current.copy(
             choice = choice,
             date = choice.date ?: current.trip?.date("endDate") ?: current.date,
-            vehicleId = if (choice.isNew) current.vehicleId else (choice.vehicleId ?: current.vehicleId)
+            vehicleId = if (choice.isNew) current.vehicleId else (choice.vehicleId ?: current.vehicleId),
+            shareDriver = if (joinsLight(choice)) choice.shareDriver else current.shareDriver,
+            shareLocked = joinsLight(choice)
         )
+    }
+
+    private fun joinsLight(choice: DeliveryChoice) = kind == "light" && !choice.isNew
+
+    fun setShareDriver(v: Boolean) {
+        if (!_state.value.shareLocked) _state.value = _state.value.copy(shareDriver = v)
     }
 
     fun backToTrips() { _state.value = _state.value.copy(step = 0, error = null) }
@@ -181,7 +198,8 @@ class AssignGroupViewModel(
                         createdId = if (kind == "light") {
                             api.createLightDelivery(
                                 CreateLightDeliveryRequest(
-                                    tripId, s.vehicleId, s.group?.int("areaId"), s.date, s.deliveryName.trim().ifBlank { null }
+                                    tripId, s.vehicleId, s.group?.int("areaId"), s.date, s.deliveryName.trim().ifBlank { null },
+                                    shareDriver = s.shareDriver
                                 ), actorUserId
                             ).int("lightDeliveryId")
                         } else {
@@ -198,7 +216,8 @@ class AssignGroupViewModel(
                         vehicleId = s.vehicleId,
                         estimatedDeliveryDate = s.date,
                         bulkDeliveryId = if (kind == "bulk") targetId else null,
-                        parentLightDeliveryId = if (kind == "light") targetId else null
+                        parentLightDeliveryId = if (kind == "light") targetId else null,
+                        shareDriver = s.shareDriver
                     ),
                     actorUserId
                 )

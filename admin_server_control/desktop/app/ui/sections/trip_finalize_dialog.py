@@ -82,7 +82,7 @@ class FinalizeTripDialog(QDialog):
             )
             for o in pending[:8]:
                 where = f"{o.get('deliveryCity') or ''} {o.get('areaName') or ''}".strip()
-                lines.append(f"    - Order #{o.get('orderId')}  KES {o.get('total')}  {where}")
+                lines.append(f"    - Order {o.get('ticketCode') or '#' + str(o.get('orderId'))}  KES {o.get('total')}  {where}")
             if len(pending) > 8:
                 lines.append(f"    ... and {len(pending) - 8} more")
             lines.append("Bulk deliveries: " + ("all finished." if not bulk else f"{len(bulk)} not finished - finalize or delete them first."))

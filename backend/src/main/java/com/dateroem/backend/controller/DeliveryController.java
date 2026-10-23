@@ -104,6 +104,18 @@ public class DeliveryController {
         deliveryService.assignLightDelivery(lightDeliveryId, body, actorUserId);
     }
 
+    // "vehicle visible only to staff ... unless enabled" - Share driver for
+    // one delivery (and the orders grouped under it), migration 038.
+    @PatchMapping("/light/{lightDeliveryId}/share-driver")
+    public void setShareDriver(
+        @PathVariable int lightDeliveryId, @RequestBody ShareDriverRequest body,
+        @RequestHeader("X-Actor-User-Id") int actorUserId
+    ) {
+        deliveryService.setShareDriver(lightDeliveryId, Boolean.TRUE.equals(body.share()), actorUserId);
+    }
+
+    public record ShareDriverRequest(Boolean share) {}
+
     @GetMapping("/bulk")
     public List<Map<String, Object>> bulkDeliveries(@RequestParam(required = false) Integer tripId) {
         return deliveryService.bulkDeliveries(tripId);

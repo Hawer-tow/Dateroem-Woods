@@ -9,5 +9,5 @@ import java.util.List;
 // delivery to group under, or just a trip.
 public record AssignLightDeliveriesBatchRequest(
     List<Integer> lightDeliveryIds, Integer tripId, Integer vehicleId, LocalDate estimatedDeliveryDate,
-    Integer bulkDeliveryId, Integer parentLightDeliveryId
+    Integer bulkDeliveryId, Integer parentLightDeliveryId, Boolean shareDriver
 ) {}

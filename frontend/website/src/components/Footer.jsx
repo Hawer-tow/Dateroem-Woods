@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client.js'
 import EmailDialog from './EmailDialog.jsx'
 import Icon from './Icon.jsx'
@@ -67,6 +68,9 @@ export default function Footer() {
           </li>
         </ul>
       )}
+      <p className="footer__more">
+        <Link to="/track">Track my order</Link>
+      </p>
       <p className="footer__copy">&copy; {new Date().getFullYear()} Dateroem Wood Sales.</p>
       {contact?.emailForm && <EmailDialog open={writing} onClose={() => setWriting(false)} contact={contact} />}
     </footer>

@@ -265,7 +265,9 @@ function ProductCard({ card, stage, ratings }) {
             {shownOrders.map((order, index) => (
               <span key={order.orderId}>
                 {index > 0 && ' '}
-                <Link to={'/orders/' + encodeOrderRef(order.orderId)}>#{order.customerOrderNumber}</Link>
+                <Link to={'/orders/' + encodeOrderRef(order.orderId)} className="ticket-code">
+                  {order.ticketCode || '#' + order.customerOrderNumber}
+                </Link>
               </span>
             ))}
             {card.orders.length > shownOrders.length && ` +${card.orders.length - shownOrders.length} more`}
@@ -349,7 +351,10 @@ function deliveryMessage(order) {
       ' (' +
       when +
       ')' +
-      (order.vehicleIdentifier ? ' - vehicle ' + order.vehicleIdentifier : '')
+      // Only when staff shared the driver for this delivery (migration 038).
+      (order.vehicleIdentifier
+        ? ' - ' + (order.driverFirstName ? 'driver ' + order.driverFirstName + ', ' : '') + 'vehicle ' + order.vehicleIdentifier
+        : '')
     )
   }
   return 'Estimated delivery: ' + order.estimatedDeliveryDate + ' (' + when + ')'

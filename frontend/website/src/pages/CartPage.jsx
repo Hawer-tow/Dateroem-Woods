@@ -39,6 +39,8 @@ export default function CartPage() {
   // still PENDING - it's only ever shown to the customer, and the cart
   // only ever cleared, once 'confirming' resolves to an actual COMPLETED.
   const [waitStage, setWaitStage] = useState(null)
+  // The new order's ticket (DW-7K3Q9P), shown while M-Pesa confirms.
+  const [waitTicket, setWaitTicket] = useState(null)
   const [error, setError] = useState(null)
   const [showAuth, setShowAuth] = useState(false)
   // Lets the chat button notice someone lingering before checkout - and
@@ -154,6 +156,7 @@ export default function CartPage() {
         },
         token
       )
+      setWaitTicket(result.ticketCode || null)
       setWaitStage('confirming')
       const outcome = await waitForPaymentOutcome(result.orderId, token)
       if (outcome === 'COMPLETED') {
@@ -411,6 +414,11 @@ export default function CartPage() {
                 <p className="checkout-waiting__hint">
                   This can take a couple of minutes - the order only goes through once M-Pesa confirms the payment.
                 </p>
+                {waitTicket && (
+                  <p className="checkout-waiting__ticket">
+                    Your ticket: <strong className="ticket-code">{waitTicket}</strong>
+                  </p>
+                )}
               </>
             )}
           </div>

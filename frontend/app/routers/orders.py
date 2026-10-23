@@ -44,6 +44,16 @@ async def my_orders(authorization: str | None = Header(default=None), limit: int
     return await backend_client.get("/api/orders/mine", params={"limit": limit}, headers={"Authorization": authorization})
 
 
+@router.get("/track")
+async def track_order(ticket: str = "", phone: str = ""):
+    """Track my order - no sign-in (23 October 2026): the order's ticket
+    (DW-7K3Q9P) and the last 3 digits of the account's phone number. The
+    backend checks both and limits wrong tries; the answer carries no name
+    or phone number. Declared before /{order_id} so "track" isn't read as
+    an order id."""
+    return await backend_client.get("/api/orders/track", params={"ticket": ticket[:20], "phone": phone[:6]})
+
+
 @router.get("/{order_id}")
 async def get_order(order_id: int, authorization: str | None = Header(default=None)):
     """Order confirmation/status page - ownership-checked on the backend."""

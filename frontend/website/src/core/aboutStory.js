@@ -101,12 +101,13 @@ export const ABOUT_HOW = {
   ],
 }
 
-// Where to find us.
+// Where to find us. The map pin is the owner's own (23 October 2026), kept
+// without Google's tracking parameters.
 export const ABOUT_LOCATION = {
   title: 'Where to find us',
   place: 'Dateroem Woods workshop',
   address: 'Ebenezar Plot, Old Nairobi Road, Nakuru, Kenya',
-  mapUrl: 'https://www.google.com/maps/search/?api=1&query=Ebenezar+Plot%2C+Old+Nairobi+Road%2C+Nakuru',
+  mapUrl: 'https://www.google.com/maps/search/?api=1&query=-0.295030%2C36.125348',
   note: 'We serve customers across Kenya from here - by delivery or through our pickup points.',
 }
 

@@ -47,6 +47,19 @@ KIND_HINTS = {
 }
 
 
+def _ticket(order: dict) -> str:
+    """The order's ticket (DW-7K3Q9P, migration 038) - what the customer
+    quotes - or its number for an order from before tickets existed."""
+    return order.get("ticketCode") or f"#{order.get('orderId')}"
+
+
+SHARE_DRIVER_TEXT = "Share the driver's first name and the number plate with the customer"
+SHARE_DRIVER_TIP = (
+    "Off by default: customers see only the delivery date. Tick it for a door-to-door delivery agreed with the "
+    "customer; they then also see the company phone number, never the driver's own."
+)
+
+
 def _fmt_feet(value) -> str:
     try:
         return f"{float(value):,.0f}"
@@ -82,7 +95,7 @@ class OrdersPage(QWidget):
         self.splitter.setHandleWidth(8)
         layout.addWidget(self.splitter, 1)
 
-        self.groups_table = DataTable("Pending Orders by Customer", show_limit_selector=False, searchable=True, search_placeholder="Search by customer, phone or area")
+        self.groups_table = DataTable("Pending Orders by Customer", show_limit_selector=False, searchable=True, search_placeholder="Search by customer, phone, area or ticket")
         self.groups_table.hidden_columns = {"idx"}
         self.groups_table.setMinimumHeight(140)
         self.groups_table.refresh_requested.connect(lambda _limit: self.load())
@@ -100,7 +113,7 @@ class OrdersPage(QWidget):
         detail_layout.addWidget(self.gauge_label)
 
         self.orders_table = DataTable("Orders in this group", show_limit_selector=False)
-        self.orders_table.hidden_columns = {"lightDeliveryId"}
+        self.orders_table.hidden_columns = {"lightDeliveryId", "orderId"}
         self.orders_table.setMinimumHeight(160)
         self.orders_table.refresh_requested.connect(lambda _limit: self.load())
         self.orders_table.row_clicked.connect(self._on_order_selected)
@@ -169,6 +182,7 @@ class OrdersPage(QWidget):
                 "#": i,
                 "customer": g.get("customer") or "(unknown)",
                 "area": g.get("area"),
+                "tickets": ", ".join(_ticket(o) for o in g.get("orders") or []),
                 "new orders": g.get("orderCount"),
                 "already assigned": g.get("assignedCount") or 0,
                 "goods": g.get("itemsText"),
@@ -236,7 +250,8 @@ class OrdersPage(QWidget):
             word = "Bulk" if batch.get("kind") == "bulk" else "Light"
             lines.append(
                 f"Already on a delivery: {word} delivery #{batch.get('targetId')} (trip #{batch.get('tripId')}, "
-                f"{batch.get('date') or 'no date'}{', ' + batch['vehicle'] if batch.get('vehicle') else ''}) - "
+                f"{batch.get('date') or 'no date'}{', ' + batch['vehicle'] if batch.get('vehicle') else ''}"
+                f"{', driver shared with the customer' if batch.get('shareDriver') else ''}) - "
                 f"{len(batch.get('orders') or [])} order(s). The new orders listed under it can still be added to it."
             )
         self.gauge_label.setText("\n".join(line for line in lines if line))
@@ -255,6 +270,7 @@ class OrdersPage(QWidget):
             word = "Bulk" if batch.get("kind") == "bulk" else "Light"
             for o in batch.get("orders") or []:
                 shaped.append({
+                    "ticket": _ticket(o),
                     "orderId": o.get("orderId"),
                     "area": area,
                     "goods": o.get("itemsText"),
@@ -270,6 +286,7 @@ class OrdersPage(QWidget):
                 })
         for o in orders:
             shaped.append({
+                "ticket": _ticket(o),
                 "orderId": o.get("orderId"),
                 "area": area,
                 "goods": o.get("itemsText"),
@@ -475,12 +492,16 @@ class AssignGroupWizard(QDialog):
         self.date_field = DatePickerField(None)
         details.addWidget(self.date_field, 2)
         box.addLayout(details)
+        # "vehicle visible only to staff ... unless enabled" (migration 038).
+        self.share_driver_check = QCheckBox(SHARE_DRIVER_TEXT)
+        self.share_driver_check.setToolTip(SHARE_DRIVER_TIP)
+        box.addWidget(self.share_driver_check)
 
         box.addWidget(QLabel("Orders to put on this delivery (untick any to leave them pending):"))
         self.checks: list[tuple[QCheckBox, dict]] = []
         for order in self.group.get("orders") or []:
             text = (
-                f"Order #{order.get('orderId')}  -  {order.get('itemsText') or 'no items'}  -  "
+                f"{_ticket(order)}  -  {order.get('itemsText') or 'no items'}  -  "
                 f"{_fmt_feet(order.get('bodyFeet'))} body ft  -  {'LARGE' if order.get('large') else 'small'}  -  KES {order.get('total')}"
             )
             check = QCheckBox(text)
@@ -528,6 +549,7 @@ class AssignGroupWizard(QDialog):
                 item = QListWidgetItem(
                     f"Light delivery #{head.get('lightDeliveryId')}  -  {count} order(s)  -  "
                     f"{head.get('estimatedDeliveryDate') or 'no date'}  -  {head.get('status')}"
+                    f"{'  -  driver shared' if head.get('shareDriver') else ''}"
                 )
                 item.setData(Qt.ItemDataRole.UserRole, {"new": False, "light": head})
                 self.delivery_list.addItem(item)
@@ -566,6 +588,12 @@ class AssignGroupWizard(QDialog):
         # and nothing visibly happened - default to today instead, still
         # editable, so creating a delivery never silently stalls on a date.
         fallback_date = date.today().isoformat()
+        # An existing light delivery already decided whether its driver is
+        # shared - the orders added to it follow that (changed from the trip's
+        # Light Deliveries). A new delivery, or bulk side quests, decide here.
+        joining_light = not creating and self.kind == "light"
+        self.share_driver_check.setEnabled(not joining_light)
+        self.share_driver_check.setChecked(bool(joining_light and choice["light"].get("shareDriver")))
         if creating:
             self.date_field.set_value((self.trip or {}).get("endDate") or fallback_date)
             return
@@ -600,6 +628,7 @@ class AssignGroupWizard(QDialog):
 
         self.error_label.setText("")
         vehicle_id = self.vehicle_combo.currentData()
+        share_driver = self.share_driver_check.isChecked()
         trip_id = self.trip.get("tripId")
         delivered_to = self.delivered_to_input.text().strip()
         set_busy(self.confirm_btn, True, "Assigning")
@@ -615,7 +644,10 @@ class AssignGroupWizard(QDialog):
                     if self.kind == "light":
                         created = self.api_client.post(
                             "/deliveries/light",
-                            json={"tripId": trip_id, "vehicleId": vehicle_id, "deliveryAreaId": self.group.get("areaId"), "estimatedDeliveryDate": date},
+                            json={
+                                "tripId": trip_id, "vehicleId": vehicle_id, "deliveryAreaId": self.group.get("areaId"),
+                                "estimatedDeliveryDate": date, "shareDriver": share_driver,
+                            },
                             actor=True,
                         )
                         self._created_id = created.get("lightDeliveryId")
@@ -628,7 +660,10 @@ class AssignGroupWizard(QDialog):
             else:
                 target_id = choice["light"].get("lightDeliveryId") if self.kind == "light" else choice["bulk"].get("bulkDeliveryId")
 
-            payload = {"lightDeliveryIds": ids, "tripId": trip_id, "vehicleId": vehicle_id, "estimatedDeliveryDate": date}
+            payload = {
+                "lightDeliveryIds": ids, "tripId": trip_id, "vehicleId": vehicle_id, "estimatedDeliveryDate": date,
+                "shareDriver": share_driver,
+            }
             payload["parentLightDeliveryId" if self.kind == "light" else "bulkDeliveryId"] = target_id
             return self.api_client.post("/deliveries/light/assign-batch", json=payload, actor=True)
 
@@ -668,7 +703,8 @@ class AddToBatchDialog(QDialog):
             word = "Bulk" if batch.get("kind") == "bulk" else "Light"
             self.batch_combo.addItem(
                 f"{word} delivery #{batch.get('targetId')}  -  trip #{batch.get('tripId')}  -  {batch.get('date') or 'no date'}"
-                f"  -  {len(batch.get('orders') or [])} order(s) already on it",
+                f"  -  {len(batch.get('orders') or [])} order(s) already on it"
+                f"{'  -  driver shared' if batch.get('shareDriver') else ''}",
                 batch,
             )
         layout.addWidget(self.batch_combo)
@@ -676,7 +712,7 @@ class AddToBatchDialog(QDialog):
         self.checks: list[tuple[QCheckBox, dict]] = []
         for order in group.get("orders") or []:
             check = QCheckBox(
-                f"Order #{order.get('orderId')}  -  {order.get('itemsText') or 'no items'}  -  "
+                f"{_ticket(order)}  -  {order.get('itemsText') or 'no items'}  -  "
                 f"{'LARGE' if order.get('large') else 'small'}  -  KES {order.get('total')}"
             )
             check.setChecked(True)
@@ -711,6 +747,7 @@ class AddToBatchDialog(QDialog):
             "tripId": batch.get("tripId"),
             "vehicleId": batch.get("vehicleId"),
             "estimatedDeliveryDate": batch.get("date"),
+            "shareDriver": batch.get("shareDriver"),
         }
         payload["bulkDeliveryId" if batch.get("kind") == "bulk" else "parentLightDeliveryId"] = batch.get("targetId")
         set_busy(self.confirm_btn, True, "Adding")
@@ -745,14 +782,15 @@ class DropOrderDialog(QDialog):
         self.api_client = api_client
         self.order = order
         self.order_id = order.get("orderId")
+        self.ticket = order.get("ticket") or f"#{self.order_id}"
         self.refunded_amount = None
         self._active_workers = []
-        self.setWindowTitle(f"Drop Order #{self.order_id}")
+        self.setWindowTitle(f"Drop Order {self.ticket}")
         self.setMinimumWidth(460)
 
         layout = QVBoxLayout(self)
         intro = QLabel(
-            f"Order #{self.order_id} - {order.get('goods') or 'no items'} - KES {order.get('total (KES)')}.\n"
+            f"Order {self.ticket} - {order.get('goods') or 'no items'} - KES {order.get('total (KES)')}.\n"
             "Dropping it cancels the order and restores the stock. Enter what to deduct (e.g. handling already "
             "done) - the rest is the refund owed to the customer."
         )
@@ -834,8 +872,8 @@ class DropOrderDialog(QDialog):
     def _open_refund(self):
         dialog = PayoutDialog(
             self.api_client,
-            f"Refund Order #{self.order_id} - Send Money",
-            purpose=f"Refund for Order #{self.order_id}",
+            f"Refund Order {self.ticket} - Send Money",
+            purpose=f"Refund for Order {self.ticket}",
             recipient_target="ORDER_REFUND",
             recipient_row_id=self.order_id,
             send_fn=lambda amount, phone: self.api_client.post(

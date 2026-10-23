@@ -34,11 +34,17 @@ public class OrderService {
     // Payment_Status comes from the light order's own STK push attempt, if
     // any (PRODUCT_PAYMENTS.Order_ID) - null when phoneNumber was never
     // given or Daraja isn't configured, same as before this feature existed.
+    //
+    // "vehicle visible only to staff" (migration 038) - the driver's first
+    // name and the number plate come out only for a delivery staff switched
+    // Share driver on for; otherwise both are null, and the vehicle's
+    // internal id never leaves at all.
     private static final String ORDER_WITH_DELIVERY_STATUS =
-        "SELECT o.Order_ID, o.Total, o.Status, o.Created_At, o.Hotspot_City, o.User_ID, " +
+        "SELECT o.Order_ID, o.Ticket_Code, o.Total, o.Status, o.Created_At, o.Hotspot_City, o.User_ID, " +
         "da.Area_Name, da.City AS Delivery_City, " +
-        "ld.Status AS Delivery_Status, ld.Delivered_At, ld.Estimated_Delivery_Date, ld.Vehicle_ID, " +
-        "v.Unique_Identifier AS Vehicle_Identifier, " +
+        "ld.Status AS Delivery_Status, ld.Delivered_At, ld.Estimated_Delivery_Date, " +
+        "CASE WHEN ld.Share_Driver THEN v.Unique_Identifier END AS Vehicle_Identifier, " +
+        "CASE WHEN ld.Share_Driver THEN NULLIF(SUBSTRING_INDEX(TRIM(v.Driver), ' ', 1), '') END AS Driver_First_Name, " +
         // A yes/no rather than the Trip_ID itself - the website only needs
         // to know "an admin has put this on a real delivery run", and
         // internal ids stay off the customer's screen.
@@ -83,16 +89,18 @@ public class OrderService {
     private final MpesaClient mpesaClient;
     private final String mediaBaseUrl;
     private final PhoneVerificationService phoneVerification;
+    private final OrderTickets orderTickets;
 
     public OrderService(
         JdbcTemplate jdbcTemplate, MpesaClient mpesaClient,
         @Value("${app.media.base-url}") String mediaBaseUrl,
-        PhoneVerificationService phoneVerification
+        PhoneVerificationService phoneVerification, OrderTickets orderTickets
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.mpesaClient = mpesaClient;
         this.mediaBaseUrl = mediaBaseUrl;
         this.phoneVerification = phoneVerification;
+        this.orderTickets = orderTickets;
     }
 
     // Carries a validated item's price from the stock-check pass to the
@@ -213,6 +221,7 @@ public class OrderService {
             city, request.deliveryAreaId(), userId
         );
         int orderId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
+        String ticketCode = orderTickets.assign(orderId);
 
         // Was previously summing item.qty() into this column instead of
         // qty*price - ORDERS.Total came out as a unit count, not the KES
@@ -286,7 +295,7 @@ public class OrderService {
             monetaryTotal, result.checkoutRequestId(), orderId
         );
 
-        return new CreateOrderResult(orderId, true, null);
+        return new CreateOrderResult(orderId, true, null, ticketCode);
     }
 
     /**
@@ -384,7 +393,7 @@ public class OrderService {
     // list-then-Pay the same way.
     public List<Map<String, Object>> listPendingRefunds() {
         return JsonKeys.camelCaseKeys(jdbcTemplate.queryForList(
-            "SELECT o.Order_ID, o.Refunded_Amount, o.Cancelled_At, o.User_ID, u.Name AS Customer_Name " +
+            "SELECT o.Order_ID, o.Ticket_Code, o.Refunded_Amount, o.Cancelled_At, o.User_ID, u.Name AS Customer_Name " +
             "FROM ORDERS o JOIN USERS u ON u.User_ID = o.User_ID " +
             "WHERE o.Status = 'CANCELLED' AND o.Refunded_Amount IS NOT NULL " +
             "AND o.Financial_Transaction_ID IS NULL AND o.Is_Deleted = FALSE " +
@@ -401,7 +410,7 @@ public class OrderService {
      */
     public List<Map<String, Object>> listPayments(int limit) {
         List<Map<String, Object>> rows = JsonKeys.camelCaseKeys(jdbcTemplate.queryForList(
-            "SELECT pp.Product_Payment_ID, pp.Order_ID, pp.Amount, pp.Status, pp.Mpesa_Receipt, pp.Created_At, " +
+            "SELECT pp.Product_Payment_ID, pp.Order_ID, o.Ticket_Code, pp.Amount, pp.Status, pp.Mpesa_Receipt, pp.Created_At, " +
             "pp.Description, o.Status AS Order_Status, u.Name AS Customer_Name, u.User_Name " +
             "FROM PRODUCT_PAYMENTS pp " +
             "JOIN ORDERS o ON o.Order_ID = pp.Order_ID " +
@@ -613,6 +622,118 @@ public class OrderService {
             order.put("customerOrderNumber", customerOrderNumber(userId, orderId));
         }
         return orders;
+    }
+
+    // Track my order: five wrong answers for one ticket lock it for half an
+    // hour, and the page answers at most 60 look-ups a minute in all - so the
+    // last three digits of a phone number (a thousand possibilities) can't
+    // simply be tried one after another.
+    private static final int TRACK_MAX_FAILURES = 5;
+    private static final long TRACK_LOCK_MS = 30 * 60_000L;
+    private static final int TRACK_MAX_PER_MINUTE = 60;
+    private final Map<String, java.util.Deque<Long>> trackFailures = new ConcurrentHashMap<>();
+    // Guarded by its own lock (only the overall per-minute count).
+    private final java.util.Deque<Long> trackRecent = new java.util.ArrayDeque<>();
+
+    /**
+     * "Track my order" without signing in (23 October 2026): the ticket plus
+     * the last 3 digits of the phone number on the customer's account. Only
+     * website orders (made by a Customer account) can be tracked this way.
+     * The answer says where the order is - never who placed it, their phone
+     * or anything internal - and the driver and number plate only when staff
+     * chose to share them for that delivery.
+     */
+    public Map<String, Object> track(String typedTicket, String phoneLastDigits) {
+        String ticket = OrderTickets.normalise(typedTicket);
+        String digits = phoneLastDigits == null ? "" : phoneLastDigits.replaceAll("\\D", "");
+        if (ticket == null || digits.length() != 3) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Enter your ticket (like DW-7K3Q9P) and the last 3 digits of your phone number.");
+        }
+        throttleTracking(ticket);
+
+        List<Map<String, Object>> found = jdbcTemplate.queryForList(
+            ORDER_WITH_DELIVERY_STATUS.replace("SELECT o.Order_ID,", "SELECT u.Phone_NO AS Owner_Phone, o.Order_ID,") +
+            "JOIN USERS u ON u.User_ID = o.User_ID JOIN ROLE r ON r.Role_ID = u.Role_ID AND r.Name = 'Customer' " +
+            "WHERE o.Ticket_Code = ? AND o.Is_Deleted = FALSE",
+            ticket
+        );
+        String ownerDigits = found.isEmpty() || found.get(0).get("Owner_Phone") == null
+            ? "" : found.get(0).get("Owner_Phone").toString().replaceAll("\\D", "");
+        if (found.isEmpty() || ownerDigits.length() < 3 || !ownerDigits.endsWith(digits)) {
+            trackFailures.computeIfAbsent(ticket, k -> new java.util.concurrent.ConcurrentLinkedDeque<>()).addLast(System.currentTimeMillis());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "We couldn't find an order with that ticket and phone number. Please check both and try again.");
+        }
+        trackFailures.remove(ticket);
+
+        Map<String, Object> order = JsonKeys.camelCaseKeys(found.get(0));
+        int orderId = ((Number) order.get("orderId")).intValue();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("ticketCode", order.get("ticketCode"));
+        result.put("stage", trackingStage(order));
+        result.put("placedOn", order.get("createdAt"));
+        result.put("estimatedDeliveryDate", order.get("estimatedDeliveryDate"));
+        result.put("deliveredAt", order.get("deliveredAt"));
+        result.put("areaName", order.get("areaName"));
+        result.put("deliveryCity", order.get("deliveryCity"));
+        result.put("total", order.get("total"));
+        result.put("items", loadOrderItems(orderId));
+        result.put("driverFirstName", order.get("driverFirstName"));
+        result.put("vehicleIdentifier", order.get("vehicleIdentifier"));
+        return result;
+    }
+
+    // One word for where the order is, for the Track my order page.
+    private static String trackingStage(Map<String, Object> order) {
+        String status = String.valueOf(order.get("status")).toUpperCase(java.util.Locale.ROOT);
+        String payment = String.valueOf(order.get("paymentStatus")).toUpperCase(java.util.Locale.ROOT);
+        if ("CANCELLED".equals(status) || "FAILED".equals(payment)) {
+            return "CANCELLED";
+        }
+        if (order.get("deliveredAt") != null || "DELIVERED".equalsIgnoreCase(String.valueOf(order.get("deliveryStatus")))) {
+            return "DELIVERED";
+        }
+        if (!"PAID".equals(status) && "PENDING".equals(payment)) {
+            return "AWAITING_PAYMENT";
+        }
+        if (isTrue(order.get("needsReassignment"))) {
+            return "RESCHEDULING";
+        }
+        return isTrue(order.get("isScheduled")) ? "SCHEDULED" : "PREPARING";
+    }
+
+    private static boolean isTrue(Object value) {
+        return Boolean.TRUE.equals(value) || (value instanceof Number n && n.intValue() != 0);
+    }
+
+    private void throttleTracking(String ticket) {
+        long now = System.currentTimeMillis();
+        synchronized (trackRecent) {
+            while (!trackRecent.isEmpty() && now - trackRecent.peekFirst() > 60_000L) {
+                trackRecent.pollFirst();
+            }
+            if (trackRecent.size() >= TRACK_MAX_PER_MINUTE) {
+                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Lots of people are checking orders right now - please try again in a minute.");
+            }
+            trackRecent.addLast(now);
+        }
+        java.util.Deque<Long> failures = trackFailures.get(ticket);
+        if (failures != null) {
+            failures.removeIf(at -> now - at > TRACK_LOCK_MS);
+            if (failures.size() >= TRACK_MAX_FAILURES) {
+                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many tries for this ticket. Please wait half an hour, or contact us and we'll help.");
+            }
+        }
+        // Old entries go once there are many, so the map can't grow without end.
+        if (trackFailures.size() > 5_000) {
+            trackFailures.entrySet().removeIf(e -> {
+                Long last = e.getValue().peekLast();
+                return last == null || now - last > TRACK_LOCK_MS;
+            });
+        }
     }
 
     // Real Daraja STK callback path for a website order's payment (as

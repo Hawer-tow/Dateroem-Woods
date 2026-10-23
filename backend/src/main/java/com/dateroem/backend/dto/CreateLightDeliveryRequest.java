@@ -9,4 +9,7 @@ import java.time.LocalDate;
 // deliveryName - "allow one to name a delivery when assigning a new one
 // ... a name delivery maasai allows quick identification" - optional,
 // purely cosmetic alongside the auto-generated Light_Delivery_ID.
-public record CreateLightDeliveryRequest(int tripId, Integer vehicleId, Integer deliveryAreaId, LocalDate estimatedDeliveryDate, String deliveryName) {}
+// shareDriver - see AssignLightDeliveryRequest (off unless ticked).
+public record CreateLightDeliveryRequest(
+    int tripId, Integer vehicleId, Integer deliveryAreaId, LocalDate estimatedDeliveryDate, String deliveryName, Boolean shareDriver
+) {}

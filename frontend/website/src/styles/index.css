@@ -841,6 +841,13 @@ body {
 .footer__copy {
   font-size: 0.8rem;
 }
+.footer__more {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.footer__more a {
+  color: var(--wood-tone);
+}
 
 /* The Theme menu at the end of the top links (components/ThemeMenu.jsx):
    one button, a short list of Forest / Dark / Light with a swatch of each
@@ -2011,6 +2018,216 @@ body {
   margin: 8px 0 0;
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+
+/* Order tickets (DW-7K3Q9P, migration 038): spaced capitals that read
+   easily over the phone, the same wherever a ticket shows. */
+.ticket-code {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.order-confirmation__ticket-hint {
+  margin: -4px 0 12px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.order-confirmation__ticket-hint a {
+  color: var(--wood-tone);
+}
+.checkout-waiting__ticket {
+  margin: 10px 0 0;
+  font-size: 0.95rem;
+}
+
+/* The driver and vehicle, only when staff shared them for the delivery. */
+.driver-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--wood-tint);
+  font-size: 0.9rem;
+}
+.driver-note .icon--inline {
+  flex: none;
+  margin-top: 2px;
+}
+.driver-note a {
+  color: var(--wood-tone);
+  font-weight: 600;
+}
+.driver-note strong,
+.driver-note a {
+  white-space: nowrap;
+}
+
+/* Track my order (pages/TrackOrderPage.jsx). */
+.track-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+.track-page__header h1 {
+  margin: 0 0 8px;
+}
+.track-page__lead {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+}
+.track-form {
+  display: grid;
+  grid-template-columns: 1fr 200px auto;
+  gap: 12px;
+  align-items: end;
+  padding: 18px 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+}
+.track-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.track-form__field input {
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid rgba(var(--ink-rgb), 0.18);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 1rem;
+}
+.track-form__field:first-child input {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.track-form__submit {
+  white-space: nowrap;
+}
+.track-result {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  border-top: 3px solid var(--wood-tone);
+}
+.track-result__ticket {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+}
+.track-result__placed {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.track-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+}
+.track-steps__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+/* The line joining each step to the one before it. */
+.track-steps__step + .track-steps__step::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: rgba(var(--ink-rgb), 0.15);
+}
+.track-steps__step--done + .track-steps__step::before,
+.track-steps__step--done + .track-steps__step--done::before {
+  background: var(--wood-tone);
+}
+.track-steps__dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--ink-rgb), 0.2);
+  background: var(--bg-elevated);
+  font-weight: 700;
+}
+.track-steps__step--done .track-steps__dot {
+  border-color: var(--wood-tone);
+  background: var(--wood-tone);
+  color: var(--bg);
+}
+.track-steps__step--current .track-steps__dot {
+  border-color: var(--wood-tone);
+  color: var(--wood-tone);
+}
+.track-steps__step--current .track-steps__label {
+  color: var(--text);
+  font-weight: 600;
+}
+.track-result__status {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+.track-result__status--cancelled {
+  color: var(--danger);
+}
+.track-result__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+.track-result__facts dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.track-result__facts dd {
+  margin: 2px 0 0;
+}
+.track-result__items {
+  margin: 14px 0 0;
+  padding: 12px 0 0 18px;
+  border-top: 1px solid rgba(var(--ink-rgb), 0.1);
+  font-size: 0.9rem;
+}
+.track-page__more {
+  margin: 20px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.track-page__more a {
+  color: var(--wood-tone);
+}
+@media (max-width: 600px) {
+  .track-form {
+    grid-template-columns: 1fr;
+  }
+  .track-steps__label {
+    font-size: 0.72rem;
+  }
 }
 
 /* "bigger card its there [keep it] - each order is a little card only 4

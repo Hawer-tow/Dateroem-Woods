@@ -47,6 +47,13 @@ class AssignBatchRequest(BaseModel):
     estimatedDeliveryDate: Optional[str] = None
     bulkDeliveryId: Optional[int] = None
     parentLightDeliveryId: Optional[int] = None
+    # "vehicle visible only to staff" (migration 038): may the customer see
+    # the driver's first name and the number plate? Off unless ticked.
+    shareDriver: Optional[bool] = None
+
+
+class ShareDriverRequest(BaseModel):
+    share: bool
 
 
 class SettleRequest(BaseModel):
@@ -63,6 +70,7 @@ class CreateLightDeliveryRequest(BaseModel):
     # "allow one to name a delivery ... a name delivery maasai allows
     # quick identification" - optional, purely cosmetic.
     deliveryName: Optional[str] = None
+    shareDriver: Optional[bool] = None
 
 
 # Pending orders gathered per customer per delivery area, with the goods
@@ -71,6 +79,18 @@ class CreateLightDeliveryRequest(BaseModel):
 @router.get("/light/pending-groups")
 async def pending_order_groups():
     return await backend_client.get("/api/deliveries/light/pending-groups")
+
+
+# "vehicle visible only to staff ... unless enabled" (migration 038) - Share
+# driver on one delivery and the orders grouped under it.
+@router.patch("/light/{light_delivery_id}/share-driver")
+async def share_driver(light_delivery_id: int, request: ShareDriverRequest, x_actor_user_id: int = Header(...)):
+    await backend_client.patch(
+        f"/api/deliveries/light/{light_delivery_id}/share-driver",
+        json=request.model_dump(),
+        headers={"X-Actor-User-Id": str(x_actor_user_id)},
+    )
+    return {"status": "shared" if request.share else "hidden"}
 
 
 @router.post("/light/assign-batch")

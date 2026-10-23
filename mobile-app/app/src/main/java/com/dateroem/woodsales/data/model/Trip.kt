@@ -53,8 +53,15 @@ data class AssignBatchRequest(
     val vehicleId: Int?,
     val estimatedDeliveryDate: String?,
     val bulkDeliveryId: Int?,
-    val parentLightDeliveryId: Int?
+    val parentLightDeliveryId: Int?,
+    // "vehicle visible only to staff" (migration 038): may the customer see
+    // the driver's first name and the number plate? Off unless ticked; orders
+    // joining a light delivery follow that delivery's choice.
+    val shareDriver: Boolean? = null
 )
+
+// Share driver on one light delivery and the orders grouped under it.
+data class ShareDriverRequest(val share: Boolean)
 
 // Which orders on a delivery arrived and which didn't (and why).
 data class SettleRequest(val deliveredIds: List<Int>, val undeliveredIds: List<Int>, val reason: String?)
@@ -66,5 +73,6 @@ data class CreateLightDeliveryRequest(
     val estimatedDeliveryDate: String?,
     // "allow one to name a delivery ... a name delivery maasai allows
     // quick identification" - optional, purely cosmetic.
-    val deliveryName: String? = null
+    val deliveryName: String? = null,
+    val shareDriver: Boolean? = null
 )

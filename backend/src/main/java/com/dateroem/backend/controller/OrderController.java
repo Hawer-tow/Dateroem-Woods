@@ -76,6 +76,14 @@ public class OrderController {
         return orderService.listMine(requireUser(authHeader), limit);
     }
 
+    // Track my order - no sign-in: the ticket plus the last 3 digits of the
+    // account's phone number (limits on wrong tries in the service). Also
+    // declared before /{orderId}.
+    @GetMapping("/track")
+    public Map<String, Object> track(@RequestParam String ticket, @RequestParam String phone) {
+        return orderService.track(ticket, phone);
+    }
+
     // Backs the order confirmation/status page - ownership-checked in the
     // service so one customer can't read another's order by guessing an id.
     @GetMapping("/{orderId}")

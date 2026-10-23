@@ -178,6 +178,22 @@ fun AssignGroupScreen(viewModel: AssignGroupViewModel, onDone: () -> Unit, onCan
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                     )
                     VehicleDropdown(state.vehicles, state.vehicleId, viewModel::setVehicle)
+                    // "vehicle visible only to staff ... unless enabled".
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                        Checkbox(
+                            checked = state.shareDriver,
+                            onCheckedChange = viewModel::setShareDriver,
+                            enabled = !state.shareLocked
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Share the driver with the customer", color = DateroemText, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                if (state.shareLocked) "Set by the delivery you picked - change it in the trip's Light Deliveries."
+                                else "Their first name and the number plate, with the company phone - never the driver's own number.",
+                                color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
 
                     Text("Orders to put on this delivery", color = DateroemText, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                     Text("Untick any to leave them pending.", color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall)
@@ -186,7 +202,7 @@ fun AssignGroupScreen(viewModel: AssignGroupViewModel, onDone: () -> Unit, onCan
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                             Checkbox(checked = id in state.ticked, onCheckedChange = { viewModel.toggle(id) })
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Order #${o.int("orderId")} · ${o.text("itemsText") ?: "no items"}", color = DateroemText, style = MaterialTheme.typography.bodyMedium)
+                                Text("Order ${o.ticket()} · ${o.text("itemsText") ?: "no items"}", color = DateroemText, style = MaterialTheme.typography.bodyMedium)
                                 Text(
                                     "${o.feet()} body ft · ${if (o.flag("large")) "LARGE" else "small"} · KES ${o.money("total")}",
                                     color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall
@@ -232,7 +248,7 @@ private fun DropOrderDialog(order: JsonMap, dropping: Boolean, error: String?, o
     var costText by remember { mutableStateOf("0") }
     AlertDialog(
         onDismissRequest = { if (!dropping) onDismiss() },
-        title = { Text("Drop Order #${order.int("orderId")}?") },
+        title = { Text("Drop Order ${order.ticket()}?") },
         text = {
             Column {
                 Text(

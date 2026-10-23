@@ -63,6 +63,10 @@ export const api = {
   checkout: (payload, token) =>
     request('/orders/checkout', { method: 'POST', body: JSON.stringify(payload), headers: authHeader(token) }),
   getOrder: (id, token) => request(`/orders/${id}`, { headers: authHeader(token) }),
+  // Track my order - no sign-in: the ticket and the last 3 digits of the
+  // account's phone number.
+  trackOrder: (ticket, phone) =>
+    request(`/orders/track?ticket=${encodeURIComponent(ticket)}&phone=${encodeURIComponent(phone)}`),
   myOrders: (token, limit = 50) => request(`/orders/mine?limit=${limit}`, { headers: authHeader(token) }),
   helpContact: () => request('/help/contact'),
   helpFaqs: () => request('/help/faqs'),

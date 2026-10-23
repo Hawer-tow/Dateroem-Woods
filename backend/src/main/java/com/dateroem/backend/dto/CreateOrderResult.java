@@ -11,4 +11,7 @@ package com.dateroem.backend.dto;
 // the website could only ever say "payment isn't automated for this
 // order", which reads identically whether the feature is switched off or
 // the credentials are wrong - and left the shopper with nothing to act on.
-public record CreateOrderResult(int orderId, boolean stkPushSent, String stkPushError) {}
+//
+// ticketCode - the order's public code (DW-7K3Q9P, migration 038), shown on
+// the payment screen so the customer has it from the start.
+public record CreateOrderResult(int orderId, boolean stkPushSent, String stkPushError, String ticketCode) {}
