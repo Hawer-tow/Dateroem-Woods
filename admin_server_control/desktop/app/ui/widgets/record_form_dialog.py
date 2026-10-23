@@ -61,6 +61,7 @@ class FieldSpec:
         upload: Optional[Callable] = None,
         type_key: Optional[str] = None,
         allow_video: bool = False,
+        clearable: bool = False,
     ):
         self.key = key
         self.label = label
@@ -75,6 +76,10 @@ class FieldSpec:
         self.upload = upload  # media only
         self.type_key = type_key  # media only
         self.allow_video = allow_video  # media only
+        # text/textarea: an emptied box is sent as "" ("clear it") instead
+        # of null, for saves where a missing value means "keep what's
+        # there" - otherwise emptying the box would quietly change nothing.
+        self.clearable = clearable
 
 
 class RecordFormDialog(QDialog):
@@ -301,7 +306,7 @@ class RecordFormDialog(QDialog):
             widget = self._inputs[field.key]
             if field.type == "textarea":
                 text = widget.toPlainText().strip()
-                values[field.key] = text or None
+                values[field.key] = text or ("" if field.clearable else None)
             elif field.type == "checkbox":
                 values[field.key] = widget.isChecked()
             elif field.type == "combo":
@@ -324,7 +329,7 @@ class RecordFormDialog(QDialog):
                 values[field.key] = widget.value()
             else:
                 text = widget.text().strip()
-                values[field.key] = text or None
+                values[field.key] = text or ("" if field.clearable else None)
 
             if field.required and (values[field.key] is None or values[field.key] == ""):
                 self.error_label.setText(f"{field.label} is required.")

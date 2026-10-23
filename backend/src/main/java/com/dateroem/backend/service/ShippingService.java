@@ -71,13 +71,17 @@ public class ShippingService {
 
     // Full-object update - lets staff fix a typo, change which city an area
     // belongs to, or flip it active/inactive without deleting/recreating it.
+    // The map pin and the active switch are kept when a request doesn't
+    // carry them: the phone's area form has no pin, and every edit from it
+    // emptied the pin (24 October 2026). An empty pin clears it on purpose.
     public void updateArea(int areaId, ShippingAreaDto area) {
         validate(area);
         int updated = jdbcTemplate.update(
-            "UPDATE DELIVERY_AREAS SET City = ?, Area_Name = ?, Description = ?, Coordinates = ?, Is_Active = ? " +
+            "UPDATE DELIVERY_AREAS SET City = ?, Area_Name = ?, Description = ?, " +
+            "Coordinates = IF(? IS NULL, Coordinates, NULLIF(TRIM(?), '')), Is_Active = COALESCE(?, Is_Active) " +
             "WHERE Delivery_Area_ID = ? AND Is_Deleted = FALSE",
-            area.city().trim(), area.areaName().trim(), blankToNull(area.description()), blankToNull(area.coordinates()),
-            area.isActive() == null || area.isActive(), areaId
+            area.city().trim(), area.areaName().trim(), blankToNull(area.description()),
+            area.coordinates(), area.coordinates(), area.isActive(), areaId
         );
         if (updated == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Delivery area not found");

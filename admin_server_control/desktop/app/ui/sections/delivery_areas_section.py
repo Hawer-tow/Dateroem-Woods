@@ -33,7 +33,7 @@ FIELDS = [
     # form): open Google Maps yourself (the "Find on Google Maps" button
     # below), right-click the spot, copy the coordinates it shows, paste
     # them in here.
-    FieldSpec("coordinates", "Coordinates (lat,long) - optional", placeholder="e.g. -1.286389,36.817223"),
+    FieldSpec("coordinates", "Coordinates (lat,long) - optional", placeholder="e.g. -1.286389,36.817223", clearable=True),
     FieldSpec("isActive", "Active (shown at checkout)", type="checkbox"),
 ]
 

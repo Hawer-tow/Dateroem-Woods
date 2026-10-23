@@ -61,6 +61,9 @@ class UpdateUserRequest(BaseModel):
     email: Optional[str] = None
     phoneNo: Optional[str] = None
     roleId: Optional[int] = None
+    # "Company phone (can sync M-Pesa SMS)" in Users > Edit - it was missing
+    # here, so the tick was dropped before it reached the backend.
+    canSyncSms: Optional[bool] = None
     # Sent only by the SuperAdmin's edit form (the backend refuses anyone
     # else who tries to change it).
     userName: Optional[str] = None

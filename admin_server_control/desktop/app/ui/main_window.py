@@ -1,7 +1,9 @@
 import time
 
 from PySide6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
+    QLabel,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
@@ -23,7 +25,8 @@ from app.ui.sections.products_section import ProductsSection
 from app.ui.sections.reviews_section import ReviewsSection
 from app.ui.sections.trips_section import TripsSection
 from app.ui.sections.users_section import UsersSection
-from PySide6.QtCore import QSettings, QSize, Qt
+from PySide6.QtCore import QSettings, QSize, Qt, Signal
+from PySide6.QtGui import QFontMetrics
 from app.core import server_address
 from app.ui import theme
 from app.ui.backdrop import Backdrop, NavDelegate, NavPane
@@ -35,6 +38,81 @@ NO_AUTO_RELOAD = {"Database Browser", "Servers"}
 # The menu's width in the modern look: open (icon and name) and folded (icons).
 MENU_WIDTH = 188
 MENU_WIDTH_FOLDED = 62
+
+
+class ProfileCard(QFrame):
+    """The signed-in admin at the foot of the menu - photo, name and role -
+    opening Profile. "increase the size of that profile area since a picture
+    doesnt seem quite well there and one cannot seem to see it clarely"
+    (24 October 2026): it was an 18 px icon on a Profile button. Folded,
+    the menu shows the photo alone."""
+
+    clicked = Signal()
+    OPEN_SIZE = 46
+    FOLDED_SIZE = 40
+
+    def __init__(self, name: str, role: str, parent=None):
+        super().__init__(parent)
+        self.setObjectName("profileCard")
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._name = name or ""
+        self._pixmap = None
+        self._folded = False
+        self.row = QHBoxLayout(self)
+        self.row.setContentsMargins(8, 8, 8, 8)
+        self.row.setSpacing(10)
+        self.photo = QLabel()
+        self.photo.setFixedSize(self.OPEN_SIZE, self.OPEN_SIZE)
+        self.row.addWidget(self.photo)
+        self.text_box = QWidget()
+        text = QVBoxLayout(self.text_box)
+        text.setContentsMargins(0, 0, 0, 0)
+        text.setSpacing(1)
+        self.name_label = QLabel()
+        self.name_label.setObjectName("profileName")
+        self.role_label = QLabel(role or "")
+        self.role_label.setObjectName("profileRole")
+        text.addWidget(self.name_label)
+        text.addWidget(self.role_label)
+        self.row.addWidget(self.text_box, 1)
+        self.set_name(self._name)
+        self._paint_photo()
+
+    def _paint_photo(self):
+        from app.ui.profile_dialog import round_photo
+
+        size = self.FOLDED_SIZE if self._folded else self.OPEN_SIZE
+        self.photo.setFixedSize(size, size)
+        self.photo.setPixmap(round_photo(self._pixmap, size, self._name or "?"))
+
+    def set_photo(self, pixmap):
+        self._pixmap = pixmap if pixmap is not None and not pixmap.isNull() else None
+        self._paint_photo()
+
+    def set_name(self, name: str):
+        self._name = name or ""
+        self.setToolTip(f"{self._name} - your profile")
+        self._fit_name()
+        if self._pixmap is None:
+            self._paint_photo()
+
+    def _fit_name(self):
+        # The menu's width less its margins, the card's padding, the photo and the gap.
+        room = MENU_WIDTH - 18 - 16 - self.OPEN_SIZE - 12
+        self.name_label.setText(QFontMetrics(self.name_label.font()).elidedText(self._name, Qt.TextElideMode.ElideRight, room))
+
+    def set_folded(self, folded: bool):
+        self._folded = folded
+        self.text_box.setVisible(not folded)
+        self.row.setContentsMargins(*((1, 6, 1, 6) if folded else (8, 8, 8, 8)))
+        self.row.setAlignment(self.photo, Qt.AlignmentFlag.AlignHCenter if folded else Qt.AlignmentFlag.AlignLeft)
+        self._paint_photo()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(event.position().toPoint()):
+            self.clicked.emit()
+        super().mouseReleaseEvent(event)
 
 
 def _server_panel(server_manager, session):
@@ -98,11 +176,12 @@ class MainWindow(QMainWindow):
         sidebar_container.addWidget(self.sidebar, 1)
 
         # "desktop profile above Settings" (23 October 2026): the signed-in
-        # admin's photo, details and password; the button shows their photo.
-        self.profile_btn = QPushButton("Profile")
-        self.profile_btn.setIcon(icon("user", theme.TEXT_MUTED) if theme.MODERN else icon("user"))
-        self.profile_btn.clicked.connect(self._open_profile)
-        sidebar_container.addWidget(self.profile_btn)
+        # admin's photo, name and role, large enough to see; opens Profile.
+        self.profile_card = ProfileCard(session.name, session.role_name)
+        self.profile_card.clicked.connect(self._open_profile)
+        sidebar_container.addSpacing(6)
+        sidebar_container.addWidget(self.profile_card)
+        sidebar_container.addSpacing(4)
 
         # Settings sits with Sign Out at the foot of the sidebar - always in
         # view, below however many sections there are (20 October 2026).
@@ -115,7 +194,7 @@ class MainWindow(QMainWindow):
         self.logout_btn.clicked.connect(self._sign_out)
         sidebar_container.addWidget(self.logout_btn)
         if theme.MODERN:
-            for button in (self.profile_btn, self.settings_btn, self.logout_btn):
+            for button in (self.settings_btn, self.logout_btn):
                 button.setObjectName("navAction")
                 button.setIconSize(QSize(18, 18))
             self.logout_btn.setText("Sign out")
@@ -214,10 +293,7 @@ class MainWindow(QMainWindow):
 
         def done(content):
             pixmap = QPixmap()
-            if content and pixmap.loadFromData(content):
-                self.profile_btn.setIcon(QIcon(round_photo(pixmap, 36)))
-            else:
-                self.profile_btn.setIcon(icon("user", theme.TEXT_MUTED) if theme.MODERN else icon("user"))
+            self.profile_card.set_photo(pixmap if content and pixmap.loadFromData(content) else None)
 
         self._photo_worker = Worker(work)
         self._photo_worker.signals.finished.connect(done)
@@ -235,16 +311,10 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def _show_profile_photo(self, pixmap):
-        from PySide6.QtGui import QIcon
-
-        from app.ui.profile_dialog import round_photo
-
-        if pixmap is not None and not pixmap.isNull():
-            self.profile_btn.setIcon(QIcon(round_photo(pixmap, 36)))
-        else:
-            self.profile_btn.setIcon(icon("user", theme.TEXT_MUTED) if theme.MODERN else icon("user"))
+        self.profile_card.set_photo(pixmap)
 
     def _show_name(self, name: str):
+        self.profile_card.set_name(name)
         self.statusBar().showMessage(f"Signed in as {name} ({self.session.role_name})")
         for widget in self._section_widgets.values():
             if isinstance(widget, DashboardSection):
@@ -289,7 +359,8 @@ class MainWindow(QMainWindow):
         self._nav_delegate.folded = folded
         self.sidebar_widget.setFixedWidth(MENU_WIDTH_FOLDED if folded else MENU_WIDTH)
         self.nav_toggle.setToolTip("Open the menu" if folded else "Fold the menu to icons")
-        for button, label in ((self.profile_btn, "Profile"), (self.settings_btn, "Settings"), (self.logout_btn, "Sign out")):
+        self.profile_card.set_folded(folded)
+        for button, label in ((self.settings_btn, "Settings"), (self.logout_btn, "Sign out")):
             button.setText("" if folded else label)
             button.setToolTip(label if folded else "")
         self.sidebar.viewport().update()

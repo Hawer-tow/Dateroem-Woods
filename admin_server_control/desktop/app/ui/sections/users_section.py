@@ -293,7 +293,8 @@ class UsersSection(QWidget):
         username_field = [FieldSpec("userName", "Username", required=True)] if self.is_super_admin else []
         fields = username_field + [
             FieldSpec("name", "Full name", required=True),
-            FieldSpec("email", "Email"),
+            # Emptying it removes the email (a missing one means "keep").
+            FieldSpec("email", "Email", clearable=True),
             FieldSpec("phoneNo", "Phone"),
             FieldSpec(
                 "roleId", "Role", type="combo", required=True,
@@ -324,6 +325,12 @@ class UsersSection(QWidget):
 
     def _on_users_loaded(self, rows):
         self.all_users = rows or []
+        # The selected account is the one just saved: hold its new copy, so
+        # Edit opens what was saved, not what was there before.
+        if self.selected_user:
+            fresh = next((u for u in self.all_users if u.get("userId") == self.selected_user.get("userId")), None)
+            if fresh is not None:
+                self.selected_user = fresh
         disabled = sum(1 for user in self.all_users if not user.get("status"))
         self.disabled_toggle.setText(f"Show disabled ({disabled})")
         self._fill_role_filter()

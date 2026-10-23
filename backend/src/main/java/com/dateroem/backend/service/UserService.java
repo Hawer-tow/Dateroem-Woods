@@ -149,8 +149,9 @@ public class UserService {
             params.add(request.name());
         }
         if (request.email() != null) {
+            // "" removes the email (the desktop sends it when the box is emptied).
             sets.add("Email = ?");
-            params.add(request.email());
+            params.add(request.email().isBlank() ? null : request.email().trim());
         }
         if (request.phoneNo() != null) {
             sets.add("Phone_NO = ?");

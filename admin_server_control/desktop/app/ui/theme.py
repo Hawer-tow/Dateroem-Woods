@@ -343,6 +343,25 @@ QLabel[role="success"] {{
     color: {STATUS_GOOD};
     font-weight: 600;
 }}
+QFrame#profileCard {{
+    background-color: rgba({INK}, 0.05);
+    border: 1px solid rgba({INK}, 0.09);
+    border-radius: 14px;
+}}
+QFrame#profileCard:hover {{
+    background-color: rgba({INK}, 0.10);
+    border-color: {WOOD};
+}}
+QLabel#profileName {{
+    color: {TEXT};
+    font-weight: 700;
+    background: transparent;
+}}
+QLabel#profileRole {{
+    color: {TEXT_MUTED};
+    font-size: 11px;
+    background: transparent;
+}}
 QFrame[role="card"] {{
     background-color: {SURFACE};
     border: 1px solid {BORDER};

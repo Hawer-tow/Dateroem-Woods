@@ -164,14 +164,16 @@ public class ProductService {
     // the picture". The one exception is the image: no image in the
     // request keeps the current one ("i edited a product all of a sudden
     // the image is lost" - the phone's edit form sent none when it couldn't
-    // read the key back), and an empty one clears it on purpose.
+    // read the key back), and an empty one clears it on purpose. Body feet
+    // per unit is kept the same way: no form edits it, and every edit from
+    // the desktop or phone emptied it (24 October 2026).
     @Transactional
     public void update(int productId, ProductDto product, int actorUserId) {
         checkDescription(product);
         String image = MediaUrls.toKey(product.image());
         jdbcTemplate.update(
             "UPDATE PRODUCTS SET Name = ?, Ske = ?, Type = ?, Description = ?, Price = ?, " +
-            "Stock = ?, Unit = ?, Attributes = ?, Body_Feet_Per_Unit = ?, Marketer_Note = ?, " +
+            "Stock = ?, Unit = ?, Attributes = ?, Body_Feet_Per_Unit = COALESCE(?, Body_Feet_Per_Unit), Marketer_Note = ?, " +
             "Image = IF(? IS NULL, Image, NULLIF(?, '')), Trees_ID = ? " +
             "WHERE Product_ID = ? AND Is_Deleted = FALSE",
             product.name(), product.sku(), product.type(), product.description(), product.price(),
