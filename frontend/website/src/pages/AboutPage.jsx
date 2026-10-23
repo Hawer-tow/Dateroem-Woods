@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { api } from '../api/client.js'
 import Icon from '../components/Icon.jsx'
 import StoryScroller from '../components/StoryScroller.jsx'
 import { ABOUT_CLOSING, ABOUT_COMPANY, ABOUT_FOUNDER, ABOUT_HOW, ABOUT_INTRO, ABOUT_LOCATION } from '../core/aboutStory.js'
 
 // "a new section about that has more information about the company" - a
 // short introduction, the scroll-played journey from tree to doorstep, then
-// who we are (the registered business, mission, vision, what we stand for)
-// and the founder, and the way on to the shop. The words live in
-// core/aboutStory.js.
+// who we are (the registered business), how we work, what drives us, where
+// to find and reach us, and the founder, and the way on to the shop. The
+// words live in core/aboutStory.js.
+//
+// "the rest need to be ordered good especially in big screens ... easy to
+// spot the business information" (23 October 2026) - every section after
+// the film follows the one the owner liked: the words on the left, the facts
+// in a card on the right, in one centred column.
 export default function AboutPage() {
   return (
     <div className="about-page">
@@ -20,79 +26,101 @@ export default function AboutPage() {
 
       <StoryScroller />
 
-      <section className="about-company" aria-labelledby="about-company-title">
-        <div className="about-company__text">
-          <p className="about-hero__eyebrow">{ABOUT_COMPANY.eyebrow}</p>
-          <h2 id="about-company-title" className="about-section__title">{ABOUT_COMPANY.title}</h2>
-          <p className="about-company__lead">{ABOUT_COMPANY.text}</p>
-        </div>
-        <dl className="about-facts">
-          {ABOUT_COMPANY.facts.map(([label, value]) => (
-            <div key={label} className="about-facts__row">
-              <dt>{label}</dt>
-              <dd>{value}</dd>
+      <div className="about-body">
+        <section className="about-split" aria-labelledby="about-company-title">
+          <div>
+            <p className="about-hero__eyebrow">{ABOUT_COMPANY.eyebrow}</p>
+            <h2 id="about-company-title" className="about-section__title">{ABOUT_COMPANY.title}</h2>
+            <p className="about-section__lead">{ABOUT_COMPANY.text}</p>
+          </div>
+          <dl className="about-card about-facts">
+            {ABOUT_COMPANY.facts.map(([label, value]) => (
+              <div key={label} className="about-facts__row">
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section className="about-how" aria-labelledby="about-how-title">
+          <header className="about-section__head">
+            <p className="about-hero__eyebrow">{ABOUT_HOW.eyebrow}</p>
+            <h2 id="about-how-title" className="about-section__title">{ABOUT_HOW.title}</h2>
+            <p className="about-section__lead">{ABOUT_HOW.lead}</p>
+          </header>
+          <ol className="about-how__steps">
+            {ABOUT_HOW.steps.map(([title, text], i) => (
+              <li key={title} className="about-how__step">
+                <span className="about-how__marker" aria-hidden="true">
+                  <span className="about-how__number">{i + 1}</span>
+                </span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="about-split" aria-labelledby="about-purpose-title">
+          <div>
+            <p className="about-hero__eyebrow">{ABOUT_COMPANY.purposeEyebrow}</p>
+            <h2 id="about-purpose-title" className="about-section__title">{ABOUT_COMPANY.purposeTitle}</h2>
+            <div className="about-purpose__item">
+              <h3>Our mission</h3>
+              <p>{ABOUT_COMPANY.mission}</p>
             </div>
-          ))}
-        </dl>
-      </section>
+            <div className="about-purpose__item">
+              <h3>Our vision</h3>
+              <p>{ABOUT_COMPANY.vision}</p>
+            </div>
+          </div>
+          <div className="about-card">
+            <h3 className="about-card__title">What we stand for</h3>
+            <ul className="about-values">
+              {ABOUT_COMPANY.values.map((value) => (
+                <li key={value}>
+                  <span className="about-values__tick" aria-hidden="true">
+                    <Icon name="check" size={13} />
+                  </span>
+                  <span>{value}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
 
-      <section className="about-how" aria-labelledby="about-how-title">
-        <h2 id="about-how-title" className="about-section__title">{ABOUT_HOW.title}</h2>
-        <ol className="about-how__steps">
-          {ABOUT_HOW.steps.map(([title, text], i) => (
-            <li key={title} className="about-how__step">
-              <span className="about-how__number" aria-hidden="true">{i + 1}</span>
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+        <section className="about-split" aria-labelledby="about-location-title">
+          <div>
+            <p className="about-hero__eyebrow">{ABOUT_LOCATION.eyebrow}</p>
+            <h2 id="about-location-title" className="about-section__title">{ABOUT_LOCATION.title}</h2>
+            <p className="about-location__place">
+              <Icon name="pin" size={18} className="icon--inline" /> {ABOUT_LOCATION.place}
+            </p>
+            <address className="about-location__address">{ABOUT_LOCATION.address}</address>
+            <p className="about-section__lead">{ABOUT_LOCATION.note}</p>
+            <div className="about-location__actions">
+              <a className="btn btn--primary" href={ABOUT_LOCATION.mapUrl} target="_blank" rel="noopener noreferrer">
+                Open in Google Maps
+              </a>
+              <Link to="/help" className="btn btn--secondary">
+                Contact us
+              </Link>
+            </div>
+          </div>
+          <ReachUs />
+        </section>
 
-      <section className="about-purpose" aria-label="Mission and vision">
-        <article className="about-purpose__card">
-          <h3>Our mission</h3>
-          <p>{ABOUT_COMPANY.mission}</p>
-        </article>
-        <article className="about-purpose__card">
-          <h3>Our vision</h3>
-          <p>{ABOUT_COMPANY.vision}</p>
-        </article>
-      </section>
-
-      <section className="about-values" aria-labelledby="about-values-title">
-        <h2 id="about-values-title" className="about-section__title">What we stand for</h2>
-        <ul className="about-values__list">
-          {ABOUT_COMPANY.values.map((value) => (
-            <li key={value}>{value}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="about-location" aria-labelledby="about-location-title">
-        <div className="about-location__pin" aria-hidden="true">
-          <Icon name="pin" size={26} />
-        </div>
-        <div>
-          <h2 id="about-location-title" className="about-section__title">{ABOUT_LOCATION.title}</h2>
-          <p className="about-location__place">{ABOUT_LOCATION.place}</p>
-          <address className="about-location__address">{ABOUT_LOCATION.address}</address>
-          <p className="about-location__note">{ABOUT_LOCATION.note}</p>
-          <a className="btn btn--secondary about-location__map" href={ABOUT_LOCATION.mapUrl} target="_blank" rel="noopener noreferrer">
-            Open in Google Maps
-          </a>
-        </div>
-      </section>
-
-      <section className="about-founder" aria-labelledby="about-founder-title">
-        <FounderPhoto />
-        <div className="about-founder__text">
-          <p className="about-hero__eyebrow">{ABOUT_FOUNDER.eyebrow}</p>
-          <h2 id="about-founder-title" className="about-section__title">{ABOUT_FOUNDER.name}</h2>
-          <p className="about-founder__role">{ABOUT_FOUNDER.role}, Dateroem Woods</p>
-          <p className="about-founder__bio">{ABOUT_FOUNDER.text}</p>
-        </div>
-      </section>
+        <section className="about-founder" aria-labelledby="about-founder-title">
+          <FounderPhoto />
+          <div className="about-founder__text">
+            <p className="about-hero__eyebrow">{ABOUT_FOUNDER.eyebrow}</p>
+            <h2 id="about-founder-title" className="about-section__title">{ABOUT_FOUNDER.name}</h2>
+            <p className="about-founder__role">{ABOUT_FOUNDER.role}, Dateroem Woods</p>
+            <p className="about-founder__bio">{ABOUT_FOUNDER.text}</p>
+          </div>
+        </section>
+      </div>
 
       <section className="about-closing">
         <h2 className="about-closing__title">{ABOUT_CLOSING.title}</h2>
@@ -109,6 +137,45 @@ export default function AboutPage() {
           </Link>
         </div>
       </section>
+    </div>
+  )
+}
+
+// The company's own contacts, from the website server's settings (the same
+// ones the footer and Help page show) - never anyone's personal number.
+function ReachUs() {
+  const [contact, setContact] = useState(null)
+
+  useEffect(() => {
+    api
+      .helpContact()
+      .then(setContact)
+      .catch(() => setContact(null))
+  }, [])
+
+  if (!contact) return null
+  const outside = { target: '_blank', rel: 'noopener noreferrer' }
+  const rows = [
+    contact.phone && ['phone', 'Phone', <a href={`tel:${contact.phone.replace(/\s+/g, '')}`}>{contact.phone}</a>],
+    contact.whatsappLink && ['whatsapp', 'WhatsApp', <a href={contact.whatsappLink} {...outside}>{contact.whatsapp || 'Chat with us'}</a>],
+    contact.email && ['mail', 'Email', contact.emailForm ? <Link to="/help">{contact.email}</Link> : <a href={`mailto:${contact.email}`}>{contact.email}</a>],
+    contact.tiktok && ['tiktok', 'TikTok', <a href={contact.tiktok} {...outside}>@dateroem.woods</a>],
+    contact.instagram && ['instagram', 'Instagram', <a href={contact.instagram} {...outside}>@dateroem.woods</a>],
+  ].filter(Boolean)
+
+  return (
+    <div className="about-card">
+      <h3 className="about-card__title">Reach us</h3>
+      <dl className="about-facts about-contact">
+        {rows.map(([icon, label, value]) => (
+          <div key={label} className="about-facts__row">
+            <dt>
+              <Icon name={icon} size={15} className="icon--inline" /> {label}
+            </dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   )
 }

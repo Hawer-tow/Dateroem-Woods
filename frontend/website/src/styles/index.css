@@ -5016,36 +5016,68 @@ button.area-card__area:hover {
   transform: none;
 }
 
-/* Who we are, mission and vision, what we stand for and the founder
-   (23 October 2026) - after the story, before the way on to the shop. */
+/* Who we are, how we work, what drives us, where to find us and the founder
+   (23 October 2026). "the rest need to be ordered good especially in big
+   screens ... easy to spot the business information" - one centred column,
+   and every section in the pattern the owner liked: the words on the left,
+   the facts in a card on the right. */
+.about-body {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.about-body > section {
+  margin-top: clamp(64px, 11vh, 120px);
+}
+.about-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: start;
+}
 .about-section__title {
-  margin: 0 0 12px;
-  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  margin: 0 0 14px;
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
   line-height: 1.15;
 }
-.about-company {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: clamp(24px, 4vw, 56px);
-  align-items: start;
-  margin: clamp(48px, 9vh, 96px) 0 0;
+.about-section__head {
+  max-width: 720px;
+  margin: 0 0 clamp(28px, 5vh, 44px);
 }
-.about-company__lead {
+.about-section__lead {
   margin: 0;
+  max-width: 62ch;
   color: var(--text-muted);
   font-size: clamp(1rem, 1.5vw, 1.1rem);
   line-height: 1.7;
 }
-.about-facts {
+
+/* The information cards: the same look for the company facts, what we
+   stand for and how to reach us. */
+.about-card {
   margin: 0;
-  padding: 8px 20px;
+  padding: 6px 22px 10px;
   background: var(--bg-elevated);
   border: 1px solid rgba(var(--ink-rgb), 0.08);
   border-top: 3px solid var(--wood-tone);
   border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+.about-card__title {
+  margin: 14px 0 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wood-tone);
+}
+.about-facts {
+  margin: 0;
+}
+.about-card .about-facts {
+  padding: 0;
 }
 .about-facts__row {
-  padding: 12px 0;
+  padding: 13px 0;
   border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
 }
 .about-facts__row:last-child {
@@ -5061,142 +5093,153 @@ button.area-card__area:hover {
 }
 .about-facts dd {
   margin: 0;
+  font-size: 1.02rem;
   line-height: 1.45;
 }
-.about-how {
-  margin: clamp(40px, 7vh, 72px) 0 0;
+.about-contact dt .icon--inline {
+  vertical-align: -2px;
+  color: var(--wood-tone);
 }
+.about-contact dd a {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(235, 154, 75, 0.5);
+}
+.about-contact dd a:hover {
+  color: var(--wood-tone);
+}
+
+/* How we work: the four steps side by side, joined by a wood line from
+   each number to the next. */
 .about-how__steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin: 8px 0 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(20px, 3vw, 40px);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 .about-how__step {
   position: relative;
-  padding: 20px 20px 22px;
-  background: var(--bg-elevated);
-  border: 1px solid rgba(var(--ink-rgb), 0.08);
-  border-radius: 12px;
+  min-width: 0;
+}
+.about-how__marker {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.about-how__step:not(:last-child) .about-how__marker::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  margin: 0 calc(-1 * clamp(20px, 3vw, 40px)) 0 14px;
+  background: linear-gradient(to right, var(--wood-tone), rgba(235, 154, 75, 0.25));
 }
 .about-how__number {
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  margin-bottom: 10px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background: var(--wood-log);
   color: var(--wood-on);
+  font-size: 1.15rem;
   font-weight: 700;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
 }
 .about-how__step h3 {
-  margin: 0 0 6px;
-  font-size: 1.05rem;
+  margin: 0 0 8px;
+  font-size: 1.15rem;
 }
 .about-how__step p {
   margin: 0;
   color: var(--text-muted);
-  line-height: 1.6;
-}
-.about-location {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-  margin: clamp(40px, 7vh, 72px) 0 0;
-  padding: clamp(20px, 3vw, 28px);
-  background: var(--wood-tint-elevated);
-  border: 1px solid rgba(235, 154, 75, 0.3);
-  border-radius: 14px;
-}
-.about-location__pin {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--bg-elevated);
-  color: var(--wood-tone);
-}
-.about-location__place {
-  margin: -4px 0 4px;
-  font-weight: 600;
-}
-.about-location__address {
-  margin: 0 0 10px;
-  font-style: normal;
-  font-size: 1.05rem;
-}
-.about-location__note {
-  margin: 0 0 16px;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-.about-purpose {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-  margin: clamp(32px, 6vh, 56px) 0 0;
-}
-.about-purpose__card {
-  padding: 22px 24px;
-  background: var(--wood-tint-elevated);
-  border: 1px solid rgba(235, 154, 75, 0.3);
-  border-radius: 12px;
-}
-.about-purpose__card h3 {
-  margin: 0 0 8px;
-  font-size: 1.1rem;
-  color: var(--wood-tone);
-}
-.about-purpose__card p {
-  margin: 0;
   line-height: 1.65;
 }
-.about-values {
-  margin: clamp(40px, 7vh, 72px) 0 0;
+
+/* What drives us: the mission and vision as statements, beside the list. */
+.about-purpose__item {
+  margin: 24px 0 0;
+  padding: 2px 0 2px 20px;
+  border-left: 3px solid var(--wood-tone);
 }
-.about-values__list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px 24px;
+.about-purpose__item h3 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wood-tone);
+}
+.about-purpose__item p {
+  margin: 0;
+  font-size: clamp(1.08rem, 1.7vw, 1.28rem);
+  line-height: 1.55;
+}
+.about-values {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.about-values__list li {
-  position: relative;
-  padding: 14px 16px 14px 42px;
-  background: var(--bg-elevated);
-  border: 1px solid rgba(var(--ink-rgb), 0.07);
-  border-radius: 10px;
+.about-values li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
   line-height: 1.5;
 }
-.about-values__list li::before {
-  content: '';
-  position: absolute;
-  left: 16px;
-  top: 19px;
-  width: 12px;
-  height: 12px;
+.about-values li:last-child {
+  border-bottom: none;
+}
+.about-values__tick {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
   border-radius: 50%;
   background: var(--wood-log);
+  color: var(--wood-on);
 }
+
+/* Where to find us. */
+.about-location__place {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--wood-tone);
+}
+.about-location__address {
+  margin: 0 0 14px;
+  font-style: normal;
+  font-size: clamp(1.2rem, 2vw, 1.45rem);
+  line-height: 1.35;
+}
+.about-location__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+/* The founder: a card of its own, centred. */
 .about-founder {
   display: grid;
-  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
-  gap: clamp(24px, 4vw, 48px);
+  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
   align-items: center;
-  margin: clamp(48px, 9vh, 96px) 0 0;
-  padding: clamp(20px, 3vw, 32px);
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: clamp(22px, 3vw, 36px);
   background: var(--bg-elevated);
   border: 1px solid rgba(var(--ink-rgb), 0.08);
   border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 .about-founder__photo {
   position: relative;
@@ -5225,7 +5268,7 @@ button.area-card__area:hover {
   opacity: 0.85;
 }
 .about-founder__role {
-  margin: -4px 0 12px;
+  margin: -6px 0 12px;
   font-weight: 600;
   color: var(--wood-tone);
 }
@@ -5235,11 +5278,47 @@ button.area-card__area:hover {
   color: var(--text-muted);
   line-height: 1.7;
 }
-@media (max-width: 720px) {
-  .about-company,
-  .about-purpose,
+
+/* Laptops and tablets: the steps two by two. */
+@media (max-width: 1000px) {
+  .about-how__steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 32px;
+  }
+  .about-how__step:nth-child(2n) .about-how__marker::after {
+    display: none;
+  }
+}
+/* Phones and narrow windows: one column; the steps down a wood line. */
+@media (max-width: 760px) {
+  .about-split,
   .about-founder {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .about-how__steps {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 22px;
+  }
+  .about-how__step {
+    padding-left: 62px;
+  }
+  .about-how__marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+  }
+  .about-how__marker::after {
+    display: none;
+  }
+  .about-how__step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 22px;
+    top: 52px;
+    bottom: -18px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--wood-tone), rgba(235, 154, 75, 0.25));
   }
   .about-founder__photo {
     width: min(220px, 70%);

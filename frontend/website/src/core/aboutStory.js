@@ -76,6 +76,8 @@ export const ABOUT_COMPANY = {
     ['Where our timber comes from', 'Farms across Central Kenya'],
     ['What we do', 'Sourcing, milling, finishing and nationwide delivery of timber and native African hardwoods'],
   ],
+  purposeEyebrow: 'What drives us',
+  purposeTitle: 'Our purpose',
   mission:
     'To make quality, responsibly sourced Kenyan timber easy to buy and reliable to receive - from the forest to the customer\'s door.',
   vision:
@@ -92,7 +94,9 @@ export const ABOUT_COMPANY = {
 // How we do business - "where we are located and how we do our business ...
 // sourcing is from central kenya as usual" (23 October 2026).
 export const ABOUT_HOW = {
+  eyebrow: 'Our process',
   title: 'How we work',
+  lead: 'From the farm to your door, in four steps.',
   steps: [
     ['Sourcing', 'We buy trees from farms across Central Kenya, with the permits each harvest needs, and pay the farmers promptly and transparently.'],
     ['Milling and finishing', 'The logs come to our workshop in Nakuru, where they are milled and finished into poles, sawn timber, boards and templates.'],
@@ -104,6 +108,7 @@ export const ABOUT_HOW = {
 // Where to find us. The map pin is the owner's own (23 October 2026), kept
 // without Google's tracking parameters.
 export const ABOUT_LOCATION = {
+  eyebrow: 'Visit us',
   title: 'Where to find us',
   place: 'Dateroem Woods workshop',
   address: 'Ebenezar Plot, Old Nairobi Road, Nakuru, Kenya',
