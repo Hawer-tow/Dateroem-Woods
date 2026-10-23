@@ -33,6 +33,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import com.dateroem.woodsales.ui.auth.AccountState
+import com.dateroem.woodsales.ui.common.Avatar
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -82,6 +84,9 @@ fun AppDrawerContent(
     onSelectSection: (Section) -> Unit,
     onOpenSettings: () -> Unit,
     onSignOut: () -> Unit,
+    // "a profile area like tiktok ... in mobile" - the photo and name at the
+    // top open My profile (23 October 2026).
+    onOpenProfile: () -> Unit = {},
     // A count shown beside a section (e.g. products out of stock); 0 hides it.
     badges: Map<Section, Int> = emptyMap()
 ) {
@@ -153,9 +158,21 @@ fun AppDrawerContent(
 
             Column(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    DateroemWordmark(modifier = Modifier.height(30.dp).padding(bottom = 6.dp))
-                    Text(session.name, color = DateroemText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(session.roleName, color = DateroemAccent, style = MaterialTheme.typography.bodySmall)
+                    DateroemWordmark(modifier = Modifier.height(30.dp).padding(bottom = 10.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(onClickLabel = "My profile", onClick = onOpenProfile)
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Avatar(name = session.name, photoUrl = AccountState.photoUrl, size = 44.dp)
+                        Column(modifier = Modifier.padding(start = 10.dp)) {
+                            Text(session.name, color = DateroemText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(session.roleName, color = DateroemAccent, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                 }
                 HorizontalDivider(color = DateroemLine.copy(alpha = 0.12f))
 

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +36,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import java.util.UUID
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -134,9 +136,49 @@ fun AppLockGate(startLocked: Boolean, onSignOut: () -> Unit, content: @Composabl
         onDispose { activity.lifecycle.removeObserver(observer) }
     }
 
+    // "a timer like about 25 minutes of inactivity" (23 October 2026): open
+    // but untouched for the minutes the SuperAdmin set (AccountState), the
+    // app locks too; a minute before, "Still there?" asks. Nothing is lost -
+    // the screens wait under the lock as they do after time away.
+    var stillThere by remember { mutableStateOf(false) }
+    LaunchedEffect(locked) {
+        if (locked) {
+            stillThere = false
+            return@LaunchedEffect
+        }
+        IdleClock.touch()
+        while (true) {
+            delay(5_000)
+            val limit = AccountState.idleLockMinutes.coerceIn(5, 120) * 60_000L
+            val idle = System.currentTimeMillis() - IdleClock.lastInteractionAt
+            if (idle >= limit) {
+                stillThere = false
+                locked = true
+                return@LaunchedEffect
+            }
+            stillThere = idle >= limit - 60_000L
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Box(modifier = if (locked) Modifier.fillMaxSize().clearAndSetSemantics { } else Modifier.fillMaxSize()) {
             content()
+        }
+        if (stillThere && !locked) {
+            AlertDialog(
+                onDismissRequest = {
+                    IdleClock.touch()
+                    stillThere = false
+                },
+                title = { Text("Still there?") },
+                text = { Text("The app locks in a minute if it isn't used.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        IdleClock.touch()
+                        stillThere = false
+                    }) { Text("I'm here") }
+                }
+            )
         }
         if (locked) {
             // Back leaves the app rather than moving the covered screens.

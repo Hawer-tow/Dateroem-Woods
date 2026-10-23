@@ -97,6 +97,13 @@ class MainWindow(QMainWindow):
             self.sidebar.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sidebar_container.addWidget(self.sidebar, 1)
 
+        # "desktop profile above Settings" (23 October 2026): the signed-in
+        # admin's photo, details and password; the button shows their photo.
+        self.profile_btn = QPushButton("Profile")
+        self.profile_btn.setIcon(icon("user", theme.TEXT_MUTED) if theme.MODERN else icon("user"))
+        self.profile_btn.clicked.connect(self._open_profile)
+        sidebar_container.addWidget(self.profile_btn)
+
         # Settings sits with Sign Out at the foot of the sidebar - always in
         # view, below however many sections there are (20 October 2026).
         self.settings_btn = QPushButton("Settings")
@@ -108,7 +115,7 @@ class MainWindow(QMainWindow):
         self.logout_btn.clicked.connect(self._sign_out)
         sidebar_container.addWidget(self.logout_btn)
         if theme.MODERN:
-            for button in (self.settings_btn, self.logout_btn):
+            for button in (self.profile_btn, self.settings_btn, self.logout_btn):
                 button.setObjectName("navAction")
                 button.setIconSize(QSize(18, 18))
             self.logout_btn.setText("Sign out")
@@ -176,6 +183,56 @@ class MainWindow(QMainWindow):
         status.showMessage(f"Signed in as {session.name} ({session.role_name})")
         self.setStatusBar(status)
 
+        # "a timer like about 25 minutes of inactivity" - locks this window
+        # after the SuperAdmin's minutes untouched (ui/idle_lock.py).
+        from app.ui.idle_lock import IdleLock
+
+        self.idle_lock = IdleLock(self, api_client, session, on_sign_out=lambda reason: self.on_logout(reason))
+        self._load_profile_photo()
+
+    def closeEvent(self, event):
+        self.idle_lock.stop()
+        super().closeEvent(event)
+
+    def _load_profile_photo(self):
+        """The Profile button shows the admin's own photo once it has loaded."""
+        from PySide6.QtCore import QThreadPool
+        from PySide6.QtGui import QIcon, QPixmap
+
+        from app.core import http
+        from app.core.worker import Worker
+        from app.ui.profile_dialog import round_photo
+
+        def work():
+            me = self.api_client.get("/auth/me")
+            url = (me or {}).get("photoUrl")
+            if not url:
+                return None
+            response = http.session().get(server_address.absolute(url), timeout=15)
+            response.raise_for_status()
+            return response.content
+
+        def done(content):
+            pixmap = QPixmap()
+            if content and pixmap.loadFromData(content):
+                self.profile_btn.setIcon(QIcon(round_photo(pixmap, 36)))
+            else:
+                self.profile_btn.setIcon(icon("user", theme.TEXT_MUTED) if theme.MODERN else icon("user"))
+
+        self._photo_worker = Worker(work)
+        self._photo_worker.signals.finished.connect(done)
+        self._photo_worker.signals.error.connect(lambda _m: None)
+        QThreadPool.globalInstance().start(self._photo_worker)
+
+    def _open_profile(self):
+        from app.ui.profile_dialog import ProfileDialog
+
+        dialog = ProfileDialog(self.api_client, self.session, self)
+        dialog.exec()
+        if dialog.photo_changed:
+            self._load_profile_photo()
+        self.statusBar().showMessage(f"Signed in as {self.session.name} ({self.session.role_name})")
+
     def _show_section(self, index: int):
         if index not in self._section_widgets:
             _icon, _label, factory = self._section_factories[index]
@@ -215,7 +272,7 @@ class MainWindow(QMainWindow):
         self._nav_delegate.folded = folded
         self.sidebar_widget.setFixedWidth(MENU_WIDTH_FOLDED if folded else MENU_WIDTH)
         self.nav_toggle.setToolTip("Open the menu" if folded else "Fold the menu to icons")
-        for button, label in ((self.settings_btn, "Settings"), (self.logout_btn, "Sign out")):
+        for button, label in ((self.profile_btn, "Profile"), (self.settings_btn, "Settings"), (self.logout_btn, "Sign out")):
             button.setText("" if folded else label)
             button.setToolTip(label if folded else "")
         self.sidebar.viewport().update()

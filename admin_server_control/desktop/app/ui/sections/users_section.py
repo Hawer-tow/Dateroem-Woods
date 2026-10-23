@@ -1,10 +1,12 @@
 import platform
 
-from PySide6.QtCore import QThreadPool
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Qt, QThreadPool
+from PySide6.QtGui import QColor, QGuiApplication
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -162,6 +164,14 @@ class UsersSection(QWidget):
         self.edit_user_btn.setEnabled(False)
         self.edit_user_btn.clicked.connect(self._open_edit_user)
         action_row.addWidget(self.edit_user_btn)
+
+        # "is it proper to allow the superadmin to see actual passwords" - no
+        # one can (they are stored one-way); a reset gives a temporary one,
+        # shown once, which the person replaces at their next sign-in.
+        self.reset_password_btn = QPushButton("Reset Password")
+        self.reset_password_btn.setEnabled(False)
+        self.reset_password_btn.clicked.connect(self._reset_password)
+        action_row.addWidget(self.reset_password_btn)
 
         self.disable_btn = QPushButton("Disable Account")
         self.disable_btn.setProperty("role", "danger")
@@ -404,6 +414,13 @@ class UsersSection(QWidget):
         self.disable_btn.setEnabled(active and not target_is_super)
         self.enable_btn.setEnabled(not active and editable)
         self.edit_user_btn.setEnabled(editable)
+        # Not your own (Profile does that), never the SuperAdmin's, and an
+        # Admin's only by the SuperAdmin - the backend checks the same.
+        is_self = user.get("userId") == self.api_client.session.user_id
+        target_is_admin = user.get("roleName") == "Admin"
+        self.reset_password_btn.setEnabled(
+            not is_self and not target_is_super and (self.is_super_admin or not target_is_admin)
+        )
         self.hand_over_btn.setEnabled(
             self.is_super_admin and active and not target_is_super and user.get("roleName") != "Customer"
         )
@@ -436,6 +453,32 @@ class UsersSection(QWidget):
             done,
             lambda message: QMessageBox.critical(self, "Couldn't hand over", message),
         )
+
+    def _reset_password(self):
+        user = self.selected_user
+        if not user:
+            return
+        who = f"{user.get('name') or user.get('userName')} ({user.get('userName')})"
+        question = (
+            f"Reset the password for {who}?\n\n"
+            "They are signed out everywhere at once, and must choose a new password the next time they sign in. "
+            "You will see a temporary password once - give it to them in person or by phone, never in a group chat."
+        )
+        if QMessageBox.question(self, "Reset password?", question) != QMessageBox.StandardButton.Yes:
+            return
+        user_id = user.get("userId")
+        self.reset_password_btn.setEnabled(False)
+
+        def done(result):
+            self.reset_password_btn.setEnabled(True)
+            TemporaryPasswordDialog(who, (result or {}).get("temporaryPassword") or "", parent=self).exec()
+            self._load_users(self.users_table.current_limit())
+
+        def failed(message: str):
+            self.reset_password_btn.setEnabled(True)
+            QMessageBox.critical(self, "Couldn't reset the password", message)
+
+        self._run(lambda: self.api_client.post(f"/users/{user_id}/reset-password"), done, failed)
 
     def _set_status(self, active: bool):
         if not self.selected_user:
@@ -825,3 +868,49 @@ def _short_time(value) -> str:
 def _phone_row_color(row: dict):
     # Waiting phones stand out so they are dealt with first.
     return QColor(235, 154, 75, 60) if row.get("Status") == "Waiting for approval" else None
+
+
+class TemporaryPasswordDialog(QDialog):
+    """The temporary password, shown this once (it is never stored readable)."""
+
+    def __init__(self, who: str, password: str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Temporary password")
+        self.setMinimumWidth(460)
+        card = QFrame()
+        card.setProperty("role", "card")
+        box = QVBoxLayout(card)
+        box.setContentsMargins(22, 18, 22, 20)
+        box.setSpacing(10)
+        title = QLabel("Temporary password")
+        title.setProperty("role", "title")
+        box.addWidget(title)
+        intro = QLabel(f"For {who}. It is shown only now. They sign in with it and then choose their own password.")
+        intro.setProperty("role", "muted")
+        intro.setWordWrap(True)
+        box.addWidget(intro)
+        value = QLineEdit(password)
+        value.setReadOnly(True)
+        font = value.font()
+        font.setFamily("Consolas")
+        font.setPointSizeF(font.pointSizeF() * 1.5)
+        font.setBold(True)
+        value.setFont(font)
+        value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        box.addWidget(value)
+        self.copied = QLabel("")
+        self.copied.setProperty("role", "muted")
+        box.addWidget(self.copied)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        copy = QPushButton("Copy")
+        copy.clicked.connect(lambda: (QGuiApplication.clipboard().setText(password), self.copied.setText("Copied.")))
+        row.addWidget(copy)
+        done = QPushButton("Done")
+        done.setProperty("role", "primary")
+        done.clicked.connect(self.accept)
+        row.addWidget(done)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(18, 18, 18, 16)
+        layout.addWidget(card)
+        layout.addLayout(row)

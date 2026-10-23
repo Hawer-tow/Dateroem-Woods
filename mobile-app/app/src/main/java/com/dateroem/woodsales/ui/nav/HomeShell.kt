@@ -32,6 +32,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
+import com.dateroem.woodsales.ui.profile.ProfileScreen
+import com.dateroem.woodsales.ui.profile.ProfileViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -214,6 +217,10 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
                     scope.launch { drawerState.close() }
                     navController.navigate("settings") { launchSingleTop = true }
                 },
+                onOpenProfile = {
+                    scope.launch { drawerState.close() }
+                    navController.navigate("profile") { launchSingleTop = true }
+                },
                 // Asks first (SignOutConfirmDialog, below) - a mistaken tap
                 // only closes the menu.
                 onSignOut = {
@@ -231,6 +238,7 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
         val topBarTitle = when (currentRoute) {
             Section.Dashboard.route -> "Home"
             "settings" -> "Settings"
+            "profile" -> "My profile"
             "deleted_products" -> "Deleted Products"
             "product_form_create" -> "New Product"
             "product_form_edit/{productId}" -> "Edit Product"
@@ -376,6 +384,14 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
                 // From the menu's bottom row; every role has it.
                 composable("settings") {
                     SettingsScreen(container)
+                }
+                // From the photo and name at the top of the menu (migration 039).
+                composable("profile") {
+                    val context = LocalContext.current
+                    val vm: ProfileViewModel = viewModel(
+                        factory = ProfileViewModel.Factory(container.api, container.sessionManager, context.applicationContext)
+                    )
+                    ProfileScreen(vm)
                 }
                 composable(Section.Products.route) {
                     // viewModel(factory=...) ties this to the back stack

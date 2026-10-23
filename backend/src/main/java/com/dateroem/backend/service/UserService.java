@@ -26,7 +26,8 @@ import com.dateroem.backend.util.JsonKeys;
 public class UserService {
 
     private static final String SELECT_COLUMNS =
-        "u.User_ID, u.User_Name, u.Name, u.Email, u.Phone_NO, u.Phone_Verified_At, u.Status, u.Role_ID, r.Name AS Role_Name, u.Can_Sync_Sms";
+        "u.User_ID, u.User_Name, u.Name, u.Email, u.Phone_NO, u.Phone_Verified_At, u.Status, u.Role_ID, r.Name AS Role_Name, u.Can_Sync_Sms, " +
+        "u.Must_Change_Password";
     private static final String FROM_JOIN = "FROM USERS u JOIN ROLE r ON r.Role_ID = u.Role_ID WHERE u.Is_Deleted = FALSE";
 
     private final JdbcTemplate jdbcTemplate;

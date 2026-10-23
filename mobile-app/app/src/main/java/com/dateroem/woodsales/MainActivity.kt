@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.dateroem.woodsales.ui.auth.IdleClock
 import com.dateroem.woodsales.ui.nav.AppRoot
 import com.dateroem.woodsales.ui.theme.DateroemWoodSalesTheme
 
@@ -30,5 +31,12 @@ class MainActivity : FragmentActivity() {
                 AppRoot(container = container)
             }
         }
+    }
+
+    // Every touch or key on the app's screens - the idle lock counts from the
+    // last one ("a timer like about 25 minutes of inactivity", AppLockGate).
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        IdleClock.touch()
     }
 }

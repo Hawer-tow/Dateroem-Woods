@@ -34,5 +34,14 @@ data class AuthResponse(
     // designated to sync SMS; gates whether that screen even shows up.
     val canSyncSms: Boolean = false,
     // The account's colour theme - "forest", "dark" or "light" (Settings).
-    val theme: String? = null
+    val theme: String? = null,
+    // Migration 039: an admin reset this account's password - a new one is
+    // chosen before anything else - and the idle lock's minutes (SuperAdmin).
+    val mustChangePassword: Boolean = false,
+    val idleLockMinutes: Int = 25
 )
+
+// "a profile area ... updating contacts/password" (migration 039).
+data class ProfileUpdateRequest(val name: String, val email: String?, val currentPassword: String?)
+
+data class PasswordChangeRequest(val currentPassword: String, val newPassword: String)

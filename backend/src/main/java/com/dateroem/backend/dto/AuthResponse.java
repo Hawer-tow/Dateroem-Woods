@@ -7,7 +7,11 @@ package com.dateroem.backend.dto;
 // else opens it.
 // theme: the account's chosen colour theme - forest (the default), dark or
 // light (USERS.Theme, migration 037) - so every app opens in it.
+// mustChangePassword: an admin reset this account's password (migration 039)
+// - the app asks for a new one before anything else.
+// idleLockMinutes: the idle lock the SuperAdmin set (APP_SETTINGS) - the
+// phone and desktop apps lock after this many minutes untouched.
 public record AuthResponse(
     String token, int userId, String userName, String name, int roleId, String roleName, boolean canSyncSms,
-    String theme
+    String theme, boolean mustChangePassword, int idleLockMinutes
 ) {}

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Header, HTTPException, Request
+from pydantic import BaseModel
 
-from app.core import backend_client
+from app.core import backend_client, profile_photos
 from app.schemas.auth import GoogleSignInRequest, LoginRequest, PhoneCodeRequest, RegisterRequest, ThemeRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -101,3 +102,62 @@ async def save_theme(request: ThemeRequest, authorization: str | None = Header(d
         "/api/auth/me/theme", json={"theme": request.theme},
         headers={"Authorization": authorization} if authorization else None,
     )
+
+
+# "a profile area ... updating contacts/password" (migration 039) - the
+# signed-in customer's own name and email (the password only when the email
+# changes), password and photo. The phone number changes with an SMS code
+# (/me/phone/send-code and /me/phone/verify above).
+class ProfileRequest(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    currentPassword: str | None = None
+
+
+class PasswordRequest(BaseModel):
+    currentPassword: str | None = None
+    newPassword: str | None = None
+
+
+def _auth(authorization: str | None) -> dict | None:
+    return {"Authorization": authorization} if authorization else None
+
+
+@router.put("/me/profile")
+async def update_profile(request: ProfileRequest, authorization: str | None = Header(default=None)):
+    return await backend_client.put("/api/auth/me/profile", json=request.model_dump(), headers=_auth(authorization))
+
+
+@router.post("/me/password")
+async def change_password(request: PasswordRequest, authorization: str | None = Header(default=None)):
+    """Answers {token}: a new sign-in for this browser - every other one ends."""
+    return await backend_client.post("/api/auth/me/password", json=request.model_dump(), headers=_auth(authorization))
+
+
+@router.post("/me/photo")
+async def upload_photo(http_request: Request, authorization: str | None = Header(default=None)):
+    """The profile photo, sent as the request body: a square JPEG the browser
+    has already cut and shrunk (this server has no image library)."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Please sign in first.")
+    data = await http_request.body()
+    if len(data) > profile_photos.MAX_BYTES:
+        raise HTTPException(status_code=413, detail="That photo is too large.")
+    if not profile_photos.is_jpeg(data):
+        raise HTTPException(status_code=400, detail="Please choose a photo.")
+    me = await backend_client.get("/api/auth/me", headers=_auth(authorization))
+    key = profile_photos.save(me["userId"], data)
+    try:
+        result = await backend_client.put("/api/auth/me/photo", json={"photo": key}, headers=_auth(authorization))
+    except Exception:
+        profile_photos.remove(key)
+        raise
+    profile_photos.remove((result or {}).get("previous"))
+    return {"photoUrl": (result or {}).get("photoUrl")}
+
+
+@router.delete("/me/photo")
+async def remove_photo(authorization: str | None = Header(default=None)):
+    result = await backend_client.put("/api/auth/me/photo", json={"photo": None}, headers=_auth(authorization))
+    profile_photos.remove((result or {}).get("previous"))
+    return {"photoUrl": None}

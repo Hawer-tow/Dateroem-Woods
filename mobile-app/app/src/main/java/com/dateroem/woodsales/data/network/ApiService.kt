@@ -24,6 +24,8 @@ import com.dateroem.woodsales.data.model.FinalizeTripRequest
 import com.dateroem.woodsales.data.model.DeliverLightDeliveryRequest
 import com.dateroem.woodsales.data.model.LightDeliveryStatusRequest
 import com.dateroem.woodsales.data.model.SettleRequest
+import com.dateroem.woodsales.data.model.PasswordChangeRequest
+import com.dateroem.woodsales.data.model.ProfileUpdateRequest
 import com.dateroem.woodsales.data.model.ShareDriverRequest
 import com.dateroem.woodsales.data.model.LoanRequest
 import com.dateroem.woodsales.data.model.LoginRequest
@@ -84,6 +86,22 @@ interface ApiService {
     // The signed-in account's colour theme ({"theme": "forest" | "dark" | "light"}).
     @PUT("auth/me/theme")
     suspend fun saveTheme(@Body body: Map<String, String>): JsonMap
+
+    // The person's own profile (migration 039): name and email (the password
+    // only when the email changes), password - answers a new {token}, every
+    // other sign-in of the account ends - and the photo.
+    @PUT("auth/me/profile")
+    suspend fun updateProfile(@Body body: ProfileUpdateRequest): JsonMap
+
+    @POST("auth/me/password")
+    suspend fun changePassword(@Body body: PasswordChangeRequest): JsonMap
+
+    @Multipart
+    @POST("auth/me/photo")
+    suspend fun uploadProfilePhoto(@Part file: MultipartBody.Part): JsonMap
+
+    @DELETE("auth/me/photo")
+    suspend fun removeProfilePhoto(): JsonMap
 
     @GET("products")
     suspend fun listProducts(): List<Product>

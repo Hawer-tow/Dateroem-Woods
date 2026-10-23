@@ -23,8 +23,10 @@ import com.dateroem.backend.security.DesktopClientFilter;
 import com.dateroem.backend.security.GoogleIdTokens;
 import com.dateroem.backend.security.JwtService;
 import com.dateroem.backend.security.MobileDeviceFilter;
+import com.dateroem.backend.service.AppSettings;
 import com.dateroem.backend.service.AuthService;
 import com.dateroem.backend.service.PhoneVerificationService;
+import com.dateroem.backend.service.ProfileService;
 import com.dateroem.backend.util.JsonKeys;
 
 @RestController
@@ -36,14 +38,18 @@ public class AuthController {
     private final GoogleIdTokens googleIdTokens;
     private final JdbcTemplate jdbcTemplate;
     private final PhoneVerificationService phoneVerification;
+    private final ProfileService profileService;
+    private final AppSettings appSettings;
 
     public AuthController(AuthService authService, JwtService jwtService, GoogleIdTokens googleIdTokens, JdbcTemplate jdbcTemplate,
-                          PhoneVerificationService phoneVerification) {
+                          PhoneVerificationService phoneVerification, ProfileService profileService, AppSettings appSettings) {
         this.authService = authService;
         this.jwtService = jwtService;
         this.googleIdTokens = googleIdTokens;
         this.jdbcTemplate = jdbcTemplate;
         this.phoneVerification = phoneVerification;
+        this.profileService = profileService;
+        this.appSettings = appSettings;
     }
 
     @PostMapping("/register")
@@ -90,16 +96,29 @@ public class AuthController {
 
     // The same for a signed-in customer whose number isn't confirmed yet
     // (asked at checkout): a correct code makes it the account's number.
+    // Customers only: a staff member's number receives payouts (salaries,
+    // refunds), so only an admin changes it (Users > Edit) - "only an admin
+    // can correct them after checking" (23 October 2026).
     @PostMapping("/me/phone/send-code")
     public Map<String, Object> sendAccountCode(@RequestHeader(value = "Authorization", required = false) String authHeader,
                                                @RequestBody PhoneCodeRequest request) {
-        return phoneVerification.sendCode(request.phoneNo(), activeUser(authHeader));
+        return phoneVerification.sendCode(request.phoneNo(), customer(activeUser(authHeader)));
     }
 
     @PostMapping("/me/phone/verify")
     public Map<String, Object> verifyAccountCode(@RequestHeader(value = "Authorization", required = false) String authHeader,
                                                  @RequestBody PhoneCodeRequest request) {
-        return phoneVerification.verifyForAccount(activeUser(authHeader), request.phoneNo(), request.code());
+        return phoneVerification.verifyForAccount(customer(activeUser(authHeader)), request.phoneNo(), request.code());
+    }
+
+    private int customer(int userId) {
+        String role = jdbcTemplate.queryForObject(
+            "SELECT r.Name FROM USERS u JOIN ROLE r ON r.Role_ID = u.Role_ID WHERE u.User_ID = ?", String.class, userId
+        );
+        if (!"Customer".equals(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Staff phone numbers are changed by an admin.");
+        }
+        return userId;
     }
 
     // The signed-in person's colour theme ({"theme": "forest" | "dark" |
@@ -108,6 +127,40 @@ public class AuthController {
     public Map<String, Object> saveTheme(@RequestHeader(value = "Authorization", required = false) String authHeader,
                                          @RequestBody Map<String, String> body) {
         return authService.saveTheme(activeUser(authHeader), body == null ? null : body.get("theme"));
+    }
+
+    // "a profile area ... updating contacts/password" (migration 039): the
+    // person's own name and email ({name, email, currentPassword} - the
+    // password only when the email changes).
+    @PutMapping("/me/profile")
+    public Map<String, Object> updateProfile(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                             @RequestBody Map<String, String> body) {
+        Map<String, String> b = body == null ? Map.of() : body;
+        return profileService.updateProfile(activeUser(authHeader), b.get("name"), b.get("email"), b.get("currentPassword"));
+    }
+
+    // {"photo": "profiles/u<id>-<random>.jpg" | null} - the website, phone
+    // and desktop servers save the picture, then name it here.
+    @PutMapping("/me/photo")
+    public Map<String, Object> setPhoto(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                        @RequestBody Map<String, String> body) {
+        return profileService.setPhoto(activeUser(authHeader), body == null ? null : body.get("photo"));
+    }
+
+    // {currentPassword, newPassword} -> {token}: a new token for this device;
+    // every other sign-in of the account ends.
+    @PostMapping("/me/password")
+    public Map<String, Object> changePassword(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                              @RequestBody Map<String, String> body) {
+        Map<String, String> b = body == null ? Map.of() : body;
+        return profileService.changePassword(activeUser(authHeader), b.get("currentPassword"), b.get("newPassword"), authHeader);
+    }
+
+    // The desktop app's idle lock: {password} -> {ok} (limits on wrong tries).
+    @PostMapping("/me/verify-password")
+    public Map<String, Object> verifyPassword(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                              @RequestBody Map<String, String> body) {
+        return profileService.verifyPassword(activeUser(authHeader), body == null ? null : body.get("password"));
     }
 
     private int activeUser(String authHeader) {
@@ -141,16 +194,28 @@ public class AuthController {
             // fill in the M-Pesa number at checkout and the email window's phone
             // - once Phone_Verified_At shows it was confirmed by an SMS code.
             "SELECT u.User_ID, u.User_Name, u.Name, u.Email, u.Phone_NO, u.Phone_Verified_At, u.Role_ID, " +
-            "r.Name AS Role_Name, u.Can_Sync_Sms, u.Theme " +
+            "r.Name AS Role_Name, u.Can_Sync_Sms, u.Theme, u.Photo, u.Must_Change_Password, " +
+            "(u.Password IS NOT NULL) AS Has_Password, (u.Google_Sub IS NOT NULL) AS Google_Linked " +
             "FROM USERS u JOIN ROLE r ON r.Role_ID = u.Role_ID " +
             "WHERE u.User_ID = ? AND u.Is_Deleted = FALSE",
             userId
         ));
         me.put("theme", AuthService.themeOf(me.get("theme")));
+        // The profile (migration 039): the photo's address, whether a reset
+        // password still has to be replaced, and the idle lock's minutes.
+        me.put("photoUrl", profileService.photoUrl(me.remove("photo")));
+        me.put("mustChangePassword", truthy(me.get("mustChangePassword")));
+        me.put("hasPassword", truthy(me.get("hasPassword")));
+        me.put("googleLinked", truthy(me.get("googleLinked")));
+        me.put("idleLockMinutes", appSettings.idleLockMinutes());
         // Customers confirm their number before their first order (see
         // OrderService.createOrder) - the website asks at checkout.
         me.put("phoneCodeRequired", "Customer".equals(me.get("roleName")) && me.get("phoneVerifiedAt") == null
             && phoneVerification.requiredFor((String) me.get("phoneNo")));
         return me;
+    }
+
+    private static boolean truthy(Object value) {
+        return Boolean.TRUE.equals(value) || (value instanceof Number n && n.intValue() != 0);
     }
 }

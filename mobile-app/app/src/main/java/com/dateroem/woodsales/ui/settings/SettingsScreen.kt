@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dateroem.woodsales.AppContainer
+import com.dateroem.woodsales.ui.auth.AccountState
 import com.dateroem.woodsales.ui.common.AppIcons
 import com.dateroem.woodsales.ui.theme.AppTheme
 import com.dateroem.woodsales.ui.theme.DateroemAccent
@@ -108,6 +109,24 @@ fun SettingsScreen(container: AppContainer) {
                 color = DateroemTextMuted.copy(alpha = 0.8f),
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+        // The idle lock (migration 039): the SuperAdmin sets the minutes in the
+        // desktop app's Settings; every phone follows them from its next start.
+        Column(
+            modifier = Modifier
+                .padding(top = 14.dp)
+                .fillMaxWidth()
+                .background(DateroemSurface, RoundedCornerShape(18.dp))
+                .padding(16.dp)
+        ) {
+            Text("Idle lock", color = DateroemText, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Left open and untouched for ${AccountState.idleLockMinutes} minutes, the app locks and asks for your fingerprint. " +
+                    "A minute before, it asks if you're still there. The SuperAdmin sets the minutes.",
+                color = DateroemTextMuted,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
     }

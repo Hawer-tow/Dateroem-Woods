@@ -27,7 +27,8 @@ import com.dateroem.backend.util.EmailAddresses;
 public class AuthService {
 
     private static final String ACCOUNT_COLUMNS =
-        "u.User_ID, u.User_Name, u.Name, u.Password, u.Status, u.Role_ID, r.Name AS Role_Name, u.Can_Sync_Sms, u.Theme";
+        "u.User_ID, u.User_Name, u.Name, u.Password, u.Status, u.Role_ID, r.Name AS Role_Name, u.Can_Sync_Sms, u.Theme, " +
+        "u.Must_Change_Password";
     // Also checked by UserService when the SuperAdmin corrects a username.
     static final Pattern USER_NAME = Pattern.compile("^[^\\s@]{3,30}$");
     // The colour themes an account can choose (USERS.Theme, migration 037):
@@ -43,11 +44,12 @@ public class AuthService {
     private final ComputerService computerService;
     private final RoleService roleService;
     private final PhoneVerificationService phoneVerification;
+    private final AppSettings appSettings;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public AuthService(JdbcTemplate jdbcTemplate, JwtService jwtService, MpesaClient mpesaClient, GoogleIdTokens googleIdTokens,
                        DeviceService deviceService, ComputerService computerService, RoleService roleService,
-                       PhoneVerificationService phoneVerification) {
+                       PhoneVerificationService phoneVerification, AppSettings appSettings) {
         this.jdbcTemplate = jdbcTemplate;
         this.jwtService = jwtService;
         this.mpesaClient = mpesaClient;
@@ -56,6 +58,7 @@ public class AuthService {
         this.computerService = computerService;
         this.roleService = roleService;
         this.phoneVerification = phoneVerification;
+        this.appSettings = appSettings;
     }
 
     @Transactional
@@ -100,7 +103,8 @@ public class AuthService {
         }
 
         String token = jwtService.issueToken(userId);
-        return new AuthResponse(token, userId, userName, request.name(), customerRoleId, "Customer", false, DEFAULT_THEME);
+        return new AuthResponse(token, userId, userName, request.name(), customerRoleId, "Customer", false, DEFAULT_THEME,
+            false, appSettings.idleLockMinutes());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -248,7 +252,8 @@ public class AuthService {
         if (phoneConfirmed) {
             phoneVerification.linkProofToUser(phone254(phoneNo), request.phoneProof(), userId);
         }
-        return new AuthResponse(jwtService.issueToken(userId), userId, userName, name, customerRoleId, "Customer", false, DEFAULT_THEME);
+        return new AuthResponse(jwtService.issueToken(userId), userId, userName, name, customerRoleId, "Customer", false, DEFAULT_THEME,
+            false, appSettings.idleLockMinutes());
     }
 
     // "make the phone number a must since a user must at least have a
@@ -312,12 +317,15 @@ public class AuthService {
         return response(row, jwtService.issueToken(userId, deviceId));
     }
 
-    private static AuthResponse response(Map<String, Object> row, String token) {
+    private AuthResponse response(Map<String, Object> row, String token) {
         Boolean canSyncSms = (Boolean) row.get("Can_Sync_Sms");
+        Object mustChange = row.get("Must_Change_Password");
         return new AuthResponse(
             token, (Integer) row.get("User_ID"), (String) row.get("User_Name"), (String) row.get("Name"),
             (Integer) row.get("Role_ID"), (String) row.get("Role_Name"), canSyncSms != null && canSyncSms,
-            themeOf(row.get("Theme"))
+            themeOf(row.get("Theme")),
+            Boolean.TRUE.equals(mustChange) || (mustChange instanceof Number n && n.intValue() != 0),
+            appSettings.idleLockMinutes()
         );
     }
 

@@ -9,7 +9,7 @@ on the same section, without signing in again.
 """
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QSpinBox, QVBoxLayout, QWidget
 
 from app.core.api_client import ApiError
 from app.ui import theme
@@ -120,6 +120,47 @@ class SettingsDialog(QDialog):
         note.setProperty("role", "muted")
         card_layout.addWidget(note)
 
+        # "a timer like about 25 minutes of inactivity" (migration 039): the
+        # SuperAdmin sets the minutes for every computer and phone; everyone
+        # else sees them.
+        lock_card = QFrame()
+        lock_card.setProperty("role", "card")
+        lock_layout = QVBoxLayout(lock_card)
+        lock_layout.setContentsMargins(22, 16, 22, 18)
+        lock_layout.setSpacing(6)
+        lock_title = QLabel("Idle lock")
+        lock_title.setProperty("role", "title")
+        lock_layout.addWidget(lock_title)
+        minutes = int(session.idle_lock_minutes or 25)
+        if session.role_name == "SuperAdmin":
+            lock_hint = QLabel(
+                "After this many minutes without use the desktop app asks for the password and the phone app for the "
+                "fingerprint. It applies to every computer and phone from their next sign-in (here, at once)."
+            )
+            lock_hint.setProperty("role", "muted")
+            lock_hint.setWordWrap(True)
+            lock_layout.addWidget(lock_hint)
+            lock_row = QHBoxLayout()
+            lock_row.addWidget(QLabel("Lock after"))
+            self.lock_minutes = QSpinBox()
+            self.lock_minutes.setRange(5, 120)
+            self.lock_minutes.setSuffix(" minutes")
+            self.lock_minutes.setValue(minutes)
+            lock_row.addWidget(self.lock_minutes)
+            save_lock = QPushButton("Save")
+            save_lock.clicked.connect(self._save_lock_minutes)
+            lock_row.addWidget(save_lock)
+            lock_row.addStretch(1)
+            lock_layout.addLayout(lock_row)
+        else:
+            lock_hint = QLabel(f"The app locks after {minutes} minutes without use and asks for your password. The SuperAdmin sets this.")
+            lock_hint.setProperty("role", "muted")
+            lock_hint.setWordWrap(True)
+            lock_layout.addWidget(lock_hint)
+        self.lock_message = QLabel("")
+        self.lock_message.setProperty("role", "muted")
+        lock_layout.addWidget(self.lock_message)
+
         close = QPushButton("Close")
         close.clicked.connect(self.reject)
         buttons = QHBoxLayout()
@@ -129,7 +170,18 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(18, 18, 18, 16)
         layout.addWidget(card)
+        layout.addWidget(lock_card)
         layout.addLayout(buttons)
+
+    def _save_lock_minutes(self):
+        minutes = self.lock_minutes.value()
+        try:
+            self.api_client.put("/auth/idle-lock", json={"minutes": minutes})
+        except ApiError as exc:
+            self.lock_message.setText(f"Couldn't save it: {exc}")
+            return
+        self.session.idle_lock_minutes = minutes
+        self.lock_message.setText(f"Saved: {minutes} minutes.")
 
     def _pick(self, name: str):
         if name == theme.CURRENT:

@@ -21,6 +21,7 @@ import com.dateroem.backend.dto.SetUserStatusRequest;
 import com.dateroem.backend.dto.UpdateUserRequest;
 import com.dateroem.backend.security.AdminGuard;
 import com.dateroem.backend.security.JwtService;
+import com.dateroem.backend.service.ProfileService;
 import com.dateroem.backend.service.UserService;
 
 // Admin-only, for the desktop control app - not exposed to the website or
@@ -34,11 +35,13 @@ public class UserController {
     private final UserService userService;
     private final AdminGuard adminGuard;
     private final JwtService jwtService;
+    private final ProfileService profileService;
 
-    public UserController(UserService userService, AdminGuard adminGuard, JwtService jwtService) {
+    public UserController(UserService userService, AdminGuard adminGuard, JwtService jwtService, ProfileService profileService) {
         this.userService = userService;
         this.adminGuard = adminGuard;
         this.jwtService = jwtService;
+        this.profileService = profileService;
     }
 
     @GetMapping("/lookup-by-phone")
@@ -95,6 +98,18 @@ public class UserController {
         int actorUserId = adminGuard.requireAdmin(authHeader);
         userService.update(userId, request, actorUserId);
         return userService.get(userId);
+    }
+
+    // "is it proper to allow the superadmin to see actual passwords" - no one
+    // can; instead an admin resets it to a temporary password, shown once,
+    // which the person must replace at their next sign-in (migration 039).
+    @PostMapping("/{userId}/reset-password")
+    public Map<String, Object> resetPassword(
+        @PathVariable int userId,
+        @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        int actorUserId = adminGuard.requireAdmin(authHeader);
+        return profileService.resetPassword(userId, actorUserId);
     }
 
     @PatchMapping("/{userId}/status")

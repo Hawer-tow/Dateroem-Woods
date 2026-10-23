@@ -80,6 +80,24 @@ export const api = {
   authProviders: () => request('/auth/providers'),
   googleSignIn: (payload) => request('/auth/google', { method: 'POST', body: JSON.stringify(payload) }),
   me: (token) => request('/auth/me', { headers: authHeader(token) }),
+  // The signed-in person's own profile (migration 039): name and email (the
+  // current password only when the email changes), password - answers a new
+  // {token}, every other sign-in ends - and the photo, a square JPEG.
+  updateProfile: (fields, token) =>
+    request('/auth/me/profile', { method: 'PUT', body: JSON.stringify(fields), headers: authHeader(token) }),
+  changePassword: (currentPassword, newPassword, token) =>
+    request('/auth/me/password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+      headers: authHeader(token),
+    }),
+  uploadPhoto: (jpegBlob, token) =>
+    request('/auth/me/photo', {
+      method: 'POST',
+      body: jpegBlob,
+      headers: { ...authHeader(token), 'Content-Type': 'image/jpeg' },
+    }),
+  removePhoto: (token) => request('/auth/me/photo', { method: 'DELETE', headers: authHeader(token) }),
   // The signed-in account's colour theme: 'forest', 'dark' or 'light'.
   saveTheme: (theme, token) =>
     request('/auth/me/theme', { method: 'PUT', body: JSON.stringify({ theme }), headers: authHeader(token) }),

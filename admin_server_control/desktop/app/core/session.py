@@ -16,6 +16,10 @@ class Session:
         self.role_name: str | None = None
         # The account's colour theme - "forest", "dark" or "light" (Settings).
         self.theme: str = "forest"
+        # Migration 039: an admin reset this account's password (a new one is
+        # chosen before the main window opens), and the idle lock's minutes.
+        self.must_change_password: bool = False
+        self.idle_lock_minutes: int = 25
 
     @property
     def is_authenticated(self) -> bool:
@@ -33,6 +37,8 @@ class Session:
         self.role_id = data["roleId"]
         self.role_name = data["roleName"]
         self.theme = data.get("theme") or "forest"
+        self.must_change_password = bool(data.get("mustChangePassword"))
+        self.idle_lock_minutes = int(data.get("idleLockMinutes") or 25)
 
     def clear(self):
         self.__init__()

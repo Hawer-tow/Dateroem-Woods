@@ -117,6 +117,17 @@ def main(app=None, guard=None, boot=None):
         group.start()
 
     def show_main_window():
+        # An admin reset this account's password (migration 039): a new one
+        # of the person's own comes first - until then the account can do
+        # nothing else, so the main window would only show refusals.
+        if session.must_change_password:
+            from app.ui.password_change_dialog import PasswordChangeDialog
+
+            if not PasswordChangeDialog(api_client, session, forced=True, parent=login_window).exec():
+                session.clear()
+                login_window.password_input.clear()
+                login_window.error_label.setText("Signed out. Choose your new password the next time you sign in.")
+                return
         # "even if i log in its still remains there bearing in mind i have
         # already the server section inside when i log in" - the pre-login
         # Manage Servers window is redundant the moment login succeeds

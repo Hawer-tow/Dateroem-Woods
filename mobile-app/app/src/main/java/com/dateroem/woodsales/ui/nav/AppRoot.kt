@@ -28,7 +28,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.dateroem.woodsales.AppContainer
 import com.dateroem.woodsales.data.session.Session
+import com.dateroem.woodsales.ui.auth.AccountState
 import com.dateroem.woodsales.ui.auth.AppLockGate
+import com.dateroem.woodsales.ui.profile.ForcedPasswordScreen
 import com.dateroem.woodsales.ui.auth.AuthViewModel
 import com.dateroem.woodsales.ui.auth.LocalEntrancePlaying
 import com.dateroem.woodsales.ui.auth.LoginScreen
@@ -49,12 +51,21 @@ private enum class RootPhase { LOADING, SPLASH, LOGIN, HOME }
 private suspend fun syncTheme(container: AppContainer) {
     val sessions = container.sessionManager
     try {
+        val me = container.api.me()
+        // The profile (migration 039): the photo, the idle lock's minutes and
+        // whether an admin's reset still waits for a new password.
+        sessions.saveAccount(
+            name = me["name"] as? String,
+            photoUrl = me["photoUrl"] as? String,
+            idleLockMinutes = (me["idleLockMinutes"] as? Number)?.toInt(),
+            mustChangePassword = me["mustChangePassword"] == true
+        )
         if (sessions.themePending()) {
             val mine = DateroemThemeState.chosen.id
             container.api.saveTheme(mapOf("theme" to mine))
             sessions.saveTheme(mine, pending = false)
         } else {
-            val account = container.api.me()["theme"] as? String ?: return
+            val account = me["theme"] as? String ?: return
             sessions.saveTheme(AppTheme.fromId(account).id, pending = false)
         }
     } catch (_: Exception) {
@@ -124,6 +135,14 @@ fun AppRoot(container: AppContainer) {
     // rebuilt, so the fingerprint lock is never asked for again.
     LaunchedEffect(Unit) {
         container.sessionManager.themeFlow.collect { DateroemThemeState.chosen = AppTheme.fromId(it) }
+    }
+    // The photo, the idle lock's minutes and a waiting password change (migration 039).
+    LaunchedEffect(Unit) {
+        container.sessionManager.accountFlow.collect { account ->
+            AccountState.photoUrl = account.photoUrl
+            AccountState.idleLockMinutes = account.idleLockMinutes
+            AccountState.mustChangePassword = account.mustChangePassword
+        }
     }
     // Read here, in AppRoot's own body, so this runs again whenever the phase
     // changes: read only inside the content below, a change of phase redrew
@@ -205,12 +224,18 @@ fun AppRoot(container: AppContainer) {
                                     phase = RootPhase.LOGIN
                                 }
                             }
-                            AppLockGate(startLocked = !justSignedIn, onSignOut = signOut) {
-                                HomeShell(container = container, session = current, onLoggedOut = {
-                                    session = null
-                                    justSignedIn = false
-                                    phase = RootPhase.LOGIN
-                                })
+                            if (AccountState.mustChangePassword) {
+                                // An admin reset the password: a new one of the
+                                // person's own comes before anything else.
+                                ForcedPasswordScreen(container = container, userName = current.userName, onSignOut = signOut)
+                            } else {
+                                AppLockGate(startLocked = !justSignedIn, onSignOut = signOut) {
+                                    HomeShell(container = container, session = current, onLoggedOut = {
+                                        session = null
+                                        justSignedIn = false
+                                        phase = RootPhase.LOGIN
+                                    })
+                                }
                             }
                         }
                     }

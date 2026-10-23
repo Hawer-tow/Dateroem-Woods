@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useFeatured } from '../context/FeaturedContext.jsx'
 import AuthModal from './AuthModal.jsx'
+import Avatar from './Avatar.jsx'
 import Icon from './Icon.jsx'
 import ThemeMenu from './ThemeMenu.jsx'
 import WoodWordmark from './WoodWordmark.jsx'
@@ -56,15 +57,19 @@ export default function NavBar() {
         <div className="navbar__account">
           <button
             type="button"
-            className="navbar__user-icon"
+            className={`navbar__user-icon${isAuthenticated && user.photoUrl ? ' navbar__user-icon--photo' : ''}`}
             onClick={() => (isAuthenticated ? setShowMenu((v) => !v) : setShowAuth(true))}
             aria-label={isAuthenticated ? `Account: ${user.name}` : 'Sign in'}
           >
-            {isAuthenticated ? user.name?.[0]?.toUpperCase() ?? '?' : <Icon name="user" size={18} />}
+            {isAuthenticated ? <Avatar name={user.name} photoUrl={user.photoUrl} size={34} /> : <Icon name="user" size={18} />}
           </button>
           {isAuthenticated && showMenu && (
             <div className="navbar__account-menu">
               <p className="navbar__account-name">{user.name}</p>
+              {/* "a profile area" - photo, details, phone and password (23 October 2026). */}
+              <Link to="/profile" className="navbar__account-link" onClick={() => setShowMenu(false)}>
+                My profile
+              </Link>
               <button
                 type="button"
                 className="btn btn--text"

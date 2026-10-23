@@ -28,17 +28,22 @@ public class JwtService {
     // when the servers were stopped for the clean-up.
     // AUTH_TOKENS_VALID_FROM moves it.
     private final Instant validFrom;
+    // Per account too: a password changed or reset signs out every sign-in
+    // made before it (migration 039).
+    private final AccountSecurity accountSecurity;
 
     public JwtService(
         @Value("${app.auth.jwt-secret}") String secret,
         @Value("${app.auth.jwt-expiry-hours}") long expiryHours,
         @Value("${app.auth.desktop-jwt-expiry-hours:12}") long desktopExpiryHours,
-        @Value("${app.auth.tokens-valid-from:${AUTH_TOKENS_VALID_FROM:2026-10-18T08:30:00Z}}") String validFrom
+        @Value("${app.auth.tokens-valid-from:${AUTH_TOKENS_VALID_FROM:2026-10-18T08:30:00Z}}") String validFrom,
+        AccountSecurity accountSecurity
     ) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expiryHours = expiryHours;
         this.desktopExpiryHours = desktopExpiryHours;
         this.validFrom = validFrom == null || validFrom.isBlank() ? null : Instant.parse(validFrom.trim());
+        this.accountSecurity = accountSecurity;
     }
 
     public String issueToken(int userId) {
@@ -97,10 +102,18 @@ public class JwtService {
             if (validFrom != null && (issuedAt == null || issuedAt.toInstant().isBefore(validFrom))) {
                 return java.util.Optional.empty();
             }
+            int userId = Integer.parseInt(claims.getSubject());
+            // A token carries whole seconds, so one issued in the same second
+            // as the change (the new one handed back) still counts.
+            Instant changedAt = accountSecurity.state(userId).passwordChangedAt();
+            if (changedAt != null && (issuedAt == null
+                || issuedAt.toInstant().isBefore(changedAt.truncatedTo(ChronoUnit.SECONDS)))) {
+                return java.util.Optional.empty();
+            }
             Number deviceId = claims.get("did", Number.class);
             Number computerId = claims.get("pc", Number.class);
             return java.util.Optional.of(new TokenClaims(
-                Integer.parseInt(claims.getSubject()), deviceId == null ? null : deviceId.intValue(),
+                userId, deviceId == null ? null : deviceId.intValue(),
                 computerId == null ? null : computerId.intValue()
             ));
         } catch (JwtException | IllegalArgumentException e) {

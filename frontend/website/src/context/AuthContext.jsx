@@ -13,6 +13,28 @@ function loadStored() {
   }
 }
 
+function store(session) {
+  if (session) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
+  } else {
+    localStorage.removeItem(STORAGE_KEY)
+  }
+}
+
+// The parts of a sign-in or /auth/me answer the site keeps. photoUrl and
+// mustChangePassword (migration 039): the profile photo, and an admin's
+// password reset still waiting for a password of the person's own.
+function sessionFrom(token, res, previous = null) {
+  return {
+    token,
+    userId: res.userId,
+    userName: res.userName,
+    name: res.name,
+    photoUrl: res.photoUrl !== undefined ? res.photoUrl : previous?.photoUrl ?? null,
+    mustChangePassword: Boolean(res.mustChangePassword),
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadStored)
   const [checking, setChecking] = useState(true)
@@ -32,11 +54,13 @@ export function AuthProvider({ children }) {
     api
       .me(stored.token)
       .then((res) => {
-        setUser({ token: stored.token, userId: res.userId, userName: res.userName, name: res.name })
+        const session = sessionFrom(stored.token, res, stored)
+        setUser(session)
+        store(session)
         setAccountTheme(res.theme ?? null)
       })
       .catch(() => {
-        localStorage.removeItem(STORAGE_KEY)
+        store(null)
         setUser(null)
       })
       .finally(() => setChecking(false))
@@ -45,11 +69,30 @@ export function AuthProvider({ children }) {
   const persist = useCallback((session, theme = null) => {
     setUser(session)
     setAccountTheme(theme)
-    if (session) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
-    } else {
-      localStorage.removeItem(STORAGE_KEY)
-    }
+    store(session)
+  }, [])
+
+  // After signing in: the photo isn't in the sign-in answer, so it is fetched.
+  const signedIn = useCallback(
+    (res) => {
+      persist(sessionFrom(res.token, res), res.theme)
+      api
+        .me(res.token)
+        .then((me) => setUser((current) => (current?.token === res.token ? sessionFrom(res.token, me, current) : current)))
+        .catch(() => {})
+    },
+    [persist]
+  )
+
+  // Changes to the signed-in person's own details (profile page, new token
+  // after a password change), kept for the next visit too.
+  const updateUser = useCallback((changes) => {
+    setUser((current) => {
+      if (!current) return current
+      const next = { ...current, ...changes }
+      store(next)
+      return next
+    })
   }, [])
 
   const value = useMemo(
@@ -58,13 +101,12 @@ export function AuthProvider({ children }) {
       checking,
       accountTheme,
       isAuthenticated: Boolean(user),
+      updateUser,
       login: async (userName, password) => {
-        const res = await api.login({ user_name: userName, password })
-        persist({ token: res.token, userId: res.userId, userName: res.userName, name: res.name }, res.theme)
+        signedIn(await api.login({ user_name: userName, password }))
       },
       register: async (fields) => {
-        const res = await api.register(fields)
-        persist({ token: res.token, userId: res.userId, userName: res.userName, name: res.name }, res.theme)
+        signedIn(await api.register(fields))
       },
       // "Continue with Google": signs in and returns null, or - for someone
       // new, whose phone number and own username are still needed - returns
@@ -74,12 +116,12 @@ export function AuthProvider({ children }) {
       googleSignIn: async (credential, phoneNo = null, userName = null, phoneProof = null) => {
         const res = await api.googleSignIn({ credential, phone_no: phoneNo, user_name: userName, phone_proof: phoneProof })
         if (res?.needsPhone) return res
-        persist({ token: res.token, userId: res.userId, userName: res.userName, name: res.name }, res.theme)
+        signedIn(res)
         return null
       },
       logout: () => persist(null),
     }),
-    [user, checking, accountTheme, persist]
+    [user, checking, accountTheme, persist, signedIn, updateUser]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

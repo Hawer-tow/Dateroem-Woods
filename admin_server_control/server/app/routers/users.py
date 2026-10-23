@@ -32,6 +32,15 @@ async def update_user(user_id: int, request: UpdateUserRequest, authorization: s
     return await backend_client.patch(f"/api/users/{user_id}", json=body, headers=auth_header(authorization))
 
 
+# "is it proper to allow the superadmin to see actual passwords" - no one can;
+# an admin resets it to a temporary password, shown once, which the person
+# must replace at their next sign-in (migration 039; only the SuperAdmin
+# resets an Admin - the backend checks).
+@router.post("/{user_id}/reset-password")
+async def reset_password(user_id: int, authorization: str | None = Header(default=None)):
+    return await backend_client.post(f"/api/users/{user_id}/reset-password", json={}, headers=auth_header(authorization))
+
+
 @router.patch("/{user_id}/status")
 async def set_user_status(
     user_id: int, request: SetUserStatusRequest, authorization: str | None = Header(default=None)

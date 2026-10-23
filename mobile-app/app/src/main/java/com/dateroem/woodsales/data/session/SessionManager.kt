@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "dateroem_session")
 
+data class AccountInfo(val photoUrl: String?, val idleLockMinutes: Int, val mustChangePassword: Boolean)
+
 data class Session(
     val token: String,
     val userId: Int,
@@ -43,6 +45,37 @@ class SessionManager(private val context: Context) {
         val LAST_SEEN_AT = stringPreferencesKey("last_seen_at")
         val THEME = stringPreferencesKey("theme")
         val THEME_PENDING = booleanPreferencesKey("theme_pending")
+        val MUST_CHANGE_PASSWORD = booleanPreferencesKey("must_change_password")
+        val IDLE_LOCK_MINUTES = intPreferencesKey("idle_lock_minutes")
+        val PHOTO_URL = stringPreferencesKey("photo_url")
+    }
+
+    // Migration 039: the profile photo, the idle lock's minutes (set by the
+    // SuperAdmin) and whether an admin's password reset still waits for a
+    // password of the person's own. From sign-in and from /auth/me at Home.
+    val accountFlow: Flow<AccountInfo> = context.dataStore.data.map { prefs ->
+        AccountInfo(
+            photoUrl = prefs[Keys.PHOTO_URL],
+            idleLockMinutes = prefs[Keys.IDLE_LOCK_MINUTES] ?: 25,
+            mustChangePassword = prefs[Keys.MUST_CHANGE_PASSWORD] ?: false
+        )
+    }
+
+    suspend fun saveAccount(name: String?, photoUrl: String?, idleLockMinutes: Int?, mustChangePassword: Boolean?) {
+        context.dataStore.edit { prefs ->
+            if (name != null) prefs[Keys.NAME] = name
+            if (photoUrl != null) prefs[Keys.PHOTO_URL] = photoUrl else prefs.remove(Keys.PHOTO_URL)
+            if (idleLockMinutes != null) prefs[Keys.IDLE_LOCK_MINUTES] = idleLockMinutes
+            if (mustChangePassword != null) prefs[Keys.MUST_CHANGE_PASSWORD] = mustChangePassword
+        }
+    }
+
+    /** After the password changed: this phone's new sign-in (every other one ended). */
+    suspend fun passwordChanged(token: String) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.TOKEN] = token
+            prefs[Keys.MUST_CHANGE_PASSWORD] = false
+        }
     }
 
     // The colour theme: from the account at sign-in, or chosen in Settings
@@ -86,6 +119,8 @@ class SessionManager(private val context: Context) {
             prefs[Keys.CAN_SYNC_SMS] = auth.canSyncSms
             auth.theme?.let { prefs[Keys.THEME] = it }
             prefs[Keys.THEME_PENDING] = false
+            prefs[Keys.MUST_CHANGE_PASSWORD] = auth.mustChangePassword
+            prefs[Keys.IDLE_LOCK_MINUTES] = auth.idleLockMinutes
         }
     }
 

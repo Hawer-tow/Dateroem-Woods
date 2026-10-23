@@ -45,3 +45,6 @@ local.properties
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Profile photos (migration 039) are personal data - never in the public repository.
+media/profiles/

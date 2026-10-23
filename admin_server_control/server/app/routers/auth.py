@@ -2,8 +2,9 @@ import math
 import re
 
 from fastapi import APIRouter, Header, HTTPException, Request
+from pydantic import BaseModel
 
-from app.core import backend_client, sign_in_limit
+from app.core import backend_client, profile_photos, sign_in_limit
 from app.core.auth_header import auth_header
 from app.core.config import settings
 from app.schemas.admin import LoginRequest, ThemeRequest
@@ -74,3 +75,80 @@ def _client_address(request: Request) -> str:
     if forwarded and host in ("127.0.0.1", "::1"):
         return forwarded.split(",")[0].strip()
     return host
+
+
+# "a profile area ... updating contacts/password" (migration 039): the admin's
+# own name, email (with the password), password and photo; the idle lock's
+# password check; and the idle lock's minutes (the SuperAdmin sets them).
+class ProfileRequest(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    currentPassword: str | None = None
+
+
+class PasswordRequest(BaseModel):
+    currentPassword: str | None = None
+    newPassword: str | None = None
+
+
+class VerifyPasswordRequest(BaseModel):
+    password: str | None = None
+
+
+@router.put("/me/profile")
+async def update_profile(request: ProfileRequest, authorization: str | None = Header(default=None)):
+    return await backend_client.put("/api/auth/me/profile", json=request.model_dump(), headers=auth_header(authorization))
+
+
+@router.post("/me/password")
+async def change_password(request: PasswordRequest, authorization: str | None = Header(default=None)):
+    """Answers {token}: this computer's new sign-in - every other one ends."""
+    return await backend_client.post("/api/auth/me/password", json=request.model_dump(), headers=auth_header(authorization))
+
+
+@router.post("/me/verify-password")
+async def verify_password(request: VerifyPasswordRequest, authorization: str | None = Header(default=None)):
+    """Unlocking the app after the idle lock."""
+    return await backend_client.post("/api/auth/me/verify-password", json=request.model_dump(), headers=auth_header(authorization))
+
+
+@router.post("/me/photo")
+async def upload_photo(http_request: Request, authorization: str | None = Header(default=None)):
+    """The profile photo, as the request body: a square JPEG the app has
+    already cut and shrunk with Qt (this server has no image library)."""
+    data = await http_request.body()
+    if len(data) > profile_photos.MAX_BYTES:
+        raise HTTPException(status_code=413, detail="That photo is too large.")
+    if not profile_photos.is_jpeg(data):
+        raise HTTPException(status_code=400, detail="Please choose a photo.")
+    me = await backend_client.get("/api/auth/me", headers=auth_header(authorization))
+    key = profile_photos.save(me["userId"], data)
+    try:
+        result = await backend_client.put("/api/auth/me/photo", json={"photo": key}, headers=auth_header(authorization))
+    except Exception:
+        profile_photos.remove(key)
+        raise
+    profile_photos.remove((result or {}).get("previous"))
+    return {"photoUrl": (result or {}).get("photoUrl")}
+
+
+@router.delete("/me/photo")
+async def remove_photo(authorization: str | None = Header(default=None)):
+    result = await backend_client.put("/api/auth/me/photo", json={"photo": None}, headers=auth_header(authorization))
+    profile_photos.remove((result or {}).get("previous"))
+    return {"photoUrl": None}
+
+
+class IdleLockRequest(BaseModel):
+    minutes: int
+
+
+@router.get("/idle-lock")
+async def idle_lock(authorization: str | None = Header(default=None)):
+    return await backend_client.get("/api/settings/idle-lock", headers=auth_header(authorization))
+
+
+@router.put("/idle-lock")
+async def set_idle_lock(request: IdleLockRequest, authorization: str | None = Header(default=None)):
+    """SuperAdmin only (the backend checks)."""
+    return await backend_client.put("/api/settings/idle-lock", json=request.model_dump(), headers=auth_header(authorization))
