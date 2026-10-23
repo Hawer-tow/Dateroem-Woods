@@ -180,3 +180,8 @@ app.sms.test-outbox=${SMS_TEST_OUTBOX:sms-test-outbox.txt}
 # reaches Airtel; once Dateroem's own sender ID is approved, set it to all.
 # Other numbers are taken as typed, as before.
 app.sms.networks=${SMS_NETWORKS:airtel}
+
+# Worker details and documents (migration 040): AES-256 key, base64 (32 random
+# bytes). Data encrypted with it can only be read with it - when moving servers
+# COPY the old value, never make a new one.
+app.workers.data-secret=${WORKER_DATA_SECRET:}

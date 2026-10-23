@@ -34,6 +34,7 @@ from app.routers import (
     trips,
     uploads,
     users,
+    workers,
 )
 
 # The automatic API description pages are turned off here too. The public
@@ -79,6 +80,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(admin_data.router)
 app.include_router(users.router)
+app.include_router(workers.router)
 app.include_router(devices.router)
 app.include_router(computers.router)
 app.include_router(faqs.router)

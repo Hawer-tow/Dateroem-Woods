@@ -35,6 +35,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 import com.dateroem.woodsales.ui.profile.ProfileScreen
 import com.dateroem.woodsales.ui.profile.ProfileViewModel
+import com.dateroem.woodsales.ui.profile.WorkerDetailsScreen
+import com.dateroem.woodsales.ui.profile.WorkerDetailsViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -239,6 +241,7 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
             Section.Dashboard.route -> "Home"
             "settings" -> "Settings"
             "profile" -> "My profile"
+            "worker_details" -> "Worker details"
             "deleted_products" -> "Deleted Products"
             "product_form_create" -> "New Product"
             "product_form_edit/{productId}" -> "Edit Product"
@@ -393,7 +396,14 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
                     val vm: ProfileViewModel = viewModel(
                         factory = ProfileViewModel.Factory(container.api, container.sessionManager, context.applicationContext)
                     )
-                    ProfileScreen(vm)
+                    ProfileScreen(vm, onOpenWorkerDetails = { navController.navigate("worker_details") { launchSingleTop = true } })
+                }
+                composable("worker_details") {
+                    val context = LocalContext.current
+                    val vm: WorkerDetailsViewModel = viewModel(
+                        factory = WorkerDetailsViewModel.Factory(container.api, context.applicationContext)
+                    )
+                    WorkerDetailsScreen(vm)
                 }
                 composable(Section.Products.route) {
                     // viewModel(factory=...) ties this to the back stack

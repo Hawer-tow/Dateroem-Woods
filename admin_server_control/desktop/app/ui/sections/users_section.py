@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from app.core.worker import Worker
 from app.ui.widgets.data_table import DataTable
 from app.ui.widgets.record_form_dialog import FieldSpec, RecordFormDialog
+from app.ui.sections.worker_details import WorkerDetailsPage
 
 SUPER_ADMIN = "SuperAdmin"
 
@@ -76,6 +77,10 @@ class UsersSection(QWidget):
         self.computers_toggle_btn = QPushButton("Computers")
         self.computers_toggle_btn.clicked.connect(lambda: self._switch_view(3))
         toggle_row.addWidget(self.computers_toggle_btn)
+        # "worker ID number and documents" (migration 040).
+        self.workers_toggle_btn = QPushButton("Worker Details")
+        self.workers_toggle_btn.clicked.connect(lambda: self._switch_view(4))
+        toggle_row.addWidget(self.workers_toggle_btn)
         toggle_row.addStretch()
         layout.addLayout(toggle_row)
 
@@ -86,6 +91,8 @@ class UsersSection(QWidget):
         self.stack.addWidget(self._build_farmers_page())
         self.stack.addWidget(self._build_phones_page())
         self.stack.addWidget(self._build_computers_page())
+        self.worker_details = WorkerDetailsPage(api_client, self.is_super_admin)
+        self.stack.addWidget(self.worker_details)
 
         self._load_roles()
         self._load_users(self.users_table.current_limit())
@@ -95,13 +102,15 @@ class UsersSection(QWidget):
 
     def _switch_view(self, index: int):
         self.stack.setCurrentIndex(index)
-        toggles = (self.users_toggle_btn, self.farmers_toggle_btn, self.phones_toggle_btn, self.computers_toggle_btn)
+        toggles = (self.users_toggle_btn, self.farmers_toggle_btn, self.phones_toggle_btn, self.computers_toggle_btn, self.workers_toggle_btn)
         for position, btn in enumerate(toggles):
             btn.setProperty("role", "primary" if index == position else "")
         if index == 2:
             self._load_phones(None)
         if index == 3:
             self._load_computers(None)
+        if index == 4:
+            self.worker_details.load()
         for btn in toggles:
             btn.style().unpolish(btn)
             btn.style().polish(btn)

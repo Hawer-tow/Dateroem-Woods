@@ -93,6 +93,18 @@ interface ApiService {
     // Home (24 October 2026): the business at a glance for Admins and the
     // SuperAdmin, and the company card - one copy on the server, which only
     // the SuperAdmin changes.
+    // Worker details and documents (migration 040): the staff member's own,
+    // from My profile. Only the SuperAdmin opens them afterwards.
+    @GET("workers/me")
+    suspend fun myWorkerDetails(): JsonMap
+
+    @PUT("workers/me")
+    suspend fun saveMyWorkerDetails(@Body body: Map<String, Map<String, String?>>): JsonMap
+
+    @Multipart
+    @POST("workers/me/documents/{typeKey}")
+    suspend fun uploadWorkerDocument(@Path("typeKey") typeKey: String, @Part file: MultipartBody.Part): JsonMap
+
     @GET("insights/overview")
     suspend fun overview(): JsonMap
 

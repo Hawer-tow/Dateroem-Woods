@@ -51,7 +51,7 @@ import com.dateroem.woodsales.ui.theme.WoodOn
  * pressed; the phone number is changed by an admin (it receives payouts).
  */
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel) {
+fun ProfileScreen(viewModel: ProfileViewModel, onOpenWorkerDetails: () -> Unit = {}) {
     val state by viewModel.state.collectAsState()
     val me = state.me
 
@@ -76,6 +76,16 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
         ) {
             PhotoCard(me = me, state = state, viewModel = viewModel)
             DetailsCard(me = me, state = state, viewModel = viewModel)
+            // "worker ID number and documents" (migration 040).
+            Card(title = "Worker details") {
+                Text(
+                    "Your ID or passport number, KRA PIN, NSSF and SHA numbers, next of kin and document photos. Only the SuperAdmin can open them.",
+                    color = DateroemTextMuted, fontSize = 13.sp
+                )
+                WoodButton(onClick = onOpenWorkerDetails, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                    Text("Open worker details", fontWeight = FontWeight.Bold)
+                }
+            }
             Card(title = "Password") {
                 PasswordForm(
                     currentLabel = "Current password",

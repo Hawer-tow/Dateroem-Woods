@@ -89,9 +89,9 @@ STATUS_COLUMNS = {
     "status", "payment", "paymentstatus", "orderstatus", "deliverystatus", "state",
     "role", "rolename", "active", "isactive", "mediatype", "kind",
 }
-_GOOD = ("COMPLETED", "PAID", "DELIVERED", "ACTIVE", "APPROVED", "CONFIRMED", "SUCCESS", "TRUE", "YES", "LIVE", "OPEN", "SENT")
+_GOOD = ("COMPLETED", "PAID", "DELIVERED", "ACTIVE", "APPROVED", "CONFIRMED", "SUCCESS", "TRUE", "YES", "LIVE", "OPEN", "SENT", "VERIFIED")
 _WAIT = ("PENDING", "NEW", "PROCESSING", "IN_PROGRESS", "IN PROGRESS", "DRAFT", "PAUSED", "WAITING", "PARTIAL", "UNASSIGNED", "QUEUED")
-_BAD = ("FAILED", "CANCELLED", "CANCELED", "REJECTED", "BLOCKED", "REVOKED", "DISABLED", "FALSE", "NO", "EXPIRED", "OVERDUE", "DROPPED", "DELETED")
+_BAD = ("FAILED", "CANCELLED", "CANCELED", "REJECTED", "BLOCKED", "REVOKED", "DISABLED", "FALSE", "NO", "EXPIRED", "OVERDUE", "DROPPED", "DELETED", "NEEDS CHANGES")
 # Money columns are right-aligned with thousands separators.
 MONEY_WORDS = ("amount", "total", "price", "kes", "cost", "balance", "refunded", "paid")
 
