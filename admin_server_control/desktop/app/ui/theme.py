@@ -339,6 +339,10 @@ QLabel[role="muted"] {{
 QLabel[role="error"] {{
     color: {DANGER};
 }}
+QLabel[role="success"] {{
+    color: {STATUS_GOOD};
+    font-weight: 600;
+}}
 QFrame[role="card"] {{
     background-color: {SURFACE};
     border: 1px solid {BORDER};

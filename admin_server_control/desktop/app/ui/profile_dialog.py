@@ -6,7 +6,7 @@ password, saved with the account (migration 039). The email and phone show
 partly until Show is pressed. The phone number receives payouts, so it is
 changed in Users > Edit, never here.
 """
-from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QRectF, Qt, QThreadPool
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QRectF, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
@@ -91,6 +91,11 @@ def square_jpeg(path: str) -> bytes | None:
 
 
 class ProfileDialog(QDialog):
+    # The main window follows each save at once: the menu photo, the status
+    # bar and the Dashboard greeting (QPixmap, or None once removed).
+    photo_saved = Signal(object)
+    name_saved = Signal(str)
+
     def __init__(self, api_client, session, parent=None):
         super().__init__(parent)
         self.api_client = api_client
@@ -232,8 +237,8 @@ class ProfileDialog(QDialog):
         self._workers.append(worker)
         QThreadPool.globalInstance().start(worker)
 
-    def _say(self, text: str, error: bool = True):
-        self.message.setProperty("role", "error" if error else "muted")
+    def _say(self, text: str, error: bool = True, busy: bool = False):
+        self.message.setProperty("role", "muted" if busy else "error" if error else "success")
         self.message.setText(text)
         self.message.style().unpolish(self.message)
         self.message.style().polish(self.message)
@@ -278,23 +283,37 @@ class ProfileDialog(QDialog):
 
     # -- saving -----------------------------------------------------------
     def _save_details(self):
-        self._say("")
         body = {
             "name": self.name_input.text(),
             "email": self.email_input.text().strip() or None,
             "currentPassword": self.password_input.text() or None,
         }
-        try:
-            result = self.api_client.put("/auth/me/profile", json=body)
-        except ApiError as exc:
-            self._say(readable(str(exc.detail)))
-            return
-        self.session.name = result.get("name") or self.session.name
-        self.name_title.setText(self.session.name)
-        self.me["email"] = result.get("email")
-        self.password_input.clear()
-        self._email_edited(self.email_input.text())
-        self._say("Saved.", error=False)
+        self.save_btn.setEnabled(False)
+        self.save_btn.setText("Saving...")
+        self._say("Saving your details...", busy=True)
+
+        def done(result):
+            result = result or {}
+            self.session.name = result.get("name") or self.session.name
+            self.name_title.setText(self.session.name)
+            self.me["name"] = self.session.name
+            self.me["email"] = result.get("email")
+            self.password_input.clear()
+            self._email_edited(self.email_input.text())
+            self.name_saved.emit(self.session.name)
+            self._say("Your details are saved - your name shows in the app now.", error=False)
+            self.save_btn.setText("Saved")
+            QTimer.singleShot(2500, self._reset_save_button)
+
+        def failed(message: str):
+            self._reset_save_button()
+            self._say(readable(message))
+
+        self._run(lambda: self.api_client.put("/auth/me/profile", json=body), done, failed)
+
+    def _reset_save_button(self):
+        self.save_btn.setEnabled(True)
+        self.save_btn.setText("Save details")
 
     def _choose_photo(self):
         path, _ = QFileDialog.getOpenFileName(self, "Choose a photo", "", "Pictures (*.jpg *.jpeg *.png *.webp *.bmp)")
@@ -304,20 +323,29 @@ class ProfileDialog(QDialog):
         if data is None:
             self._say("That file can't be read as a picture.")
             return
+        # The photo is saved as soon as it is chosen (Save details is for
+        # the name and email) - show it at once and say so.
+        pixmap = QPixmap()
+        pixmap.loadFromData(data)
+        self.avatar.setPixmap(round_photo(pixmap, 108))
         self.choose_btn.setEnabled(False)
+        self.choose_btn.setText("Saving photo...")
+        self._say("Saving your photo...", busy=True)
 
         def done(result):
             self.choose_btn.setEnabled(True)
+            self.choose_btn.setText("Choose photo...")
             self.photo_changed = True
-            pixmap = QPixmap()
-            pixmap.loadFromData(data)
             self.photo = pixmap
-            self.avatar.setPixmap(round_photo(pixmap, 108))
             self.me["photoUrl"] = (result or {}).get("photoUrl")
             self.remove_btn.setVisible(True)
+            self.photo_saved.emit(pixmap)
+            self._say("Your photo is saved - it shows in the menu now.", error=False)
 
         def failed(message: str):
             self.choose_btn.setEnabled(True)
+            self.choose_btn.setText("Choose photo...")
+            self.avatar.setPixmap(round_photo(self.photo, 108, self.session.name or "?"))
             self._say(readable(message))
 
         self._run(lambda: self.api_client.post_file("/auth/me/photo", data, "image/jpeg", timeout=60), done, failed)
@@ -333,6 +361,8 @@ class ProfileDialog(QDialog):
         self.me["photoUrl"] = None
         self.avatar.setPixmap(round_photo(None, 108, self.session.name or "?"))
         self.remove_btn.setVisible(False)
+        self.photo_saved.emit(None)
+        self._say("Your photo is removed.", error=False)
 
     def _change_password(self):
         from app.ui.password_change_dialog import PasswordChangeDialog

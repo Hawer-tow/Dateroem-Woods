@@ -102,9 +102,9 @@ class DashboardSection(QWidget):
         self._deleted_campaigns = None
 
         layout = QVBoxLayout(self)
-        heading = QLabel(f"Welcome, {session.name} ({session.role_name})")
-        heading.setProperty("role", "title")
-        layout.addWidget(heading)
+        self.heading = QLabel(f"Welcome, {session.name} ({session.role_name})")
+        self.heading.setProperty("role", "title")
+        layout.addWidget(self.heading)
         if theme.MODERN:
             subtitle = QLabel("The whole system at a glance.")
             subtitle.setProperty("role", "muted")

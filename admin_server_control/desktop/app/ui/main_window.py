@@ -227,11 +227,28 @@ class MainWindow(QMainWindow):
     def _open_profile(self):
         from app.ui.profile_dialog import ProfileDialog
 
+        # "the ui response was not together" - the menu photo, the status
+        # bar and the Dashboard follow each save at once, not on closing.
         dialog = ProfileDialog(self.api_client, self.session, self)
+        dialog.photo_saved.connect(self._show_profile_photo)
+        dialog.name_saved.connect(self._show_name)
         dialog.exec()
-        if dialog.photo_changed:
-            self._load_profile_photo()
-        self.statusBar().showMessage(f"Signed in as {self.session.name} ({self.session.role_name})")
+
+    def _show_profile_photo(self, pixmap):
+        from PySide6.QtGui import QIcon
+
+        from app.ui.profile_dialog import round_photo
+
+        if pixmap is not None and not pixmap.isNull():
+            self.profile_btn.setIcon(QIcon(round_photo(pixmap, 36)))
+        else:
+            self.profile_btn.setIcon(icon("user", theme.TEXT_MUTED) if theme.MODERN else icon("user"))
+
+    def _show_name(self, name: str):
+        self.statusBar().showMessage(f"Signed in as {name} ({self.session.role_name})")
+        for widget in self._section_widgets.values():
+            if isinstance(widget, DashboardSection):
+                widget.heading.setText(f"Welcome, {name} ({self.session.role_name})")
 
     def _show_section(self, index: int):
         if index not in self._section_widgets:
