@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,9 @@ import com.dateroem.woodsales.ui.theme.DateroemSurface
 import com.dateroem.woodsales.ui.theme.DateroemText
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.common.ErrorBox
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 
 /**
  * Home. Everyone sees the company card, the picked trip's products and
@@ -59,6 +63,22 @@ import com.dateroem.woodsales.ui.common.ErrorBox
 fun DashboardScreen(viewModel: DashboardViewModel, isAdmin: Boolean, isSuperAdmin: Boolean) {
     val state by viewModel.uiState.collectAsState()
     val message by viewModel.message.collectAsState()
+
+    // "in home the new edited info i did doesnt show in my mobile but i eddited
+    // and saved it in the desktop" (24 October 2026): Home loaded once and kept
+    // that; it now loads again whenever it comes back into view - back from
+    // another screen or from another app.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        var first = true
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (first) first = false else viewModel.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(DateroemBackground)) {
         when (val current = state) {
@@ -77,7 +97,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, isAdmin: Boolean, isSuperAdmi
             is DashboardUiState.Loaded -> {
                 val data = current.data
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = 72.dp)) {
-                    CompanyCard(data.company, canEdit = isSuperAdmin, onSave = viewModel::saveCompanyInfo)
+                    CompanyCard(data.company, fromServer = data.companyFromServer, canEdit = isSuperAdmin, onSave = viewModel::saveCompanyInfo)
                     data.overview?.let { Overview(it) }
                     val stats = data.trip
                     if (stats == null) {
@@ -280,7 +300,7 @@ private fun CampaignsCard(campaigns: DashboardCampaignStats, modifier: Modifier 
 // The company card: the same on every phone (kept on the server); "only
 // superadmin edits ... others see the motto".
 @Composable
-private fun CompanyCard(info: CompanyInfo, canEdit: Boolean, onSave: (CompanyInfo) -> Unit) {
+private fun CompanyCard(info: CompanyInfo, fromServer: Boolean, canEdit: Boolean, onSave: (CompanyInfo) -> Unit) {
     var showEdit by remember { mutableStateOf(false) }
 
     Card(
@@ -297,6 +317,14 @@ private fun CompanyCard(info: CompanyInfo, canEdit: Boolean, onSave: (CompanyInf
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
+            if (!fromServer) {
+                Text(
+                    "Showing the copy kept on this phone - the server couldn't be reached. It updates when the phone is back online.",
+                    color = DueSoonOrange,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
             if (canEdit) {
                 TextButton(onClick = { showEdit = true }, modifier = Modifier.padding(top = 4.dp)) {
                     Text("Edit", color = DateroemAccent)

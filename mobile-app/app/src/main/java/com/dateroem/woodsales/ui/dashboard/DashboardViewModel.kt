@@ -33,6 +33,8 @@ data class DashboardCampaignStats(val total: Int, val completed: Int)
  */
 data class DashboardData(
     val company: CompanyInfo,
+    // False when the server couldn't be reached and the phone's kept copy is shown.
+    val companyFromServer: Boolean,
     val overview: JsonMap?,
     val trip: DashboardTripStats?,
     val campaigns: DashboardCampaignStats
@@ -105,14 +107,15 @@ class DashboardViewModel(
                     throw e
                 }
             }
-            DashboardUiState.Loaded(DashboardData(company(), overview, trip, campaigns))
+            val (card, fromServer) = company()
+            DashboardUiState.Loaded(DashboardData(card, fromServer, overview, trip, campaigns))
         } catch (e: Exception) {
             DashboardUiState.Error(friendlyError(e, "Couldn't load this right now"))
         }
     }
 
     // The server's card, kept on the phone; the kept one when offline.
-    private suspend fun company(): CompanyInfo = try {
+    private suspend fun company(): Pair<CompanyInfo, Boolean> = try {
         val card = api.companyCard()
         val info = CompanyInfo(
             name = card["name"] as? String ?: "",
@@ -120,9 +123,9 @@ class DashboardViewModel(
             code = card["code"] as? String ?: ""
         )
         companyInfoStore.save(info)
-        info
+        info to true
     } catch (e: Exception) {
-        companyInfoStore.companyInfo.first()
+        companyInfoStore.companyInfo.first() to false
     }
 
     private suspend fun loadTripStats(tripId: Int): DashboardTripStats {

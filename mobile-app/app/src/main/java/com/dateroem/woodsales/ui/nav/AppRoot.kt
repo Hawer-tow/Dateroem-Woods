@@ -139,6 +139,7 @@ fun AppRoot(container: AppContainer) {
     // The photo, the idle lock's minutes and a waiting password change (migration 039).
     LaunchedEffect(Unit) {
         container.sessionManager.accountFlow.collect { account ->
+            AccountState.name = account.name
             AccountState.photoUrl = account.photoUrl
             AccountState.idleLockMinutes = account.idleLockMinutes
             AccountState.mustChangePassword = account.mustChangePassword

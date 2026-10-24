@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "dateroem_session")
 
-data class AccountInfo(val photoUrl: String?, val idleLockMinutes: Int, val mustChangePassword: Boolean)
+data class AccountInfo(val name: String?, val photoUrl: String?, val idleLockMinutes: Int, val mustChangePassword: Boolean)
 
 data class Session(
     val token: String,
@@ -55,6 +55,7 @@ class SessionManager(private val context: Context) {
     // password of the person's own. From sign-in and from /auth/me at Home.
     val accountFlow: Flow<AccountInfo> = context.dataStore.data.map { prefs ->
         AccountInfo(
+            name = prefs[Keys.NAME],
             photoUrl = prefs[Keys.PHOTO_URL],
             idleLockMinutes = prefs[Keys.IDLE_LOCK_MINUTES] ?: 25,
             mustChangePassword = prefs[Keys.MUST_CHANGE_PASSWORD] ?: false

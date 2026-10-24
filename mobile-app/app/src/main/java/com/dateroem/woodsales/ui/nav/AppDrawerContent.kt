@@ -167,9 +167,13 @@ fun AppDrawerContent(
                             .clickable(onClickLabel = "My profile", onClick = onOpenProfile)
                             .padding(vertical = 4.dp)
                     ) {
-                        Avatar(name = session.name, photoUrl = AccountState.photoUrl, size = 44.dp)
+                        // "the circular thing that should show my picture doent show"
+                        // (24 October 2026): the name and photo follow the account live
+                        // (AccountState), not the copy read when the app opened.
+                        val shownName = AccountState.name?.takeIf { it.isNotBlank() } ?: session.name
+                        Avatar(name = shownName, photoUrl = AccountState.photoUrl, size = 44.dp)
                         Column(modifier = Modifier.padding(start = 10.dp)) {
-                            Text(session.name, color = DateroemText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(shownName, color = DateroemText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text(session.roleName, color = DateroemAccent, style = MaterialTheme.typography.bodySmall)
                         }
                     }

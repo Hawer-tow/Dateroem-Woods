@@ -13,6 +13,9 @@ import androidx.compose.runtime.setValue
  * /auth/me when Home opens.
  */
 object AccountState {
+    // The name as the server last gave it - changed on the website or the
+    // desktop, the menu shows the new one as soon as Home has asked.
+    var name by mutableStateOf<String?>(null)
     var photoUrl by mutableStateOf<String?>(null)
     var idleLockMinutes by mutableIntStateOf(25)
     var mustChangePassword by mutableStateOf(false)
