@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCookieConsent } from '../context/CookieConsentContext.jsx'
 
 // Remembering your cart is strictly necessary for the site to work the
@@ -14,6 +14,11 @@ export default function CookieConsentBanner() {
   const { hasDecided, consent, acceptAll, rejectAll, savePreferences } = useCookieConsent()
   const [customizing, setCustomizing] = useState(false)
   const [draft, setDraft] = useState(consent)
+
+  // Opened again from Cookie settings: start from the current choices.
+  useEffect(() => {
+    if (!hasDecided) setDraft(consent)
+  }, [hasDecided, consent])
 
   if (hasDecided) return null
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api, apiErrorMessage } from '../api/client.js'
@@ -387,6 +387,10 @@ export default function CartPage() {
           >
             {submitting ? 'Placing order...' : 'Place order'}
           </button>
+          <p className="cart-terms-note">
+            By placing your order you agree to our <Link to="/terms">Terms</Link> and{' '}
+            <Link to="/returns">Returns &amp; Refunds</Link>.
+          </p>
         </form>
       </div>
 

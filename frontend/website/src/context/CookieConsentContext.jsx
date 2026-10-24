@@ -56,6 +56,9 @@ export function CookieConsentProvider({ children }) {
       setConsentState({ ...DEFAULT_CONSENT, ...next })
       setHasDecided(true)
     },
+    // Cookie settings in the footer: the banner again, with the choices as
+    // they stand (the Privacy page says they can be changed any time).
+    reopen: () => setHasDecided(false),
   }
 
   return <CookieConsentContext.Provider value={value}>{children}</CookieConsentContext.Provider>

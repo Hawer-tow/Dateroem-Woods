@@ -17,6 +17,9 @@ PAGES = [
     ("Shipping", "/shipping"),
     ("Bulk Orders", "/heavy-order"),
     ("About", "/about"),
+    ("Returns & Refunds", "/returns"),
+    ("Privacy", "/privacy"),
+    ("Terms", "/terms"),
 ]
 PAGE_NAMES = {path: name for name, path in PAGES if path}
 

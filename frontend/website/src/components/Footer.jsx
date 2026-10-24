@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client.js'
+import { useCookieConsent } from '../context/CookieConsentContext.jsx'
 import EmailDialog from './EmailDialog.jsx'
 import Icon from './Icon.jsx'
 
@@ -13,6 +14,7 @@ import Icon from './Icon.jsx'
 export default function Footer() {
   const [contact, setContact] = useState(null)
   const [writing, setWriting] = useState(false)
+  const { reopen } = useCookieConsent()
 
   useEffect(() => {
     api.helpContact().then(setContact).catch(() => setContact(null))
@@ -68,8 +70,20 @@ export default function Footer() {
           </li>
         </ul>
       )}
+      {/* The policy pages (24 October 2026) and a way back to the cookie
+          choices, which the Privacy page promises. */}
       <p className="footer__more">
         <Link to="/track">Track my order</Link>
+        <span aria-hidden="true"> · </span>
+        <Link to="/returns">Returns &amp; Refunds</Link>
+        <span aria-hidden="true"> · </span>
+        <Link to="/privacy">Privacy</Link>
+        <span aria-hidden="true"> · </span>
+        <Link to="/terms">Terms</Link>
+        <span aria-hidden="true"> · </span>
+        <button type="button" className="footer__text-button" onClick={reopen}>
+          Cookie settings
+        </button>
       </p>
       <p className="footer__copy">&copy; {new Date().getFullYear()} Dateroem Wood Sales.</p>
       {contact?.emailForm && <EmailDialog open={writing} onClose={() => setWriting(false)} contact={contact} />}

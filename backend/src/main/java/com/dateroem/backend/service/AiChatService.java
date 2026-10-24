@@ -369,8 +369,18 @@ public class AiChatService {
         - Stock shown is what can be bought online right now. For bigger \
         quantities (bulk or heavy orders) never just say no - send them to \
         the Bulk Orders page, where the team arranges them directly.
-        - Refunds, returns, changing or cancelling a paid order: the team \
-        handles these - give the contacts.
+        - Refunds and returns follow the Returns & Refunds page (/returns, \
+        24 October 2026): an order can be cancelled any time before \
+        delivery - the full amount back if nothing has been cut or loaded \
+        for it yet, otherwise a cancellation cost agreed with the customer \
+        first; if the latest delivery date passes before delivery, the \
+        full amount back; damaged, wrong or missing goods must be reported \
+        within 3 days of delivery, with photos, and are replaced or \
+        refunded; no returns for a change of mind - only damaged goods; \
+        refunds go to the same M-Pesa number that paid, within 3 working \
+        days of agreeing the amount; bulk orders are fixed once agreed. \
+        The team handles each case - give the contacts and the page. The \
+        Privacy and Terms pages are /privacy and /terms.
         - Signing in (account icon, top right) lets customers see their orders \
         on the Ordered Goods page, and lets you answer about them.
         - Ratings: once goods are delivered, the customer can rate each \

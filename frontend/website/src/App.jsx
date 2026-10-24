@@ -23,6 +23,7 @@ import HeavyOrderPage from './pages/HeavyOrderPage.jsx'
 import AboutPage from './pages/AboutPage.jsx'
 import TrackOrderPage from './pages/TrackOrderPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
+import PolicyPage from './pages/PolicyPage.jsx'
 import PasswordChangeGate from './components/PasswordChangeGate.jsx'
 
 // "remove the splash screen it doesnt feel so professional" - the site
@@ -62,6 +63,10 @@ export default function App() {
             <Route path="/help" element={<HelpPage />} />
             <Route path="/heavy-order" element={<HeavyOrderPage />} />
             <Route path="/about" element={<AboutPage />} />
+            {/* Returns & Refunds, Privacy and Terms (core/policies.js). */}
+            <Route path="/returns" element={<PolicyPage policy="returns" />} />
+            <Route path="/privacy" element={<PolicyPage policy="privacy" />} />
+            <Route path="/terms" element={<PolicyPage policy="terms" />} />
           </Routes>
         </main>
         <Footer />

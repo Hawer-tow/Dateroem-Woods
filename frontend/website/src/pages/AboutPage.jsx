@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../api/client.js'
 import Icon from '../components/Icon.jsx'
+import ReachUs from '../components/ReachUs.jsx'
 import StoryScroller from '../components/StoryScroller.jsx'
 import { ABOUT_CLOSING, ABOUT_COMPANY, ABOUT_FOUNDER, ABOUT_HOW, ABOUT_INTRO, ABOUT_LOCATION } from '../core/aboutStory.js'
 
@@ -143,43 +143,6 @@ export default function AboutPage() {
 
 // The company's own contacts, from the website server's settings (the same
 // ones the footer and Help page show) - never anyone's personal number.
-function ReachUs() {
-  const [contact, setContact] = useState(null)
-
-  useEffect(() => {
-    api
-      .helpContact()
-      .then(setContact)
-      .catch(() => setContact(null))
-  }, [])
-
-  if (!contact) return null
-  const outside = { target: '_blank', rel: 'noopener noreferrer' }
-  const rows = [
-    contact.phone && ['phone', 'Phone', <a href={`tel:${contact.phone.replace(/\s+/g, '')}`}>{contact.phone}</a>],
-    contact.whatsappLink && ['whatsapp', 'WhatsApp', <a href={contact.whatsappLink} {...outside}>{contact.whatsapp || 'Chat with us'}</a>],
-    contact.email && ['mail', 'Email', contact.emailForm ? <Link to="/help">{contact.email}</Link> : <a href={`mailto:${contact.email}`}>{contact.email}</a>],
-    contact.tiktok && ['tiktok', 'TikTok', <a href={contact.tiktok} {...outside}>@dateroem.woods</a>],
-    contact.instagram && ['instagram', 'Instagram', <a href={contact.instagram} {...outside}>@dateroem.woods</a>],
-  ].filter(Boolean)
-
-  return (
-    <div className="about-card">
-      <h3 className="about-card__title">Reach us</h3>
-      <dl className="about-facts about-contact">
-        {rows.map(([icon, label, value]) => (
-          <div key={label} className="about-facts__row">
-            <dt>
-              <Icon name={icon} size={15} className="icon--inline" /> {label}
-            </dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  )
-}
-
 // The founder's photo (public/brand/founder.jpg) over the company emblem.
 // Until the photo is added - or while it loads - the frame shows the emblem
 // instead of a broken picture.

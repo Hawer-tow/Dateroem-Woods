@@ -78,6 +78,9 @@ const PAGE_NAMES = {
   '/shipping': 'Shipping',
   '/heavy-order': 'Bulk Orders',
   '/about': 'About',
+  '/returns': 'Returns & Refunds',
+  '/privacy': 'Privacy',
+  '/terms': 'Terms',
 }
 
 // "adding faqs in the help area ... to stop feeling less empty to assist in
