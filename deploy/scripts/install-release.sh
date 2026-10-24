@@ -31,7 +31,9 @@ systemctl stop dateroem-admin-server dateroem-mobile-server dateroem-website-ser
 
 step "Copying the new version"
 install -d -o dateroem -g dateroem "$APP/backend"
-install -m 644 -o dateroem -g dateroem "$NEW/backend/backend.jar" "$APP/backend/backend.jar"
+# The backend carries the live keys (make-release.sh): readable by the
+# service account only.
+install -m 640 -o dateroem -g dateroem "$NEW/backend/backend.jar" "$APP/backend/backend.jar"
 for d in frontend mobileServer admin_server_control/server; do
   install -d -o dateroem -g dateroem "$APP/$d"
   rsync -a --delete --exclude 'venv/' "$NEW/$d/" "$APP/$d/"
@@ -40,6 +42,12 @@ rsync -a --delete "$NEW/sql scripts/" "$APP/sql scripts/"
 rsync -a --delete "$NEW/deploy/" "$APP/deploy/"
 if [[ -d "$NEW/media" ]]; then rsync -a --ignore-existing "$NEW/media/" "$APP/media/"; fi
 if [[ -d "$NEW/downloads" ]]; then rsync -a --ignore-existing "$NEW/downloads/" "$APP/downloads/"; fi
+# Safaricom's production certificate for Send Money (MPESA_B2C_CERT_PATH).
+if [[ -f "$NEW/mpesa/ProductionCertificate.cer" && ! -f /etc/dateroem/mpesa/ProductionCertificate.cer ]]; then
+  install -d -o root -g dateroem -m 750 /etc/dateroem/mpesa
+  install -m 640 -o root -g dateroem "$NEW/mpesa/ProductionCertificate.cer" /etc/dateroem/mpesa/ProductionCertificate.cer
+  echo "  Send Money certificate installed in /etc/dateroem/mpesa"
+fi
 chown -R dateroem:dateroem "$APP/backend" "$APP/frontend" "$APP/mobileServer" "$APP/admin_server_control" \
   "$APP/sql scripts" "$APP/deploy" "$APP/media" "$APP/downloads"
 

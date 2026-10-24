@@ -10,8 +10,15 @@
 # phone app downloads (downloads/); the server never lets a release replace
 # pictures it already has.
 #
-# Never packed: settings files (.env), secrets, Python venvs, node_modules,
-# logs or the database (export-database.sh does that, separately).
+# Never packed: the .env files, Python venvs, node_modules, logs or the
+# database (export-database.sh does that, separately).
+#
+# The backend is built from this computer's application.properties, so it
+# CARRIES THE LIVE SETTINGS: the M-Pesa keys and passkey, the SMS key and the
+# worker data key (24 October 2026). That is what lets the server run with
+# only a few lines in /etc/dateroem/backend.env - and it makes the release
+# file as secret as a password: it is readable by root only, goes only to
+# the server, and is deleted there after installing.
 # Hosting and Deployment Guide (DWS-CFG-03).
 set -euo pipefail
 
@@ -48,6 +55,14 @@ cp -r "$ROOT/deploy/Caddyfile" "$ROOT/deploy/systemd" "$ROOT/deploy/env" "$ROOT/
 if $WITH_MEDIA; then
   cp -r "$ROOT/media" "$R/media"
   cp -r "$ROOT/downloads" "$R/downloads"
+fi
+# Safaricom's production certificate for Send Money (public, not a secret);
+# install-release.sh puts it in /etc/dateroem/mpesa. Its file name here says
+# Sandbox, but it is the production certificate (checked 17 October 2026).
+CERT_SRC="$ROOT/backend/src/main/resources/mpesa/SandboxCertificate.cer"
+if [[ -f "$CERT_SRC" ]]; then
+  mkdir -p "$R/mpesa"
+  cp "$CERT_SRC" "$R/mpesa/ProductionCertificate.cer"
 fi
 find "$R" -name __pycache__ -type d -prune -exec rm -rf {} +
 find "$R" \( -name '*.pyc' -o -name '*.log' \) -delete
@@ -94,7 +109,9 @@ PY
 step "Packing"
 mkdir -p "$OUT"
 tar czf "$OUT/$NAME.tar.gz" -C "$STAGE" dateroem
+chmod 600 "$OUT/$NAME.tar.gz"
 SIZE="$(du -h "$OUT/$NAME.tar.gz" | cut -f1)"
 echo "Release: $OUT/$NAME.tar.gz ($SIZE)$($WITH_MEDIA && echo ', with pictures and downloads')"
+echo "It carries the live keys: copy it only to the server, and delete it there after installing."
 echo "Next: copy it to the server and run there:"
 echo "  sudo bash dateroem/deploy/scripts/install-release.sh $NAME.tar.gz"

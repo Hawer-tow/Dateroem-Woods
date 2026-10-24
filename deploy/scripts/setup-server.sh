@@ -29,6 +29,27 @@ apt-get update -q
 apt-get install -y -q openjdk-17-jre-headless mysql-server python3 python3-venv python3-pip \
   rsync curl gnupg openssl ufw unattended-upgrades apt-transport-https
 
+step "Memory: a 2 GB swap file and a lighter MySQL (the 2 GB HostAfrica C3 plan)"
+# Measured on the company computer: about 1.1 GB in use idle, up to about
+# 2 GB busy. The swap file catches peaks; MySQL's performance schema (about
+# 400 MB) isn't needed. The backend is held to 512 MB (dateroem-backend.service).
+if ! swapon --show --noheadings | grep -q .; then
+  fallocate -l 2G /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile >/dev/null
+  swapon /swapfile
+  grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  echo "  swap: 2 GB at /swapfile"
+else
+  echo "  swap already on"
+fi
+cat > /etc/mysql/mysql.conf.d/zz-dateroem.cnf <<'EOF'
+# Dateroem on a 2 GB server (setup-server.sh).
+[mysqld]
+performance_schema = OFF
+EOF
+systemctl restart mysql
+
 step "Caddy (from its official package repository)"
 if ! command -v caddy >/dev/null; then
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
@@ -109,7 +130,9 @@ cat <<EOF
      (two "A" records, value ${ADDRESS:-<this server's public IP>}).
   2. Copy the database here and run:
        sudo bash $DEPLOY/scripts/import-database.sh dateroem-db-....sql.gz
-  3. Fill in the values only you can get (M-Pesa, AI keys, Gmail App Password):
+  3. Fill in what the release doesn't carry - a new Groq key for the
+     assistant, and the Gmail App Password for the email form (the M-Pesa,
+     SMS and worker keys come with the release):
        sudo nano /etc/dateroem/backend.env
        sudo nano /etc/dateroem/website-server.env
   4. Install the release and start everything:

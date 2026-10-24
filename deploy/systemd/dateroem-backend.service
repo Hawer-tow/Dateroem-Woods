@@ -11,7 +11,7 @@ User=dateroem
 Group=dateroem
 WorkingDirectory=/srv/dateroem/backend
 EnvironmentFile=/etc/dateroem/backend.env
-ExecStart=/usr/bin/java -Djava.net.preferIPv4Stack=true -Xms256m -Xmx768m -jar /srv/dateroem/backend/backend.jar
+ExecStart=/usr/bin/java -Djava.net.preferIPv4Stack=true -Xms256m -Xmx512m -jar /srv/dateroem/backend/backend.jar
 # 143 = stopped by systemd (SIGTERM), a normal stop for Java.
 SuccessExitStatus=143
 Restart=always

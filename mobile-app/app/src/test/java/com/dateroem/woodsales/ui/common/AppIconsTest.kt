@@ -15,7 +15,8 @@ class AppIconsTest {
     fun everyIconBuildsWithDrawableShapes() {
         val getters = AppIcons::class.java.declaredMethods
             .filter { it.name.startsWith("get") && it.returnType == ImageVector::class.java && it.parameterCount == 0 }
-        assertEquals("number of icons", 56, getters.size)
+        // 57 since 24 October 2026; update it when an icon is added.
+        assertEquals("number of icons", 57, getters.size)
         for (getter in getters) {
             val icon = getter.invoke(AppIcons) as ImageVector
             val paths = icon.root.filterIsInstance<VectorPath>()

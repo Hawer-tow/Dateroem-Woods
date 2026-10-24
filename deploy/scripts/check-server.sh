@@ -41,6 +41,8 @@ for f in /etc/dateroem/*.env; do
   fi
 done
 (( EMPTY )) || echo "  none"
+echo "  (an empty line switches that setting off; the three MPESA_B2C lines stay"
+echo "   empty until Safaricom provides Send Money)"
 CERT="$(sed -n 's/^MPESA_B2C_CERT_PATH=//p' /etc/dateroem/backend.env)"
 if [[ -n "$CERT" && ! -f "$CERT" ]]; then echo "  Send Money certificate missing: $CERT"; fi
 
@@ -59,6 +61,9 @@ if [[ -n "$LAST" ]]; then
 else
   echo "  none yet (the first runs tonight at 02:30, or: sudo dateroem-backup)"
 fi
+
+echo "== Memory (the server has 2 GB; the swap file catches peaks)"
+free -h | awk '/^Mem:/ {print "  memory: " $3 " in use of " $2 ", " $7 " available"} /^Swap:/ {print "  swap:   " $3 " in use of " $2}'
 
 echo "== Disk"
 df -h / | awk 'NR == 2 {print "  " $4 " free of " $2 " (" $5 " used)"}'
