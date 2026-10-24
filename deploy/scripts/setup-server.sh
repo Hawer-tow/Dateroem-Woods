@@ -130,9 +130,9 @@ cat <<EOF
      (two "A" records, value ${ADDRESS:-<this server's public IP>}).
   2. Copy the database here and run:
        sudo bash $DEPLOY/scripts/import-database.sh dateroem-db-....sql.gz
-  3. Fill in what the release doesn't carry - a new Groq key for the
-     assistant, and the Gmail App Password for the email form (the M-Pesa,
-     SMS and worker keys come with the release):
+  3. Fill in what the release doesn't carry - the Gmail App Password for the
+     email form and the Anthropic key for picture scanning (the M-Pesa, SMS,
+     Groq and worker keys come with the release):
        sudo nano /etc/dateroem/backend.env
        sudo nano /etc/dateroem/website-server.env
   4. Install the release and start everything:
