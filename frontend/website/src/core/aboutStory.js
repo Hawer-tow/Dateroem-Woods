@@ -116,13 +116,31 @@ export const ABOUT_LOCATION = {
   note: 'We serve customers across Kenya from here - by delivery or through our pickup points.',
 }
 
-// The founder. The photo is public/brand/founder.jpg (square, at least 800 x
-// 800): until that file is added the frame shows the company emblem.
+// The founder (24 October 2026): "the bio ... this is straight from the
+// founder" - his own words, put in order and approved by the owner. The
+// portrait (public/brand/founder.jpg, 800 x 800) is cut from a clearer group
+// photo; the second picture (public/brand/founder-tree.jpg, 640 x 800) shows
+// him with a young tree - "this depict his love for trees". Until a photo
+// loads, the round frame shows the company emblem.
 export const ABOUT_FOUNDER = {
   eyebrow: 'The people behind Dateroem',
   name: 'Charles Mwangi Kimundu',
   role: 'Founder',
   photo: '/brand/founder.jpg',
-  text:
-    'Charles founded Dateroem Woods and leads it from the workshop in Nakuru - from choosing the trees and the milling to making sure every order reaches its customer.',
+  intro: [
+    'Charles founded Dateroem Woods in 2026 to meet the high demand for timber in Nakuru and the areas around it.',
+    'He grew up in Timboroa, where timber milling was the main economic activity, and the trade drew him in as he grew up.',
+  ],
+  aimsLead: 'He started the business to:',
+  aims: [
+    'give customers a steady supply of timber;',
+    'add value to raw timber, such as by making furniture;',
+    'offer one central place where customers can meet the team, so their tastes are met;',
+    'let customers choose exactly what they want before it is supplied.',
+  ],
+  closing:
+    'Charles personally leads the purchasing team, buying trees from farmers across Nakuru and parts of the Central region and choosing the right species for each customer. He also leads the team that makes sure every supply reaches customers promptly, on time and in good shape.',
+  quote: 'We are efficient and steady in our business. The sky is the limit.',
+  treePhoto: '/brand/founder-tree.jpg',
+  treeCaption: 'Charles with a young tree',
 }

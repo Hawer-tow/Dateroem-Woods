@@ -111,13 +111,37 @@ export default function AboutPage() {
           <ReachUs />
         </section>
 
+        {/* The founder (24 October 2026): his portrait and, under it, the
+            photo with a young tree; beside them his story, his reasons for
+            starting the business and his own closing words. */}
         <section className="about-founder" aria-labelledby="about-founder-title">
-          <FounderPhoto />
+          <div className="about-founder__pictures">
+            <FounderPhoto />
+            <figure className="about-founder__tree">
+              <img src={ABOUT_FOUNDER.treePhoto} alt={ABOUT_FOUNDER.treeCaption} loading="lazy" decoding="async" />
+              <figcaption>{ABOUT_FOUNDER.treeCaption}</figcaption>
+            </figure>
+          </div>
           <div className="about-founder__text">
             <p className="about-hero__eyebrow">{ABOUT_FOUNDER.eyebrow}</p>
             <h2 id="about-founder-title" className="about-section__title">{ABOUT_FOUNDER.name}</h2>
             <p className="about-founder__role">{ABOUT_FOUNDER.role}, Dateroem Woods</p>
-            <p className="about-founder__bio">{ABOUT_FOUNDER.text}</p>
+            {ABOUT_FOUNDER.intro.map((text) => (
+              <p key={text} className="about-founder__bio">
+                {text}
+              </p>
+            ))}
+            <p className="about-founder__bio">{ABOUT_FOUNDER.aimsLead}</p>
+            <ul className="about-founder__aims">
+              {ABOUT_FOUNDER.aims.map((aim) => (
+                <li key={aim}>{aim}</li>
+              ))}
+            </ul>
+            <p className="about-founder__bio">{ABOUT_FOUNDER.closing}</p>
+            <blockquote className="about-founder__quote">
+              <p>&ldquo;{ABOUT_FOUNDER.quote}&rdquo;</p>
+              <footer>{ABOUT_FOUNDER.name.split(' ')[0]}, {ABOUT_FOUNDER.role.toLowerCase()}</footer>
+            </blockquote>
           </div>
         </section>
       </div>
@@ -141,8 +165,6 @@ export default function AboutPage() {
   )
 }
 
-// The company's own contacts, from the website server's settings (the same
-// ones the footer and Help page show) - never anyone's personal number.
 // The founder's photo (public/brand/founder.jpg) over the company emblem.
 // Until the photo is added - or while it loads - the frame shows the emblem
 // instead of a broken picture.

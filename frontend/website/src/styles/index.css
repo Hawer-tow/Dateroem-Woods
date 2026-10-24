@@ -5443,7 +5443,7 @@ button.area-card__area:hover {
   display: grid;
   grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
   gap: clamp(24px, 4vw, 56px);
-  align-items: center;
+  align-items: start;
   max-width: 980px;
   margin-left: auto;
   margin-right: auto;
@@ -5485,10 +5485,61 @@ button.area-card__area:hover {
   color: var(--wood-tone);
 }
 .about-founder__bio {
-  margin: 0;
+  margin: 0 0 12px;
   max-width: 60ch;
   color: var(--text-muted);
   line-height: 1.7;
+}
+/* The portrait, and under it the photo with a young tree (24 October 2026). */
+.about-founder__pictures {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.about-founder__tree {
+  margin: 0;
+}
+.about-founder__tree img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 3px solid var(--wood-tone);
+  background: var(--bg-inset);
+}
+.about-founder__tree figcaption {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+.about-founder__aims {
+  margin: 0 0 14px;
+  padding-left: 1.2rem;
+  max-width: 60ch;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.about-founder__aims li::marker {
+  color: var(--wood-tone);
+}
+.about-founder__quote {
+  margin: 18px 0 0;
+  padding: 4px 0 4px 16px;
+  border-left: 3px solid var(--wood-tone);
+}
+.about-founder__quote p {
+  margin: 0;
+  font-size: 1.15rem;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--text);
+}
+.about-founder__quote footer {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--wood-tone);
 }
 
 /* Laptops and tablets: the steps two by two. */
@@ -5532,15 +5583,34 @@ button.area-card__area:hover {
     width: 2px;
     background: linear-gradient(to bottom, var(--wood-tone), rgba(235, 154, 75, 0.25));
   }
+  /* Phones: the portrait, then his name and story, then the tree photo. */
+  .about-founder__pictures {
+    display: contents;
+  }
   .about-founder__photo {
+    order: 0;
     width: min(220px, 70%);
+    margin: 0 auto;
+  }
+  .about-founder__text {
+    order: 1;
+  }
+  .about-founder__tree {
+    order: 2;
+    width: min(280px, 85%);
     margin: 0 auto;
   }
   .about-founder__text {
     text-align: center;
   }
+  /* The name and role centred; the story itself reads better left-aligned. */
+  .about-founder__bio,
+  .about-founder__aims,
+  .about-founder__quote {
+    text-align: left;
+  }
   .about-founder__bio {
-    margin: 0 auto;
+    margin: 0 auto 12px;
   }
 }
 

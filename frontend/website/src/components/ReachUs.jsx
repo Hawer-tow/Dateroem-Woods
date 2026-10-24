@@ -4,7 +4,8 @@ import { api } from '../api/client.js'
 import Icon from './Icon.jsx'
 
 // Every way to reach the business - phone, WhatsApp, email and the socials -
-// from the website server's settings (the same ones the footer and Help use).
+// from the website server's settings (the same ones the footer and Help use) -
+// the company's own contacts, never anyone's personal number.
 // On the About page, and at the foot of each policy page.
 export default function ReachUs({ title = 'Reach us' }) {
   const [contact, setContact] = useState(null)
