@@ -56,6 +56,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
 import com.dateroem.woodsales.ui.common.AppIcons
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun LoginScreen(
@@ -158,12 +159,7 @@ fun LoginScreen(
                 }
 
                 if (state is LoginUiState.Error) {
-                    Text(
-                        text = (state as LoginUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(top = 12.dp)
-                    )
+                    ErrorBox((state as LoginUiState.Error).message, modifier = Modifier.padding(top = 12.dp), fontSize = 13.sp)
                 }
 
                 WoodButton(

@@ -33,6 +33,7 @@ import com.dateroem.woodsales.ui.theme.DateroemAccent
 import com.dateroem.woodsales.ui.theme.DateroemBackground
 import com.dateroem.woodsales.ui.theme.DateroemSurface
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 // Carried straight from the list row that was tapped (Assign Transactions /
 // View All Unassigned) - no second fetch just to show what's already known.
@@ -86,7 +87,7 @@ fun AssignDetailScreen(viewModel: AssignDetailViewModel, transactionSummary: Tra
             is AssignDetailUiState.Error -> {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     Text("Couldn't load candidates", color = MaterialTheme.colorScheme.error)
-                    Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                    ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                     Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) {
                         Text("Retry")
                     }
@@ -101,7 +102,7 @@ fun AssignDetailScreen(viewModel: AssignDetailViewModel, transactionSummary: Tra
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
                     if (assignError != null) {
-                        Text(assignError!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+                        ErrorBox(assignError!!, modifier = Modifier.padding(bottom = 8.dp))
                     }
                     if (current.candidates.isEmpty()) {
                         Text(

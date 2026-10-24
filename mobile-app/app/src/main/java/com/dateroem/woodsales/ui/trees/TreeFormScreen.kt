@@ -67,6 +67,7 @@ import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import kotlinx.coroutines.launch
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun TreeFormScreen(
@@ -226,7 +227,7 @@ fun TreeFormScreen(
                 modifier = Modifier.padding(top = 4.dp)
             )
             if (locationError != null) {
-                Text(locationError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+                ErrorBox(locationError!!, modifier = Modifier.padding(top = 4.dp), small = true)
             }
             VoiceOutlinedTextField(
                 value = state.noTrees,
@@ -341,7 +342,7 @@ fun TreeFormScreen(
             )
 
             if (state.error != null) {
-                Text(state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
+                ErrorBox(state.error!!, modifier = Modifier.padding(top = 12.dp))
             }
 
             Row(modifier = Modifier.fillMaxWidth().padding(top = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

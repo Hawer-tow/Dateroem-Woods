@@ -37,6 +37,7 @@ import com.dateroem.woodsales.ui.theme.DateroemSurface
 import com.dateroem.woodsales.ui.theme.DateroemText
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 private val SuccessGreen = Color(0xFF4FA35C)
 
@@ -161,7 +162,7 @@ fun SmsSyncScreen(viewModel: SmsSyncViewModel) {
             }
         }
         state.error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+            ErrorBox(it, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }

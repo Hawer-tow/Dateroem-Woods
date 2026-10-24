@@ -26,6 +26,7 @@ import com.dateroem.woodsales.ui.theme.DateroemAccent
 import com.dateroem.woodsales.ui.theme.DateroemBackground
 import com.dateroem.woodsales.ui.theme.DateroemSurface
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun TripPickerScreen(viewModel: TripPickerViewModel, onSelectTrip: (Int) -> Unit) {
@@ -39,7 +40,7 @@ fun TripPickerScreen(viewModel: TripPickerViewModel, onSelectTrip: (Int) -> Unit
             is TripPickerUiState.Error -> {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     Text("Couldn't load trips", color = MaterialTheme.colorScheme.error)
-                    Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                    ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                     Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) {
                         Text("Retry")
                     }

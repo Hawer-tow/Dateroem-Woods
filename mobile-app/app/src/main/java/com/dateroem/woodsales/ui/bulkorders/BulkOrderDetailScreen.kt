@@ -50,6 +50,7 @@ import com.dateroem.woodsales.ui.theme.WoodOn
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.width
 import com.dateroem.woodsales.ui.common.AppIcons
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun BulkOrderDetailScreen(
@@ -99,7 +100,7 @@ fun BulkOrderDetailScreen(
             is BulkOrderDetailUiState.Error -> {
                 Column(modifier = Modifier.align(Alignment.Center).padding(16.dp)) {
                     Text("Couldn't load this order", color = MaterialTheme.colorScheme.error)
-                    Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                    ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                     Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) {
                         Text("Retry")
                     }
@@ -185,7 +186,7 @@ fun BulkOrderDetailScreen(
                             )
                         }
                         if (error != null) {
-                            Text(error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
+                            ErrorBox(error!!, modifier = Modifier.padding(top = 12.dp))
                         }
                         Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             TextButton(onClick = { editingPayment = false }, enabled = !finalizing) { Text("Cancel") }
@@ -287,7 +288,7 @@ fun BulkOrderDetailScreen(
                         }
 
                         if (error != null) {
-                            Text(error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
+                            ErrorBox(error!!, modifier = Modifier.padding(top = 12.dp))
                         }
 
                         WoodButton(

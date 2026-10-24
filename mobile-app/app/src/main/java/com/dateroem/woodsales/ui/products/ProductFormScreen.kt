@@ -64,6 +64,7 @@ import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import java.io.File
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun ProductFormScreen(
@@ -347,7 +348,7 @@ fun ProductFormScreen(
             }
 
             if (state.error != null) {
-                Text(state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
+                ErrorBox(state.error!!, modifier = Modifier.padding(top = 12.dp))
             }
 
             Row(modifier = Modifier.fillMaxWidth().padding(top = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -33,6 +33,7 @@ import com.dateroem.woodsales.ui.theme.DateroemText
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 // STK pulls money FROM a customer - business owner correction: "the stk
 // option will only happen to users paying for a product in the product
@@ -85,7 +86,7 @@ fun StkPushScreen(viewModel: StkPushViewModel, onDone: () -> Unit) {
                 )
 
                 if (state.error != null) {
-                    Text(state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
+                    ErrorBox(state.error!!, modifier = Modifier.padding(top = 12.dp))
                 }
 
                 WoodButton(
@@ -121,7 +122,7 @@ fun StkPushScreen(viewModel: StkPushViewModel, onDone: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (state.error != null) {
-                    Text(state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
+                    ErrorBox(state.error!!, modifier = Modifier.padding(top = 12.dp))
                 }
                 WoodButton(
                     onClick = { viewModel.confirm() },

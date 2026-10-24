@@ -46,6 +46,7 @@ import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
 import java.util.Locale
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 private const val SEARCH_THRESHOLD = 8
 
@@ -78,12 +79,7 @@ fun CampaignProductsField(
         ) {
             when {
                 error != null -> Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        error,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.weight(1f)
-                    )
+                    ErrorBox(error, modifier = Modifier.weight(1f), small = true)
                     TextButton(onClick = onRetry) { Text("Retry") }
                 }
                 !loaded -> Row(verticalAlignment = Alignment.CenterVertically) {

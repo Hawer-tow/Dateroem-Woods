@@ -228,7 +228,7 @@ fun rememberVoiceAssistant(): VoiceAssistant {
 private fun VoiceNoticeLine(notice: VoiceNotice, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     Column(modifier = modifier) {
-        Text(notice.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        ErrorBox(notice.message, small = true)
         if (notice.needsSettings) {
             // Once Android has been told "don't allow", it stops asking -
             // the app's own settings page is the only way back.

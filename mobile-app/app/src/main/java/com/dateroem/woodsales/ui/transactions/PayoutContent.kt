@@ -38,6 +38,7 @@ import com.dateroem.woodsales.ui.theme.DateroemText
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 private val SuccessGreen = Color(0xFF4FA35C)
 
@@ -98,7 +99,7 @@ fun PayoutContent(controller: PayoutController, purpose: String, sendLabel: Stri
                     color = DateroemTextMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp)
                 )
             }
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp)) }
+            state.error?.let { ErrorBox(it, modifier = Modifier.padding(top = 12.dp)) }
             WoodButton(
                 onClick = { controller.send() },
                 enabled = !state.submitting,
@@ -220,7 +221,7 @@ fun PayoutContent(controller: PayoutController, purpose: String, sendLabel: Stri
                 colors = fieldColors,
                 modifier = Modifier.fillMaxWidth()
             )
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp)) }
+            state.error?.let { ErrorBox(it, modifier = Modifier.padding(top = 12.dp)) }
             WoodButton(
                 onClick = { controller.confirmManual() },
                 enabled = !state.submitting,

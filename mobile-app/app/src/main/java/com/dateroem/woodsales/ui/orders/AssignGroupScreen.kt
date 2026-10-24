@@ -53,6 +53,7 @@ import com.dateroem.woodsales.ui.theme.DateroemText
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 // Send one customer's group to a light or bulk delivery: pick the trip, then
 // an existing delivery on it or a new one, tick the orders that go, confirm.
@@ -97,7 +98,7 @@ fun AssignGroupScreen(viewModel: AssignGroupViewModel, onDone: () -> Unit, onCan
         when {
             state.loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = DateroemAccent)
             group == null -> Column(modifier = Modifier.align(Alignment.Center).padding(24.dp)) {
-                Text(state.error ?: "Nothing to assign", color = MaterialTheme.colorScheme.error)
+                ErrorBox(state.error ?: "Nothing to assign")
                 Button(onClick = onCancel, modifier = Modifier.padding(top = 12.dp)) { Text("Back") }
             }
             else -> Column(
@@ -223,7 +224,7 @@ fun AssignGroupScreen(viewModel: AssignGroupViewModel, onDone: () -> Unit, onCan
                     }
                 }
 
-                state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp)) }
+                state.error?.let { ErrorBox(it, modifier = Modifier.padding(top = 12.dp)) }
 
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextButton(onClick = if (state.step == 1) viewModel::backToTrips else onCancel, modifier = Modifier.weight(1f)) {
@@ -268,7 +269,7 @@ private fun DropOrderDialog(order: JsonMap, dropping: Boolean, error: String?, o
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                 )
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp)) }
+                error?.let { ErrorBox(it, modifier = Modifier.padding(top = 8.dp)) }
             }
         },
         confirmButton = {

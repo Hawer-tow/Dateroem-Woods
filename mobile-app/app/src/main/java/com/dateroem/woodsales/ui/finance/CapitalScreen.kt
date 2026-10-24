@@ -45,6 +45,7 @@ import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
 import com.dateroem.woodsales.ui.common.AppIcons
 import com.dateroem.woodsales.ui.common.IconLabel
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun CapitalScreen(viewModel: CapitalViewModel) {
@@ -60,7 +61,7 @@ fun CapitalScreen(viewModel: CapitalViewModel) {
             is CapitalUiState.Error -> {
                 Column(modifier = Modifier.align(Alignment.Center).padding(16.dp)) {
                     Text("Couldn't load capital", color = MaterialTheme.colorScheme.error)
-                    Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                    ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                     Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) {
                         Text("Retry")
                     }

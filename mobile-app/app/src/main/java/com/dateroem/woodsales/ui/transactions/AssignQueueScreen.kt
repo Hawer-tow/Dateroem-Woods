@@ -32,6 +32,7 @@ import com.dateroem.woodsales.ui.theme.DateroemSurface
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun AssignQueueScreen(viewModel: AssignQueueViewModel, onOpen: (JsonMap) -> Unit) {
@@ -60,7 +61,7 @@ fun AssignQueueScreen(viewModel: AssignQueueViewModel, onOpen: (JsonMap) -> Unit
                     is AssignQueueUiState.Error -> {
                         Column(modifier = Modifier.align(Alignment.Center)) {
                             Text("Couldn't load the queue", color = MaterialTheme.colorScheme.error)
-                            Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                            ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                             Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) {
                                 Text("Retry")
                             }

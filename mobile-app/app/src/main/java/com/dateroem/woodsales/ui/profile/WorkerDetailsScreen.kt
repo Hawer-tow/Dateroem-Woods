@@ -55,6 +55,7 @@ import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
 import java.io.File
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 private val VerifiedGreen = Color(0xFF43A047)
 private val ChangesRed = Color(0xFFE53935)
@@ -77,7 +78,7 @@ fun WorkerDetailsScreen(viewModel: WorkerDetailsViewModel) {
         }
         if (record == null) {
             Column(modifier = Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(state.error ?: "Couldn't load your details", color = MaterialTheme.colorScheme.error)
+                ErrorBox(state.error ?: "Couldn't load your details")
                 TextButton(onClick = viewModel::load) { Text("Try again") }
             }
             return@Box
@@ -179,7 +180,7 @@ private fun DetailsCard(record: JsonMap, state: WorkerDetailsState, viewModel: W
                 )
             }
         }
-        state.saveError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
+        state.saveError?.let { ErrorBox(it, modifier = Modifier.padding(top = 6.dp), fontSize = 13.sp) }
         state.saveNote?.let { Text(it, color = DateroemAccent, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
         WoodButton(
             onClick = { viewModel.save(values.mapValues { (_, v) -> v.trim().ifBlank { null } }) },
@@ -216,7 +217,7 @@ private fun DocumentsCard(record: JsonMap, state: WorkerDetailsState, viewModel:
 
     Section("Document photos") {
         Text("Photograph each one flat, in good light, with every corner showing.", color = DateroemTextMuted, fontSize = 13.sp)
-        state.uploadError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
+        state.uploadError?.let { ErrorBox(it, modifier = Modifier.padding(top = 6.dp), fontSize = 13.sp) }
         record.maps("docTypes").forEach { doc ->
             val key = doc.text("typeKey") ?: return@forEach
             val sent = doc.text("uploadedAt")

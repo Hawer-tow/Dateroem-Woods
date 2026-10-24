@@ -43,6 +43,7 @@ import com.dateroem.woodsales.ui.theme.DateroemText
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 /**
  * My profile, from the photo or name at the top of the menu ("a profile area
@@ -62,7 +63,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, onOpenWorkerDetails: () -> Unit =
         }
         if (me == null) {
             Column(modifier = Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(state.error ?: "Couldn't load your profile", color = MaterialTheme.colorScheme.error)
+                ErrorBox(state.error ?: "Couldn't load your profile")
                 TextButton(onClick = viewModel::load) { Text("Try again") }
             }
             return@Box
@@ -147,7 +148,7 @@ private fun PhotoCard(me: Map<String, Any?>, state: ProfileState, viewModel: Pro
                 }
             }
         }
-        state.photoError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
+        state.photoError?.let { ErrorBox(it, fontSize = 13.sp) }
     }
 }
 
@@ -184,7 +185,7 @@ private fun DetailsCard(me: Map<String, Any?>, state: ProfileState, viewModel: P
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
             )
         }
-        state.detailsError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
+        state.detailsError?.let { ErrorBox(it, modifier = Modifier.padding(top = 6.dp), fontSize = 13.sp) }
         state.detailsNote?.let { Text(it, color = DateroemAccent, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
         WoodButton(
             onClick = { viewModel.saveDetails(name, email, if (needsPassword) password else "") },

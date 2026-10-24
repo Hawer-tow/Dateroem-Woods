@@ -24,6 +24,7 @@ import com.dateroem.woodsales.ui.theme.DateroemAccent
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 /**
  * The current (or temporary) password and the new one twice - the profile
@@ -54,7 +55,7 @@ fun PasswordForm(
             "At least 8 characters, with letters and numbers. Your other devices will be signed out.",
             color = DateroemTextMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)
         )
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
+        error?.let { ErrorBox(it, modifier = Modifier.padding(top = 6.dp), fontSize = 13.sp) }
         note?.let { Text(it, color = DateroemAccent, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp)) }
         WoodButton(
             onClick = {

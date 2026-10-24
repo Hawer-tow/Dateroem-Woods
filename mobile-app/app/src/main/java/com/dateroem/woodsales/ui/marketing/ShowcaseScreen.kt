@@ -64,6 +64,7 @@ import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodFab
 import java.io.File
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 // "pictures that can be used to show case what bulk orders look like so that
 // customers can see a template of what is meant by bulk orders" - the photos
@@ -114,7 +115,7 @@ fun ShowcaseScreen(viewModel: ShowcaseViewModel) {
                 state.loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = DateroemAccent)
                 state.loadError != null -> Column(modifier = Modifier.align(Alignment.Center).padding(24.dp)) {
                     Text("Couldn't load the pictures", color = MaterialTheme.colorScheme.error)
-                    Text(state.loadError ?: "", color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                    ErrorBox(state.loadError ?: "", modifier = Modifier.padding(top = 8.dp))
                     WoodButton(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) { Text("Retry") }
                 }
                 else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -140,7 +141,7 @@ fun ShowcaseScreen(viewModel: ShowcaseViewModel) {
                             LinearProgressIndicator(color = DateroemAccent, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
                         }
                         state.error?.let {
-                            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 4.dp))
+                            ErrorBox(it, modifier = Modifier.padding(vertical = 4.dp))
                         }
                     }
                     itemsIndexed(state.pictures, key = { _, p -> p.showcaseId }) { index, picture ->

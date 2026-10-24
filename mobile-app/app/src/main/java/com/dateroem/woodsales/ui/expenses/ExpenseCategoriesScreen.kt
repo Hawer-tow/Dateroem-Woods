@@ -29,6 +29,7 @@ import com.dateroem.woodsales.ui.theme.DateroemSurface
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.size
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun ExpenseCategoriesScreen(viewModel: ExpenseCategoriesViewModel, onSelectCategory: (ExpenseCategory) -> Unit) {
@@ -42,7 +43,7 @@ fun ExpenseCategoriesScreen(viewModel: ExpenseCategoriesViewModel, onSelectCateg
             is ExpenseCategoriesUiState.Error -> {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     Text("Couldn't load totals", color = MaterialTheme.colorScheme.error)
-                    Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                    ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                     Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) {
                         Text("Retry")
                     }

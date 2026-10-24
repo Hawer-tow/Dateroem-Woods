@@ -43,6 +43,7 @@ import com.dateroem.woodsales.ui.theme.DateroemText
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
 import com.dateroem.woodsales.ui.theme.WoodOn
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun RemainderTreeFormScreen(viewModel: RemainderTreeFormViewModel, onDone: () -> Unit) {
@@ -137,7 +138,7 @@ fun RemainderTreeFormScreen(viewModel: RemainderTreeFormViewModel, onDone: () ->
             )
 
             if (state.error != null) {
-                Text(state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp))
+                ErrorBox(state.error!!, modifier = Modifier.padding(top = 12.dp))
             }
 
             Row(modifier = Modifier.fillMaxWidth().padding(top = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -36,6 +36,7 @@ import com.dateroem.woodsales.ui.theme.DateroemSurface
 import com.dateroem.woodsales.ui.theme.DateroemText
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodButton
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 // "where exactly do i go ... still cannot see it" - the list dropOrder()'s
 // refund figure was always missing until now: every dropped order still
@@ -49,7 +50,7 @@ fun RefundsScreen(viewModel: RefundsViewModel, onPay: (orderId: Int, amount: Dou
             is RefundsUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = DateroemAccent)
             is RefundsUiState.Error -> Column(modifier = Modifier.align(Alignment.Center).padding(16.dp)) {
                 Text("Couldn't load refunds", color = MaterialTheme.colorScheme.error)
-                Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                 Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) { Text("Retry") }
             }
             is RefundsUiState.Loaded -> {

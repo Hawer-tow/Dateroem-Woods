@@ -44,6 +44,7 @@ import com.dateroem.woodsales.ui.theme.DateroemBackground
 import com.dateroem.woodsales.ui.theme.DateroemSurface
 import com.dateroem.woodsales.ui.theme.DateroemTextMuted
 import com.dateroem.woodsales.ui.theme.WoodFab
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 @Composable
 fun ExpenseListScreen(
@@ -73,7 +74,7 @@ fun ExpenseListScreen(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     picker.error?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+                        ErrorBox(it, modifier = Modifier.padding(bottom = 8.dp))
                     }
                     when {
                         picker.loading || picker.busy -> CircularProgressIndicator(color = DateroemAccent)
@@ -149,7 +150,7 @@ fun ExpenseListScreen(
             }
 
             if (deleteError != null) {
-                Text(deleteError!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+                ErrorBox(deleteError!!, modifier = Modifier.padding(bottom = 8.dp))
             }
 
             Box(modifier = Modifier.fillMaxSize()) {
@@ -160,7 +161,7 @@ fun ExpenseListScreen(
                     is ExpenseListUiState.Error -> {
                         Column(modifier = Modifier.align(Alignment.Center)) {
                             Text("Couldn't load entries", color = MaterialTheme.colorScheme.error)
-                            Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                            ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                             Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) {
                                 Text("Retry")
                             }

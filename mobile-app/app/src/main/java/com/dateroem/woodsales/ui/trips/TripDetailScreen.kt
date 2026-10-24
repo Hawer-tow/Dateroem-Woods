@@ -44,6 +44,7 @@ import com.dateroem.woodsales.ui.theme.WoodOn
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.dateroem.woodsales.ui.common.AppIcons
 import com.dateroem.woodsales.ui.common.IconLabel
+import com.dateroem.woodsales.ui.common.ErrorBox
 
 // "i should not have a financial filling area what i should see are the
 // major details pertaining the trip e.g heavy delivery number permits
@@ -83,7 +84,7 @@ fun TripDetailScreen(
             is TripDetailUiState.Error -> {
                 Column(modifier = Modifier.align(Alignment.Center).padding(16.dp)) {
                     Text("Couldn't load this trip", color = MaterialTheme.colorScheme.error)
-                    Text(current.message, color = DateroemTextMuted, modifier = Modifier.padding(top = 4.dp))
+                    ErrorBox(current.message, modifier = Modifier.padding(top = 8.dp))
                     Button(onClick = { viewModel.refresh() }, modifier = Modifier.padding(top = 12.dp)) {
                         Text("Retry")
                     }
@@ -219,7 +220,7 @@ private fun FinalizeTripDialog(
                         }
                     }
                 }
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp)) }
+                error?.let { ErrorBox(it, modifier = Modifier.padding(top = 10.dp)) }
             }
         },
         confirmButton = {
