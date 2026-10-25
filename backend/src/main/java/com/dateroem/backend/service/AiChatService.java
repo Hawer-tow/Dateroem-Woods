@@ -341,6 +341,25 @@ public class AiChatService {
         greetings and off-topic replies.
         """;
 
+    // Who the business is and where (the same public facts as the About page,
+    // 25 October 2026): asked "Where are you located?" the assistant used to
+    // decline, as if it were off-topic.
+    private static final String COMPANY_FACTS = """
+        About the business (also on the About page, /about):
+        - Dateroem Woods (Dateroem Wood Sales) deals in timber and native \
+        African hardwoods: poles, sawn timber, boards, templates and \
+        decorative pieces.
+        - Trees are bought from farms across Central Kenya, with the permits \
+        each harvest needs; the logs are milled and finished at the \
+        workshop in Nakuru and delivered across the country.
+        - Where to find us: the workshop at Ebenezar Plot, Old Nairobi Road, \
+        Nakuru, Kenya. The About page has a map.
+        - Social media: TikTok and Instagram @dateroem.woods.
+        - Questions about where the company is, who runs it or where its \
+        timber comes from are about this business - answer them from these \
+        facts.
+        """;
+
     private static final String WEB_BUYING_FACTS = """
         How buying works on the website:
         - Anyone can browse and fill the cart, but placing an order needs a \
@@ -624,6 +643,7 @@ public class AiChatService {
 
     private String buildWebSystemPrompt(Integer userId, Map<String, String> siteInfo, Map<String, Object> visitorContext) {
         StringBuilder prompt = new StringBuilder(WEB_SYSTEM_PROMPT_HEADER);
+        prompt.append("\n").append(COMPANY_FACTS);
         prompt.append("\n").append(WEB_BUYING_FACTS);
         prompt.append("\n").append(buildContactContext(siteInfo));
         prompt.append("\n").append(buildProductCatalogContext());

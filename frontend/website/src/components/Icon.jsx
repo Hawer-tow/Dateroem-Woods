@@ -148,6 +148,13 @@ const SHAPES = {
     </>
   ),
   play: <path d="M7 4.5v15l12.5-7.5z" />,
+  // The chat's send button (forest look).
+  send: (
+    <>
+      <path d="m22 2-7 20-4-9-9-4z" />
+      <path d="M22 2 11 13" />
+    </>
+  ),
   arrowDown: <path d="M12 5v14M19 12l-7 7-7-7" />,
   arrowLeft: <path d="M19 12H5M12 5l-7 7 7 7" />,
   chevronLeft: <path d="m15 18-6-6 6-6" />,

@@ -1122,6 +1122,340 @@ html[data-look='forest'] .featured-banner__close {
   }
 }
 
+/* ---- The chat (HelpWidget.jsx) ----
+   "the chat area not being so modern" (25 October 2026): a glass panel over
+   the forest, a header with the emblem and "Online", a welcome with
+   suggestions, soft bubbles (answers carry the emblem beside them), and a
+   rounded message bar with a round send button. */
+html[data-look='forest'] .help-widget {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 24px;
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  background: var(--bg);
+}
+html[data-look='forest'] .help-widget > :not(.help-widget__forest) {
+  position: relative;
+  z-index: 1;
+}
+/* The site's misty forest behind the chat, shaded so the words stay easy
+   to read: lighter at the top under the header, deeper where the answers
+   are. Light theme: a misty morning; Dark: the forest at night. */
+.help-widget__forest {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.help-widget__forest-photo {
+  position: absolute;
+  inset: -4%;
+  background: url('/forest/forest-tall.webp') center 30% / cover no-repeat;
+  filter: var(--forest-photo-filter);
+  animation: forest-sway 40s ease-in-out infinite alternate;
+}
+.help-widget__forest::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--bg-rgb), 0.5) 0%,
+    rgba(var(--bg-rgb), 0.74) 26%,
+    rgba(var(--bg-rgb), 0.84) 62%,
+    rgba(var(--bg-rgb), 0.92) 100%
+  );
+}
+.help-widget__forest-mist {
+  position: absolute;
+  left: 0;
+  bottom: 6%;
+  z-index: 1;
+  width: 200%;
+  height: 45%;
+  background: url('/forest/fog.webp') 0 0 / 50% 100% repeat-x;
+  opacity: calc(var(--forest-mist-opacity) * 1.3);
+  animation: forest-mist 90s linear infinite;
+}
+.help-widget__fireflies {
+  z-index: 1;
+}
+html[data-look='forest'][data-theme='light'] .help-widget__forest::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--bg-rgb), 0.55) 0%,
+    rgba(var(--bg-rgb), 0.8) 26%,
+    rgba(var(--bg-rgb), 0.88) 62%,
+    rgba(var(--bg-rgb), 0.94) 100%
+  );
+}
+html[data-look='forest'] .help-widget--open {
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(235, 154, 75, 0.12);
+}
+html[data-look='forest'] .help-widget__scrim {
+  background: rgba(4, 12, 8, 0.45);
+}
+html[data-look='forest'] .help-widget__header {
+  padding: 18px 16px 16px 20px;
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.1);
+  background: rgba(var(--bg-rgb), 0.35);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.help-widget__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.help-widget__avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #2b5a44, #12291e);
+  box-shadow:
+    0 0 0 2px rgba(235, 154, 75, 0.55),
+    0 8px 18px -8px rgba(0, 0, 0, 0.8);
+}
+html[data-look='forest'] .help-widget__header h2 {
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+.help-widget__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+.help-widget__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4cc56a;
+  box-shadow: 0 0 0 0 rgba(76, 197, 106, 0.6);
+  animation: status-pulse 2.4s ease-out infinite;
+}
+@keyframes status-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 197, 106, 0.55);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px rgba(76, 197, 106, 0);
+  }
+}
+html[data-look='forest'] .help-widget__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(var(--ink-rgb), 0.06);
+  transition: background 0.2s ease;
+}
+html[data-look='forest'] .help-widget__close:hover {
+  background: rgba(var(--ink-rgb), 0.12);
+}
+html[data-look='forest'] .help-widget__history-row {
+  padding: 10px 16px 0;
+}
+html[data-look='forest'] .help-widget .chat-window--widget {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+html[data-look='forest'] .help-widget .chat-window--widget .chat-window__messages {
+  gap: 12px;
+  margin: 0;
+  padding: 18px 16px 12px;
+  scrollbar-width: thin;
+}
+
+/* The welcome, before the first question. */
+.chat-welcome {
+  margin-left: 40px;
+  position: relative;
+  padding: 14px 16px;
+  border-radius: 6px 18px 18px 18px;
+  border: 1px solid rgba(var(--ink-rgb), 0.1);
+  background: rgba(var(--bg-elevated-rgb), 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.chat-welcome p {
+  margin: 0;
+}
+.chat-welcome .chat-welcome__hello {
+  margin-bottom: 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.chat-welcome__note {
+  margin-top: 8px !important;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+.chat-welcome .chat-context__chips {
+  margin-top: 12px;
+}
+
+/* The bubbles. */
+html[data-look='forest'] .chat-bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  animation: bubble-in 0.35s var(--grow-ease) both;
+}
+html[data-look='forest'] .chat-bubble--user {
+  max-width: 82%;
+  border-bottom-right-radius: 6px;
+  background: linear-gradient(135deg, #f4b566, #e8892f);
+  color: #2a1508;
+  box-shadow: 0 8px 20px -12px rgba(232, 137, 47, 0.8);
+}
+html[data-look='forest'] .chat-bubble--bot,
+.chat-welcome {
+  position: relative;
+}
+html[data-look='forest'] .help-widget .chat-bubble--bot {
+  max-width: calc(100% - 40px);
+  margin-left: 40px;
+  border-top-left-radius: 6px;
+  border: 1px solid rgba(var(--ink-rgb), 0.1);
+  background: rgba(var(--bg-elevated-rgb), 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+/* The emblem beside each answer. */
+html[data-look='forest'] .help-widget .chat-bubble--bot::before,
+.chat-welcome::before {
+  content: '';
+  position: absolute;
+  left: -40px;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: url('/brand/emblem.svg') center / 22px 22px no-repeat, radial-gradient(circle at 35% 30%, #2b5a44, #12291e);
+  box-shadow: 0 0 0 1.5px rgba(235, 154, 75, 0.5);
+}
+html[data-look='forest'] .chat-bubble__link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border-color: rgba(235, 154, 75, 0.5);
+  color: var(--wood-tone);
+  font-size: 0.82rem;
+}
+html[data-look='forest'] .chat-bubble__link::after {
+  content: '\2192';
+  margin-left: 6px;
+}
+html[data-look='forest'] .chat-bubble--typing {
+  min-height: 0;
+}
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* The suggestions. */
+html[data-look='forest'] .help-widget .chat-context {
+  padding: 0 16px 10px;
+}
+html[data-look='forest'] .chat-context__chip {
+  border-radius: 999px;
+  border: 1px solid rgba(235, 154, 75, 0.4);
+  background: rgba(235, 154, 75, 0.08);
+  color: var(--text);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+html[data-look='forest'] .chat-context__chip:hover,
+html[data-look='forest'] .chat-context__chip:focus-visible {
+  border-color: var(--wood-tone);
+  background: rgba(235, 154, 75, 0.18);
+}
+
+/* The message bar. */
+html[data-look='forest'] .help-widget .chat-window__form {
+  align-items: center;
+  gap: 8px;
+  margin: 4px 14px 14px;
+  padding: 6px 6px 6px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.14);
+  background: rgba(var(--bg-rgb), 0.85);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+html[data-look='forest'] .help-widget .chat-window__form:focus-within {
+  border-color: rgba(235, 154, 75, 0.6);
+  box-shadow: 0 0 0 3px rgba(235, 154, 75, 0.14);
+}
+html[data-look='forest'] .help-widget .chat-window__form input {
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.95rem;
+  outline: none;
+}
+.chat-window__send--round {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  min-width: 0;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f4b566, #e8892f);
+  color: #2a1508;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+.chat-window__send--round:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: scale(1.05);
+}
+.chat-window__send--round:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.chat-window__send--round .icon {
+  margin-left: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-look='forest'] .chat-bubble,
+  .help-widget__status-dot,
+  .help-widget__forest * {
+    animation: none !important;
+  }
+}
+
 /* ---- The product page ---- */
 html[data-look='forest'] .product-detail__image {
   position: relative;

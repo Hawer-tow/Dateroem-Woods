@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useHelpWidget } from '../context/HelpWidgetContext.jsx'
 import { useChatNudge } from '../context/ChatNudgeContext.jsx'
 import Icon from './Icon.jsx'
+import { FOREST_LOOK } from '../core/look.js'
+import Fireflies from './forest/Fireflies.jsx'
 
 // One-tap questions for the page the chat was opened from - the commonest
 // things people ask at that moment.
@@ -13,6 +15,11 @@ const QUICK_QUESTIONS = {
   cart: ['How much is delivery?', 'Where can I pick it up?', 'How do I pay with M-Pesa?'],
   search: ["What do you have that's close?", 'Can you get it for me?'],
 }
+
+// The forest look's welcome offers these when the chat opens away from a
+// product, the cart or a search (25 October 2026: "the chat area not being
+// so modern").
+const GENERAL_QUESTIONS = ['How long does delivery take?', 'How do I pay with M-Pesa?', 'Where are you located?', 'Do you take bulk orders?']
 
 // The page context as the server takes it (the label is only for the
 // "Asking about ..." line here).
@@ -542,13 +549,37 @@ export default function HelpWidget() {
       {isOpen && <div className="help-widget__scrim" onClick={close} />}
 
       <aside ref={panelRef} className={`help-widget${isOpen ? ' help-widget--open' : ''}`} aria-hidden={!isOpen}>
+        {/* The forest look: the site's misty forest behind the chat - its
+            photo, drifting mist and a few fireflies (styles/forest.css). */}
+        {FOREST_LOOK && (
+          <div className="help-widget__forest" aria-hidden="true">
+            <div className="help-widget__forest-photo" />
+            <div className="help-widget__forest-mist" />
+            {isOpen && <Fireflies count={6} className="help-widget__fireflies" />}
+          </div>
+        )}
         <div className="help-widget__header">
-          <h2>Ask Dateroem</h2>
+          {FOREST_LOOK ? (
+            <div className="help-widget__who">
+              <span className="help-widget__avatar" aria-hidden="true">
+                <img src="/brand/emblem.svg" alt="" width="30" height="30" />
+              </span>
+              <div>
+                <h2>Dateroem assistant</h2>
+                <p className="help-widget__status">
+                  <span className="help-widget__status-dot" aria-hidden="true" />
+                  Online · replies in seconds
+                </p>
+              </div>
+            </div>
+          ) : (
+            <h2>Ask Dateroem</h2>
+          )}
           <button type="button" className="help-widget__close" onClick={close} aria-label="Close">
             <Icon name="close" size={18} />
           </button>
         </div>
-        {!isAuthenticated && (
+        {!isAuthenticated && !FOREST_LOOK && (
           <p className="state-message help-widget__hint">
             Ask away - sign in and I can also look up your own orders and remember our conversation.
           </p>
@@ -605,7 +636,28 @@ export default function HelpWidget() {
           <div className="chat-window__viewport">
             <div className="chat-window__messages" ref={messagesRef} onScroll={updateAtBottom}>
               {loadingHistory && <p className="state-message">Loading your conversation...</p>}
-              {!loadingHistory && visibleMessages.length === 0 && (
+              {!loadingHistory && visibleMessages.length === 0 && FOREST_LOOK && !viewingBucket && (
+                <div className="chat-welcome">
+                  <p className="chat-welcome__hello">Hi there!</p>
+                  <p>
+                    I&apos;m the Dateroem assistant. Ask me about our timber, prices, delivery or paying with M-Pesa
+                    {isAuthenticated ? ' - or about your own orders.' : '.'}
+                  </p>
+                  {!isAuthenticated && (
+                    <p className="chat-welcome__note">Sign in and I can also look up your orders and remember our conversation.</p>
+                  )}
+                  {!askContext && (
+                    <div className="chat-context__chips">
+                      {GENERAL_QUESTIONS.map((quick) => (
+                        <button key={quick} type="button" className="chat-context__chip" onClick={() => sendQuestion(quick)}>
+                          {quick}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {!loadingHistory && visibleMessages.length === 0 && !(FOREST_LOOK && !viewingBucket) && (
                 <p className="state-message">
                   {viewingBucket ? `Nothing in ${viewingBucket.label}.` : 'Ask us anything about our products.'}
                 </p>
@@ -680,6 +732,17 @@ export default function HelpWidget() {
               {/* "add a rotating feature so that one can see progress not
                   just making the button inactive" - a spinner inside the
                   button while the answer is on its way. */}
+              {FOREST_LOOK ? (
+                <button
+                  className="chat-window__send chat-window__send--round"
+                  type="submit"
+                  disabled={sending || !question.trim()}
+                  aria-busy={sending}
+                  aria-label={sending ? 'Sending' : 'Send'}
+                >
+                  {sending ? <span className="chat-window__send-spinner" aria-hidden="true" /> : <Icon name="send" size={19} strokeWidth={2.1} />}
+                </button>
+              ) : (
               <button className="btn btn--primary chat-window__send" type="submit" disabled={sending} aria-busy={sending}>
                 {sending ? (
                   <>
@@ -690,6 +753,7 @@ export default function HelpWidget() {
                   'Send'
                 )}
               </button>
+              )}
             </form>
           )}
         </div>

@@ -152,10 +152,27 @@ public class GroqClient implements ChatAiClient {
             sleep(attempt.busyFor());
             attempt = tryEachModel(messages);
         }
+        // Seen on 25 October 2026, about one time in three: "How do I pay
+        // with M-Pesa?" came back as only "Sure, here's how to pay with
+        // M-Pesa:" - the model itself stopped after promising the steps. One
+        // more try usually gives the whole answer; if it doesn't, the first
+        // reply stands.
+        if (attempt.reply() != null && endsOnPromise(attempt.reply().answer())) {
+            Attempt again = tryEachModel(messages);
+            if (again.reply() != null && !endsOnPromise(again.reply().answer())) {
+                log.info("Chat answer stopped after its first line; the second try was complete");
+                attempt = again;
+            }
+        }
         if (attempt.reply() != null) {
             return attempt.reply();
         }
         throw new AiBusyException(attempt.busyFor());
+    }
+
+    // An answer that ends on a colon promised something it then left out.
+    private static boolean endsOnPromise(String answer) {
+        return answer != null && answer.strip().endsWith(":");
     }
 
     // Either a model answered (reply), or every model is at its limit and
