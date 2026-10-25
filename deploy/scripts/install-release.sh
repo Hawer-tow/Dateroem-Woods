@@ -82,6 +82,18 @@ for _ in $(seq 1 60); do
 done
 echo
 systemctl start dateroem-website-server dateroem-mobile-server dateroem-admin-server
-sleep 3
+# On one processor they need longer than a moment to start (25 October 2026):
+# wait for each to answer, up to a minute.
+printf '  waiting for the three small servers'
+for _ in $(seq 1 30); do
+  up=0
+  for port in 8000 8001 8002; do
+    curl -s -o /dev/null -m 2 "http://127.0.0.1:$port/health" && up=$((up + 1))
+  done
+  (( up == 3 )) && break
+  printf '.'
+  sleep 2
+done
+echo
 
 bash "$APP/deploy/scripts/check-server.sh"

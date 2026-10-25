@@ -66,7 +66,10 @@ APT::Periodic::Unattended-Upgrade "1";
 EOF
 
 step "Firewall: only remote login (SSH), HTTP and HTTPS from outside"
-SSH_PORT="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')"
+# awk reads all of sshd's answer (no early "exit"): stopping early broke the
+# pipe, and with pipefail that ended the whole script (first real server,
+# 25 October 2026).
+SSH_PORT="$(sshd -T 2>/dev/null | awk '/^port /{p = $2} END {print p}')" || SSH_PORT=22
 ufw allow "${SSH_PORT:-22}/tcp" >/dev/null
 ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
@@ -124,10 +127,13 @@ EOF
 systemctl daemon-reload
 
 ADDRESS="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") print $(i + 1)}')"
+# Set apart from the message below: an apostrophe inside ${...:-...} in it
+# stopped the script at its very end (25 October 2026).
+[[ -n "$ADDRESS" ]] || ADDRESS="<the public IP of this server>"
 step "Done. Next:"
 cat <<EOF
   1. At the domain registrar, point $DOMAIN and www.$DOMAIN to this server
-     (two "A" records, value ${ADDRESS:-<this server's public IP>}).
+     (two "A" records, value $ADDRESS).
   2. Copy the database here and run:
        sudo bash $DEPLOY/scripts/import-database.sh dateroem-db-....sql.gz
   3. Fill in what the release doesn't carry - the Gmail App Password for the

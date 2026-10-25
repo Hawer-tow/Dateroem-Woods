@@ -1119,3 +1119,8 @@ and when you click it you go to a payout that is generated when one opens a cert
 
 i know that other tables e. the stk push will be created but since the it will still connnect to the FINANCIAL_TRANSACTION table then it can be added later slowly among other tables needed. 
 check all this and see if its ok any new features needed or tables and if its possible.
+
+
+
+
+https://console.cloud.google.com/apis/credentials.

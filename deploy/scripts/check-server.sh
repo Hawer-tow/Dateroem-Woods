@@ -28,8 +28,12 @@ echo "== Public addresses (https://$DOMAIN)"
 check "Website" "https://$DOMAIN/"
 check "Phone app server (/mobile-api)" "https://$DOMAIN/mobile-api/health"
 check "Desktop app server (/admin-api)" "https://$DOMAIN/admin-api/health"
-# Safaricom POSTs here; a GET answering 405 proves the path reaches the backend.
-check "Payment callback (/api/dateroem-payments)" "https://$DOMAIN/api/dateroem-payments/stk" 405
+# Safaricom POSTs payment results here. The router lets only Safaricom's
+# addresses through (deploy/Caddyfile), so from anywhere else the public path
+# answers 403 - the guard working - and the backend's own route, asked
+# directly, answers 405 to a GET: it is there (first real server, 25 October 2026).
+check "Payment callback guard (Safaricom only)" "https://$DOMAIN/api/dateroem-payments/stk" 403
+check "Payment callback in the backend" http://127.0.0.1:8080/api/dateroem-payments/stk 405
 
 echo "== Settings still empty (fill in, then restart that server)"
 EMPTY=0
