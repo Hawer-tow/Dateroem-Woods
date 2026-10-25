@@ -6,6 +6,7 @@ import { useHelpWidget } from '../context/HelpWidgetContext.jsx'
 import { useChatNudge } from '../context/ChatNudgeContext.jsx'
 import Icon from './Icon.jsx'
 import { FOREST_LOOK } from '../core/look.js'
+import { parseAnswer } from '../core/chatAnswer.js'
 import Fireflies from './forest/Fireflies.jsx'
 
 // One-tap questions for the page the chat was opened from - the commonest
@@ -132,42 +133,7 @@ function ClockIcon({ size = 20 }) {
   )
 }
 
-// "it should be able to categorize the answers properly" - the assistant
-// answers in a fixed plain-text layout (AiChatService's web prompt): a
-// heading is a short line ending in a colon, list items start with "- ".
-// This turns that into real headings and lists; anything else stays a
-// plain paragraph, so an answer that strays from the layout still reads fine.
-const HEADING_MAX_WORDS = 5
 const LABEL_MAX_WORDS = 3
-
-function parseAnswer(text) {
-  const blocks = []
-  let list = null
-  for (const rawLine of (text || '').split('\n')) {
-    const line = rawLine.trim().replace(/^#+\s*/, '')
-    if (!line) {
-      list = null
-      continue
-    }
-    const item = line.match(/^(?:[-•*]|\d+[.)])\s+(.+)$/)
-    if (item) {
-      if (!list) {
-        list = { type: 'list', items: [] }
-        blocks.push(list)
-      }
-      list.items.push(item[1])
-      continue
-    }
-    list = null
-    const plain = line.replace(/\*\*/g, '')
-    if (plain.endsWith(':') && plain.split(/\s+/).length <= HEADING_MAX_WORDS) {
-      blocks.push({ type: 'heading', text: plain.slice(0, -1) })
-    } else {
-      blocks.push({ type: 'paragraph', text: line })
-    }
-  }
-  return blocks
-}
 
 // **bold** from a model that slips into markdown, and a short "Label:" at
 // the start of a line ("Payment: M-Pesa only", "Nakuru: Town Center") shown
