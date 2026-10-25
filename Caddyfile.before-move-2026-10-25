@@ -1,0 +1,84 @@
+# The public tunnel's one door (ngrok forwards here - see the desktop app's
+# server_manager.py, "Tunnel Router (Caddy)"). Only these paths are public;
+# the backend itself (8080) never is, since it trusts X-Actor-User-Id from
+# the servers in front of it.
+:9099 {
+	# Request size limits (9 October 2026): anything larger is refused (413)
+	# here, before a server reads it - an upload is checked for a sign-in
+	# only once it has arrived, so without these anyone could send huge
+	# files to fill memory or disk. Phone and desktop apps: campaign videos
+	# up to 60 MB (sent as they are). Website and
+	# Safaricom: small forms only.
+	# The shared phone app's base URL -> Mobile Server BFF.
+	handle_path /mobile-api/* {
+		request_body {
+			max_size 70MB
+		}
+		reverse_proxy 127.0.0.1:8001
+	}
+	handle_path /downloadable/* {
+		root * /root/fathersProject/downloads
+		file_server
+	}
+	# The desktop app on other computers (its server address set to
+	# <public address>/admin-api) -> Admin Server BFF. Every call there needs
+	# a sign-in from a computer the SuperAdmin approved (the backend's
+	# DesktopClientFilter); its API description pages stay private.
+	@admin_api_docs path /admin-api/docs* /admin-api/redoc* /admin-api/openapi.json
+	handle @admin_api_docs {
+		respond 404
+	}
+	handle_path /admin-api/* {
+		request_body {
+			max_size 70MB
+		}
+		reverse_proxy 127.0.0.1:8002
+	}
+	# Safaricom's STK push results, straight to the backend (inside WSL, so
+	# no Windows port relay involved) - payments don't depend on the
+	# website process being up.
+	handle /api/dateroem-mpesa-callback/* {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy 127.0.0.1:8080
+	}
+	# The same handlers under the production path (no "mpesa" in it -
+	# deploy/Caddyfile), so it can be tried in the sandbox first.
+	handle /api/dateroem-payments/* {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy 127.0.0.1:8080
+	}
+	# Everything else: the public website build (and its /svc server calls).
+	handle {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy 127.0.0.1:4173
+	}
+
+	# "in the event of an error e.g the server is offline ... never gets the
+	# whole details but what is necessary and presentable" (18 October
+	# 2026): when a server behind this router is down, an app or a site
+	# call gets one calm sentence as JSON, and a browser gets the "we'll be
+	# right back" page (deploy/maintenance, written by the website's
+	# brand:export) - never a bare 502.
+	handle_errors {
+		@down expression `{err.status_code} >= 502 && {err.status_code} <= 504`
+		@calls expression `{http.request.orig_uri.path}.startsWith("/svc/") || {http.request.orig_uri.path}.startsWith("/mobile-api/") || {http.request.orig_uri.path}.startsWith("/admin-api/") || {http.request.orig_uri.path}.startsWith("/api/")`
+		handle @down {
+			handle @calls {
+				header Content-Type application/json
+				respond `{"detail":"We can't reach Dateroem right now. Please try again in a few minutes."}` 503
+			}
+			handle {
+				root * /root/fathersProject/deploy/maintenance
+				rewrite * /index.html
+				header Cache-Control "no-store"
+				file_server
+			}
+		}
+	}
+}
