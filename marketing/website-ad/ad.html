@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dateroem Woods advert</title>
+<!--
+  The website advert (25 October 2026): "create a advertisemet video ... to
+  allow post on tiktok place on the whatapp status especially the desktop
+  one ... in the default forest theme". One 1080 x 1920 page (the shape of
+  TikTok and WhatsApp Status) with the real website in a browser window,
+  driven scene by scene by record.mjs, which films it. Served next to the
+  website build (make-ad.sh), so the window shows the site itself.
+-->
+<style>
+  @font-face { font-family: 'Montserrat'; src: url('/ad/Montserrat-Regular.ttf'); font-weight: 400; }
+  @font-face { font-family: 'Montserrat'; src: url('/ad/Montserrat-Medium.ttf'); font-weight: 500; }
+  @font-face { font-family: 'Montserrat'; src: url('/ad/Montserrat-SemiBold.ttf'); font-weight: 600; }
+  :root {
+    --wood-ink: repeating-linear-gradient(100deg, #fcdca6 0, #f4b566 1.2em, #e8892f 2.3em, #f4b566 3.4em, #fcdca6 4.6em);
+    --wood: #eb9a4b;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; }
+  /* Only the website takes the pointer: the invisible scenes waiting their
+     turn (the closing card covers the whole page) must not catch clicks. */
+  .bg, .shade, .fog, #flies, .intro, .cap, .chips, .site-line, .outro { pointer-events: none; }
+  html, body {
+    margin: 0;
+    width: 1080px;
+    height: 1920px;
+    overflow: hidden;
+    background: #0b1a13;
+    color: #f5f5f1;
+    font-family: Montserrat, 'Segoe UI', sans-serif;
+  }
+
+  /* The forest behind everything. */
+  .bg {
+    position: absolute;
+    inset: -60px;
+    background: url('/forest/forest-tall.webp') center 35% / cover no-repeat;
+    filter: blur(2px) brightness(0.62) saturate(1.05);
+    animation: breathe 26s ease-in-out infinite alternate;
+  }
+  .shade {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 60% at 50% 46%, transparent 30%, rgba(5, 14, 9, 0.55) 100%),
+      linear-gradient(to bottom, rgba(5, 14, 9, 0.5), rgba(5, 14, 9, 0.12) 38%, rgba(5, 14, 9, 0.2) 62%, rgba(5, 14, 9, 0.8));
+  }
+  .fog {
+    position: absolute;
+    left: 0;
+    width: 200%;
+    background: url('/forest/fog.webp') 0 0 / 50% 100% repeat-x;
+    animation: drift 70s linear infinite;
+  }
+  .fog--high { top: 520px; height: 420px; opacity: 0.22; animation-duration: 90s; }
+  .fog--low { bottom: 120px; height: 520px; opacity: 0.3; }
+  .fly {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ffe7a3;
+    box-shadow: 0 0 12px 4px rgba(255, 205, 110, 0.6), 0 0 34px 10px rgba(255, 205, 110, 0.18);
+    opacity: 0;
+    animation: fly var(--t) ease-in-out var(--d) infinite alternate, glow var(--g) ease-in-out var(--d) infinite;
+  }
+  @keyframes breathe { from { transform: scale(1.02); } to { transform: scale(1.1); } }
+  @keyframes drift { to { transform: translate3d(-50%, 0, 0); } }
+  @keyframes fly { to { transform: translate3d(var(--x), var(--y), 0); } }
+  @keyframes glow { 0%, 100% { opacity: 0; } 45%, 60% { opacity: 0.95; } }
+
+  /* Scene 1: the name. */
+  .intro {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 34px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.9s ease, transform 1.2s var(--ease), filter 0.9s ease;
+  }
+  .intro img { width: 250px; height: 250px; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.6)); }
+  .brand {
+    margin: 0;
+    font-size: 92px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.05;
+  }
+  .brand b {
+    display: block;
+    font-weight: 600;
+    background: var(--wood-ink);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .tag {
+    margin: 0;
+    color: #d6e2d8;
+    font-size: 40px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .tag::before, .tag::after { content: ''; display: inline-block; width: 46px; height: 2px; margin: 0 18px 12px; background: var(--wood); }
+  body.s-intro .intro { opacity: 1; }
+  body.s-intro-out .intro { opacity: 0; transform: translateY(-60px) scale(0.96); filter: blur(6px); }
+
+  /* The captions above the window. */
+  .cap {
+    position: absolute;
+    left: 70px;
+    right: 70px;
+    top: 250px;
+    margin: 0;
+    font-size: 82px;
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    transform: translateY(40px);
+    filter: blur(8px);
+    transition: opacity 0.7s ease, transform 0.9s var(--ease), filter 0.7s ease;
+  }
+  .cap b {
+    display: block;
+    font-weight: 600;
+    background: var(--wood-ink);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 4px 22px rgba(0, 0, 0, 0.5));
+  }
+  .cap.on { opacity: 1; transform: none; filter: none; }
+
+  /* The browser window with the website in it. */
+  .win {
+    position: absolute;
+    left: 40px;
+    top: 650px;
+    width: 1000px;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #13241c;
+    box-shadow: 0 50px 110px -30px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    transform-origin: 0 0;
+    opacity: 0;
+    transform: translateY(120px) scale(0.94);
+    transition: opacity 0.8s ease, transform 1.3s var(--ease);
+  }
+  body.s-site .win { opacity: 1; transform: none; }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 54px;
+    padding: 0 20px;
+    background: #1b2f25;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .dot { width: 14px; height: 14px; border-radius: 50%; }
+  .url {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 18px;
+    padding: 8px 20px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.28);
+    color: #dfe9e1;
+    font-size: 21px;
+    font-weight: 500;
+  }
+  .url svg { width: 18px; height: 18px; }
+  .view { position: relative; width: 1000px; height: 625px; overflow: hidden; }
+  .view iframe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1280px;
+    height: 800px;
+    border: 0;
+    transform: scale(0.78125);
+    transform-origin: 0 0;
+    background: #0f241b;
+    transition: transform 1.3s var(--ease);
+  }
+
+  /* The promises under the window. */
+  .chips {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1395px;
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.9s var(--ease);
+  }
+  .chips span {
+    padding: 14px 28px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(235, 154, 75, 0.55);
+    background: rgba(8, 20, 14, 0.62);
+    font-size: 30px;
+    font-weight: 500;
+  }
+  .chips.on { opacity: 1; transform: none; }
+  .site-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 150px;
+    text-align: center;
+    font-size: 44px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  .site-line span { background: var(--wood-ink); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  body.s-site .site-line { opacity: 1; }
+
+  /* The pointer. */
+  .cursor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 66px;
+    height: 66px;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+    pointer-events: none;
+  }
+  .cursor.on { opacity: 1; }
+  .cursor .ring {
+    position: absolute;
+    left: -14px;
+    top: -21px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 220, 160, 0.95);
+    opacity: 0;
+  }
+  .cursor.click .ring { animation: ring 0.5s ease-out; }
+  @keyframes ring { from { opacity: 1; transform: scale(0.4); } to { opacity: 0; transform: scale(1.6); } }
+
+  /* Last scene: where to order. */
+  .outro {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(60px);
+    transition: opacity 1s ease, transform 1.3s var(--ease);
+  }
+  .outro img { width: 170px; height: 170px; margin-bottom: 10px; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.6)); }
+  .outro h2 { margin: 0; font-size: 104px; font-weight: 600; line-height: 1; }
+  .outro .addr {
+    margin: 6px 0 4px;
+    font-size: 70px;
+    font-weight: 600;
+    background: var(--wood-ink);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 4px 22px rgba(0, 0, 0, 0.5));
+  }
+  .outro p { margin: 0; color: #e3ece4; font-size: 38px; font-weight: 500; }
+  .outro .row { display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .outro .row svg { width: 40px; height: 40px; color: var(--wood); }
+  .outro .small { color: #b9c9bc; font-size: 32px; }
+  body.s-outro .outro { opacity: 1; transform: none; }
+  body.s-outro .win,
+  body.s-outro .chips,
+  body.s-outro .cap,
+  body.s-outro .site-line { opacity: 0 !important; transform: translateY(-80px) scale(0.92) !important; filter: blur(6px); transition-duration: 0.8s; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="shade"></div>
+  <div class="fog fog--high"></div>
+  <div class="fog fog--low"></div>
+  <div id="flies"></div>
+
+  <section class="intro">
+    <img src="/brand/emblem.svg" alt="">
+    <h1 class="brand">DATEROEM<b>WOODS</b></h1>
+    <p class="tag">Native African hardwoods</p>
+  </section>
+
+  <h2 class="cap" id="cap-site">From the forest<b>to your door</b></h2>
+  <h2 class="cap" id="cap-shop">Quality timber,<b>ready to order online</b></h2>
+  <h2 class="cap" id="cap-buy">Pick the amount.<b>Order in a tap.</b></h2>
+  <h2 class="cap" id="cap-featured">Featured picks,<b>fresh from the field</b></h2>
+
+  <div class="win">
+    <div class="bar">
+      <span class="dot" style="background:#ff5f57"></span>
+      <span class="dot" style="background:#febc2e"></span>
+      <span class="dot" style="background:#28c840"></span>
+      <span class="url">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        dateroemwoods.co.ke
+      </span>
+    </div>
+    <div class="view"><iframe id="site" title="Dateroem Woods website"></iframe></div>
+  </div>
+
+  <div class="chips" id="chips"><span>Pay with M-Pesa</span><span>Delivery across Kenya</span></div>
+  <div class="site-line"><span>dateroemwoods.co.ke</span></div>
+
+  <section class="outro">
+    <img src="/brand/emblem.svg" alt="">
+    <h2>Order today</h2>
+    <div class="addr">dateroemwoods.co.ke</div>
+    <p>Pay with M-Pesa &middot; Delivery across Kenya</p>
+    <p class="row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5l1.3-4.1A8.6 8.6 0 1 1 8.1 19.3z"/><path d="M9 9.5c.3 2.6 2.4 4.8 5 5.3l1.4-1.4 2 1-.6 2c-4.3.2-8.6-4-8.4-8.4l2-.6 1 2z"/></svg>
+      WhatsApp +254 182 995 011
+    </p>
+    <p class="row small">TikTok &amp; Instagram @dateroem.woods</p>
+  </section>
+
+  <div class="cursor" id="cursor">
+    <span class="ring"></span>
+    <svg viewBox="0 0 24 24" width="66" height="66"><path d="M5 3l14 8.2-6.1 1.3 3.6 7.3-2.6 1.3-3.6-7.4L5 18z" fill="#fff" stroke="#1b1b1b" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </div>
+
+<script>
+  // A few fireflies over the forest, in fixed places.
+  const seeded = (i, s) => { const x = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x) }
+  const flies = document.getElementById('flies')
+  for (let i = 0; i < 18; i += 1) {
+    const f = document.createElement('span')
+    f.className = 'fly'
+    f.style.cssText = `left:${seeded(i, 1) * 100}%;top:${8 + seeded(i, 2) * 88}%;--x:${Math.round(seeded(i, 3) * 120 - 60)}px;--y:${Math.round(-20 - seeded(i, 4) * 90)}px;--t:${(9 + seeded(i, 5) * 9).toFixed(1)}s;--g:${(2.4 + seeded(i, 6) * 3).toFixed(1)}s;--d:${(-seeded(i, 7) * 12).toFixed(1)}s`
+    flies.appendChild(f)
+  }
+
+  // Called by record.mjs: the website in the window, a fresh visit in the
+  // Forest theme, cookie choice made, nothing hidden, no chat bubble.
+  window.openSite = () => {
+    try {
+      localStorage.setItem('dateroem_cookie_consent', JSON.stringify({ analytics: false, marketing: false }))
+      localStorage.removeItem('dateroem_theme')
+      localStorage.removeItem('dateroem.featuredHidden')
+      document.cookie = 'dateroem_cart_v2=; path=/; max-age=0'
+    } catch {}
+    const frame = document.getElementById('site')
+    frame.addEventListener('load', () => {
+      const style = frame.contentDocument.createElement('style')
+      style.textContent = '.help-widget, .help-widget__fab, .cookie-banner { display: none !important; }'
+      frame.contentDocument.head.appendChild(style)
+    }, { once: true })
+    frame.src = '/'
+  }
+
+  // A camera inside the window: the website zooms s times, with its point
+  // (x, y) - in its own 1280 x 800 pixels - brought to (cx, cy) of the
+  // window's 1000 x 625 view, never past the website's edges. The window
+  // itself keeps its size, so the captions and chips stay clear.
+  window.camera = (s, x, y, cx, cy) => {
+    const frame = document.getElementById('site')
+    if (!s) { frame.style.transform = ''; return }
+    const k = 0.78125 * s
+    const tx = Math.min(0, Math.max(1000 - 1280 * k, cx - x * k))
+    const ty = Math.min(0, Math.max(625 - 800 * k, cy - y * k))
+    frame.style.transform = `translate(${tx}px, ${ty}px) scale(${k})`
+  }
+
+  // Where a part of the website is on the page now (for the pointer).
+  window.placeOf = (selector, fx = 0.5, fy = 0.5, index = 0) => {
+    const frame = document.getElementById('site')
+    const el = frame.contentDocument.querySelectorAll(selector)[index]
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    const f = frame.getBoundingClientRect()
+    const k = f.width / 1280
+    return { x: f.left + (r.left + r.width * fx) * k, y: f.top + (r.top + r.height * fy) * k, inX: r.left + r.width * fx, inY: r.top + r.height * fy }
+  }
+  window.pointer = (x, y, on = true) => {
+    const c = document.getElementById('cursor')
+    // The arrow's tip is 14 px in and 8 px down in the 66 px drawing.
+    c.style.left = `${x - 14}px`
+    c.style.top = `${y - 8}px`
+    c.classList.toggle('on', on)
+  }
+  window.clickMark = () => {
+    const c = document.getElementById('cursor')
+    c.classList.remove('click')
+    void c.offsetWidth
+    c.classList.add('click')
+  }
+  window.caption = (id) => {
+    document.querySelectorAll('.cap').forEach((el) => el.classList.toggle('on', el.id === id))
+  }
+</script>
+</body>
+</html>
