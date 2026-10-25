@@ -119,6 +119,35 @@ const SHAPES = {
       <path d="M17.3 6.7h.01" />
     </>
   ),
+  // The forest look (25 October 2026): the journey from the forest to the door.
+  tree: (
+    <>
+      <path d="M8 19a4 4 0 0 1-2.24-7.32A3.5 3.5 0 0 1 9 6.03V6a3 3 0 1 1 6 0v.04a3.5 3.5 0 0 1 3.24 5.65A4 4 0 0 1 16 19Z" />
+      <path d="M12 19v3" />
+    </>
+  ),
+  sprout: (
+    <>
+      <path d="M7 20h10" />
+      <path d="M10 20c5.5-2.5.8-6.4 3-10" />
+      <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" />
+      <path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />
+    </>
+  ),
+  axe: (
+    <>
+      <path d="m14 12-8.5 8.5a2.12 2.12 0 1 1-3-3L11 9" />
+      <path d="M15 13 9 7l4-4 6 6h3a8 8 0 0 1-7 7z" />
+    </>
+  ),
+  // The Featured column's tag and its video's play button.
+  leaf: (
+    <>
+      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+      <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+    </>
+  ),
+  play: <path d="M7 4.5v15l12.5-7.5z" />,
   arrowDown: <path d="M12 5v14M19 12l-7 7-7-7" />,
   arrowLeft: <path d="M19 12H5M12 5l-7 7 7 7" />,
   chevronLeft: <path d="m15 18-6-6 6-6" />,

@@ -6,6 +6,10 @@ import Icon from '../components/Icon.jsx'
 import FeaturedBanner from '../components/FeaturedBanner.jsx'
 import { useChatNudge } from '../context/ChatNudgeContext.jsx'
 import { useFeatured } from '../context/FeaturedContext.jsx'
+import ForestHero from '../components/forest/ForestHero.jsx'
+import FeaturedSapling from '../components/forest/FeaturedSapling.jsx'
+import { useWideScreen } from '../components/forest/useWideScreen.js'
+import { FOREST_LOOK, motionAllowed } from '../core/look.js'
 
 // "i go back im taken to the top product ... it should go back to the
 // product i was at" - the list and the search are remembered while the tab
@@ -14,6 +18,11 @@ import { useFeatured } from '../context/FeaturedContext.jsx'
 // copy still loads quietly behind it.
 let cachedProducts = null
 let lastSearch = ''
+
+// "Shop the timber" on the forest look's entrance.
+function showProducts() {
+  document.getElementById('products')?.scrollIntoView({ behavior: motionAllowed() ? 'smooth' : 'auto' })
+}
 
 export default function ProductsPage() {
   const [all, setAll] = useState(cachedProducts || [])
@@ -25,6 +34,7 @@ export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const campaignParam = searchParams.get('campaign')
   const { campaigns, loaded: featuredLoaded } = useFeatured()
+  const wideScreen = useWideScreen()
   const activeCampaign = campaignParam
     ? campaigns.find((campaign) => String(campaign.campaignId) === campaignParam) || null
     : null
@@ -83,12 +93,32 @@ export default function ProductsPage() {
   }, [nothingFound, search, reportEmptySearch])
   useEffect(() => () => reportEmptySearch(''), [reportEmptySearch])
 
-  if (loading || (campaignParam && !featuredLoaded)) return <p className="state-message">Loading products...</p>
-  if (error) return <p className="state-message state-message--error">Couldn't reach the server: {error}</p>
+  // On wide screens the forest look sets Featured beside the products, so it
+  // waits for the campaigns too (they load alongside) - the products never
+  // squeeze over when the column turns up a moment later.
+  const featuredBeside = FOREST_LOOK && wideScreen && !campaignParam
+  const waiting = loading || ((campaignParam || featuredBeside) && !featuredLoaded)
+  const waitingMessage = <p className="state-message">Loading products...</p>
+  const errorMessage = <p className="state-message state-message--error">Couldn't reach the server: {error}</p>
 
-  return (
-    <div className="products-page">
-      {!campaignParam && !trimmedSearch && <FeaturedBanner />}
+  // The forest look's entrance (25 October 2026) shows at once, even while
+  // the list is still loading; a campaign's link goes straight to its products.
+  const hero = FOREST_LOOK && !campaignParam ? <ForestHero onShop={showProducts} /> : null
+  const anchor = hero && <div id="products" className="products-page__anchor" />
+  if (hero && (waiting || error)) {
+    return (
+      <div className="products-page">
+        {hero}
+        {anchor}
+        {waiting ? waitingMessage : errorMessage}
+      </div>
+    )
+  }
+  if (waiting) return waitingMessage
+  if (error) return errorMessage
+
+  const catalogue = (
+    <>
       <label className="product-search">
         <span className="product-search__icon">
           <Icon name="search" size={17} />
@@ -129,6 +159,25 @@ export default function ProductsPage() {
       />
       {all.length === 0 && (
         <p className="state-message">No products listed yet - check back soon.</p>
+      )}
+    </>
+  )
+
+  // On wide screens the forest look puts Featured in a column beside the
+  // products (FeaturedSapling, 25 October 2026); elsewhere it is the card
+  // above them.
+  return (
+    <div className="products-page">
+      {hero}
+      {anchor}
+      {!featuredBeside && !campaignParam && !trimmedSearch && <FeaturedBanner />}
+      {featuredBeside ? (
+        <div className="products-layout">
+          <div className="products-layout__main">{catalogue}</div>
+          <FeaturedSapling />
+        </div>
+      ) : (
+        catalogue
       )}
     </div>
   )

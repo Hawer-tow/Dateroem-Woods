@@ -22,8 +22,14 @@ import com.dateroem.backend.util.MediaUrls;
 @Service
 public class ProductService {
 
+    // The tidied copy is only handed out while it still matches the
+    // description: right after a save (or while the AI can't be reached) the
+    // website lays out the new text itself instead of showing the tidied
+    // copy of the old one (25 October 2026).
     private static final String SELECT_COLUMNS =
-        "Product_ID, Name, Ske, Type, Description, Description_Display, Price, Stock, Unit, Attributes, Body_Feet_Per_Unit, " +
+        "Product_ID, Name, Ske, Type, Description, " +
+        "IF(Description_Display_Source <=> SHA2(IFNULL(Description, ''), 256), Description_Display, NULL) AS Description_Display, " +
+        "Price, Stock, Unit, Attributes, Body_Feet_Per_Unit, " +
         "Marketer_Note, Image, Trees_ID, Is_Deleted, Deleted_By, Deleted_At, Is_Retired, Retired_At, Retired_By";
 
     private final JdbcTemplate jdbcTemplate;

@@ -25,6 +25,8 @@ import TrackOrderPage from './pages/TrackOrderPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
 import PolicyPage from './pages/PolicyPage.jsx'
 import PasswordChangeGate from './components/PasswordChangeGate.jsx'
+import ForestAmbience from './components/forest/ForestAmbience.jsx'
+import { FOREST_LOOK } from './core/look.js'
 
 // "remove the splash screen it doesnt feel so professional" - the site
 // opens straight onto its pages (the mobile app keeps its own splash).
@@ -44,6 +46,7 @@ export default function App() {
       <ChatNudgeProvider>
       <FeaturedProvider>
       <ScrollManager />
+      {FOREST_LOOK && <ForestAmbience />}
       <div className="app-shell">
         <NavBar />
         <main className="app-main">

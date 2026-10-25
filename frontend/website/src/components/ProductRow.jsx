@@ -14,7 +14,7 @@ export default function ProductRow({ title, products, layout = 'scroll', emptyMe
       {title && <h2>{title}</h2>}
       <div className={layout === 'grid' ? 'product-grid' : 'product-row__scroller'}>
         {products.map((product) => (
-          <ProductCard key={product.productId} product={product} />
+          <ProductCard key={product.productId} product={product} shop={layout === 'grid'} />
         ))}
       </div>
     </section>

@@ -10,6 +10,9 @@ import ProductDescription, { descriptionPreview, isLongDescription } from '../co
 import { useChatPage } from '../context/ChatNudgeContext.jsx'
 import { useFeatured } from '../context/FeaturedContext.jsx'
 import { jumpTo } from '../core/jumpTo.js'
+import ForestJourney from '../components/forest/ForestJourney.jsx'
+import ForestMore from '../components/forest/ForestMore.jsx'
+import { FOREST_LOOK } from '../core/look.js'
 
 export default function ProductDetailPage() {
   const { productId } = useParams()
@@ -163,6 +166,9 @@ export default function ProductDetailPage() {
         </div>
       </div>
       </div>
+      {/* The forest look (25 October 2026): where the piece comes from and
+          how it reaches you, right under it. */}
+      {FOREST_LOOK && <ForestJourney />}
       {isLongDescription(product.description) && (
         <section className="product-about" id="description" tabIndex={-1}>
           <h2 className="product-about__heading">About this product</h2>
@@ -175,6 +181,7 @@ export default function ProductDetailPage() {
           card (the "Featured in" link above jumps here), then the reviews. */}
       {campaign?.media && <ProductCampaignCard campaign={campaign} productId={product.productId} />}
       <ProductReviews reviews={reviews} />
+      {FOREST_LOOK && <ForestMore product={product} />}
     </div>
   )
 }

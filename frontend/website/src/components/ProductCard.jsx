@@ -1,15 +1,47 @@
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Stars } from './Stars.jsx'
 import Icon from './Icon.jsx'
 import { useFeatured } from '../context/FeaturedContext.jsx'
+import { FOREST_LOOK } from '../core/look.js'
+import { leanToward, revealWhenSeen, settle } from './forest/cardMotion.js'
+import CardBuy from './forest/CardBuy.jsx'
 
-export default function ProductCard({ product }) {
+// shop: the catalogue's cards (layout="grid") can be bought from directly in
+// the forest look - an amount, Add to cart and Order now under the details.
+export default function ProductCard({ product, shop = false }) {
   // Products in a live campaign carry its name, bottom-left on the photo
   // (the marketer's badge keeps the top-left corner).
   const { campaignForProduct } = useFeatured()
   const campaign = campaignForProduct(product.productId)
+  // The forest look: rises into view further down, leans toward the mouse.
+  const ref = useRef(null)
+  useEffect(() => (FOREST_LOOK ? revealWhenSeen(ref.current) : undefined), [])
+  const motion = FOREST_LOOK ? { onPointerMove: leanToward, onPointerLeave: settle } : {}
+  const link = `/products/${product.productId}`
+
+  // A button can't sit inside a link, so a card you can buy from is a box
+  // holding the link (picture and details) and the buying controls.
+  if (FOREST_LOOK && shop) {
+    return (
+      <div ref={ref} className="product-card product-card--shop" {...motion}>
+        <Link to={link} className="product-card__link">
+          <CardContent product={product} campaign={campaign} />
+        </Link>
+        <CardBuy product={product} />
+      </div>
+    )
+  }
   return (
-    <Link to={`/products/${product.productId}`} className="product-card">
+    <Link ref={ref} to={link} className="product-card" {...motion}>
+      <CardContent product={product} campaign={campaign} />
+    </Link>
+  )
+}
+
+function CardContent({ product, campaign }) {
+  return (
+    <>
       <div
         className="product-card__image"
         style={product.image ? { backgroundImage: `url(${product.image})` } : undefined}
@@ -43,6 +75,6 @@ export default function ProductCard({ product }) {
           )
         )}
       </div>
-    </Link>
+    </>
   )
 }

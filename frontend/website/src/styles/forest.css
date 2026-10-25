@@ -1,0 +1,1370 @@
+/* The forest look (25 October 2026): "the most modern look of the website
+   to feel like an out of the world experience making one feel the ambience
+   of the forests and feel that in the products in all sections".
+   Everything here applies only with <html data-look="forest"> (main.jsx,
+   on when the build has VITE_FOREST_LOOK=1 - core/look.js), so the site is
+   unchanged without it. Stage 1: the forest behind every page, the home
+   page's entrance, product cards as pieces of wood, the product page's
+   "from the forest to your door", the Featured spotlight and the top bar.
+   Movement is transform and opacity only, nothing follows the scroll and
+   nothing is blurred over the moving forest, so it stays smooth on ordinary
+   phones; all of it stops for visitors who turn animations off (bottom of
+   this file). */
+
+html[data-look='forest'] {
+  --forest-photo-opacity: 0.62;
+  --forest-photo-filter: none;
+  --forest-mist-opacity: 0.16;
+  --forest-ray: 255, 232, 180;
+  --forest-ray-strength: 1;
+  --forest-glow: rgba(255, 226, 170, 0.16);
+  --firefly: #ffe7a3;
+  --firefly-glow: 255, 205, 110;
+}
+/* Dark: the same forest at night - grey, dimmer, fewer lights. */
+html[data-look='forest'][data-theme='dark'] {
+  --forest-photo-opacity: 0.45;
+  --forest-photo-filter: grayscale(0.75) brightness(0.7);
+  --forest-mist-opacity: 0.1;
+  --forest-ray-strength: 0.55;
+}
+/* Light: a misty morning - pale trees, white mist, specks of pollen in the
+   sun instead of fireflies. */
+html[data-look='forest'][data-theme='light'] {
+  --forest-photo-opacity: 0.5;
+  --forest-photo-filter: saturate(0.8) brightness(1.12);
+  --forest-mist-opacity: 0.55;
+  --forest-ray: 255, 246, 222;
+  --forest-glow: rgba(235, 154, 75, 0.12);
+  --firefly: #d9a54e;
+  --firefly-glow: 230, 180, 90;
+}
+
+/* ---- The forest behind every page (ForestAmbience.jsx) ---- */
+.forest-ambience {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  /* Its own layer: the page scrolling over it never repaints it. */
+  contain: strict;
+  pointer-events: none;
+}
+html[data-look='forest'] .app-shell {
+  position: relative;
+  z-index: 1;
+}
+.forest-ambience__photo {
+  position: absolute;
+  inset: -3%;
+  background: url('/forest/forest-ambient.webp') center 60% / cover no-repeat;
+  opacity: var(--forest-photo-opacity);
+  filter: var(--forest-photo-filter);
+  /* The bright mist at the top of the photo fades out behind the top bar. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 38%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 38%);
+  animation: forest-sway 40s ease-in-out infinite alternate;
+}
+.forest-ambience__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--bg-rgb), 0.72) 0%,
+    rgba(var(--bg-rgb), 0.56) 55%,
+    rgba(var(--bg-rgb), 0.68) 100%
+  );
+}
+/* Light coming down through the canopy, slowly swinging. */
+.forest-ambience__rays {
+  position: absolute;
+  top: -12%;
+  left: 8%;
+  width: 92%;
+  height: 95%;
+  background:
+    linear-gradient(112deg, transparent 30%, rgba(var(--forest-ray), 0.09) 35%, transparent 41%),
+    linear-gradient(112deg, transparent 47%, rgba(var(--forest-ray), 0.06) 50%, transparent 54%),
+    linear-gradient(112deg, transparent 59%, rgba(var(--forest-ray), 0.08) 64%, transparent 71%);
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 85%);
+  mask-image: linear-gradient(to bottom, #000, transparent 85%);
+  transform-origin: 70% 0;
+  animation: forest-rays 18s ease-in-out infinite alternate;
+}
+/* Leaf shadows: soft patches of sun moving as if wind stirs the branches. */
+.forest-ambience__leaves {
+  position: absolute;
+  inset: -15%;
+  background:
+    radial-gradient(closest-side, rgba(var(--forest-ray), 0.07), transparent) 12% 18% / 26% 22% no-repeat,
+    radial-gradient(closest-side, rgba(var(--forest-ray), 0.05), transparent) 64% 12% / 34% 26% no-repeat,
+    radial-gradient(closest-side, rgba(var(--forest-ray), 0.06), transparent) 84% 46% / 22% 20% no-repeat,
+    radial-gradient(closest-side, rgba(var(--forest-ray), 0.045), transparent) 30% 62% / 30% 24% no-repeat,
+    radial-gradient(closest-side, rgba(var(--forest-ray), 0.05), transparent) 58% 84% / 24% 20% no-repeat;
+  animation: forest-leaves 26s ease-in-out infinite alternate;
+}
+/* Mist drifting between the trees: the fog picture is the fog and its
+   mirror side by side, so moving half the strip loops without a seam. */
+.forest-ambience__mist,
+.forest-hero__mist {
+  position: absolute;
+  left: 0;
+  width: 200%;
+  background: url('/forest/fog.webp') 0 0 / 50% 100% repeat-x;
+  animation: forest-mist 120s linear infinite;
+}
+.forest-ambience__mist--far {
+  top: 24%;
+  height: 40%;
+  opacity: calc(var(--forest-mist-opacity) * 0.7);
+  animation-duration: 170s;
+}
+.forest-ambience__mist--near {
+  bottom: -8%;
+  height: 50%;
+  opacity: var(--forest-mist-opacity);
+  animation-duration: 100s;
+}
+
+@keyframes forest-sway {
+  from {
+    transform: scale(1.04) translate3d(-0.6%, 0, 0);
+  }
+  to {
+    transform: scale(1.07) translate3d(0.6%, -0.5%, 0);
+  }
+}
+@keyframes forest-rays {
+  from {
+    transform: rotate(-2deg);
+    opacity: calc(var(--forest-ray-strength) * 0.5);
+  }
+  to {
+    transform: rotate(2deg);
+    opacity: var(--forest-ray-strength);
+  }
+}
+@keyframes forest-leaves {
+  0% {
+    transform: translate3d(-1.2%, -0.8%, 0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translate3d(0.8%, 0.6%, 0) rotate(0.5deg);
+  }
+  100% {
+    transform: translate3d(1.4%, -0.4%, 0) rotate(1.5deg);
+  }
+}
+@keyframes forest-mist {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* ---- Fireflies (Fireflies.jsx) ---- */
+.fireflies {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.firefly {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--firefly);
+  box-shadow:
+    0 0 calc(var(--size) * 2) calc(var(--size) * 0.6) rgba(var(--firefly-glow), 0.7),
+    0 0 calc(var(--size) * 6) calc(var(--size) * 1.4) rgba(var(--firefly-glow), 0.2);
+  opacity: 0;
+  animation:
+    firefly-drift var(--fly-time) ease-in-out var(--fly-delay) infinite alternate,
+    firefly-glow var(--glow-time) ease-in-out var(--fly-delay) infinite;
+}
+@keyframes firefly-drift {
+  to {
+    transform: translate3d(var(--drift-x), var(--drift-y), 0);
+  }
+}
+@keyframes firefly-glow {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  45%,
+  60% {
+    opacity: 0.9;
+  }
+}
+
+/* ---- The top bar ----
+   Solid, not blurred: a blur over the moving forest has to be worked out
+   again on every frame, which made scrolling less smooth - and without the
+   blur, anything see-through let the page's words show through the bar. */
+html[data-look='forest'] .navbar {
+  background: rgb(var(--bg-rgb));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.07);
+  box-shadow: 0 12px 30px -22px rgba(0, 0, 0, 0.7);
+}
+
+/* ---- The home page's entrance (ForestHero.jsx) ----
+   The hero keeps the Forest colours in every theme - it is a photograph,
+   like the About story. */
+.forest-hero {
+  --wood-ink: repeating-linear-gradient(100deg, #fcdca6 0, #f4b566 1.2em, #e8892f 2.3em, #f4b566 3.4em, #fcdca6 4.6em);
+  --wood-tone: #eb9a4b;
+  --forest-ray-strength: 1;
+  --firefly: #ffe7a3;
+  --firefly-glow: 255, 205, 110;
+  --hero-shade: 9, 24, 17;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: clamp(460px, 76vh, 780px);
+  /* Edge to edge: undoes the page's own side and top padding (.app-main). */
+  margin: -24px calc(-1 * clamp(16px, 4vw, 64px)) 40px;
+  overflow: hidden;
+  color: #f5f5f1;
+  color-scheme: dark;
+}
+/* The scene melts into the forest behind the page at its foot. */
+.forest-hero__scene {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
+}
+/* The forest slowly breathes in and out; it scrolls with the page. */
+.forest-hero__photo {
+  position: absolute;
+  inset: -8% 0 -14%;
+  background: url('/forest/forest-wide.webp') center 30% / cover no-repeat;
+  animation: hero-breathe 30s ease-in-out infinite alternate;
+}
+.forest-hero__rays {
+  position: absolute;
+  inset: -20% -10% 20% 20%;
+  background:
+    linear-gradient(115deg, transparent 30%, rgba(255, 238, 196, 0.16) 35%, transparent 42%),
+    linear-gradient(115deg, transparent 46%, rgba(255, 238, 196, 0.11) 50%, transparent 55%),
+    linear-gradient(115deg, transparent 58%, rgba(255, 238, 196, 0.14) 63%, transparent 71%);
+  mix-blend-mode: screen;
+  -webkit-mask-image: linear-gradient(to bottom, #000 10%, transparent 80%);
+  mask-image: linear-gradient(to bottom, #000 10%, transparent 80%);
+  transform-origin: 80% 0;
+  animation: forest-rays 16s ease-in-out infinite alternate;
+}
+.forest-hero__mist--back {
+  top: 16%;
+  height: 50%;
+  opacity: 0.4;
+  animation-duration: 110s;
+}
+.forest-hero__mist--front {
+  bottom: -10%;
+  height: 60%;
+  opacity: 0.36;
+  animation-duration: 65s;
+}
+.forest-hero__shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to top,
+      rgba(var(--hero-shade), 0.94) 0%,
+      rgba(var(--hero-shade), 0.62) 32%,
+      rgba(var(--hero-shade), 0.12) 64%,
+      rgba(var(--hero-shade), 0.32) 100%
+    ),
+    linear-gradient(to right, rgba(var(--hero-shade), 0.7) 0%, rgba(var(--hero-shade), 0.2) 55%, transparent 80%);
+}
+/* The first time the shop opens in a visit (forest-hero--enter) the forest
+   arrives like dawn: in shadow and out of focus, with the fireflies already
+   glowing, it sharpens, brightens and settles back as the light comes up,
+   then the words appear. The out-of-focus copy and the shadow are plain
+   layers fading out, so it stays smooth on ordinary phones. */
+.forest-hero__soft {
+  position: absolute;
+  inset: -8% 0 -14%;
+  background: url('/forest/forest-wide-soft.webp') center 30% / cover no-repeat;
+  opacity: 0;
+}
+.forest-hero__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 72% 0%, rgba(14, 30, 22, 0.6), rgba(4, 10, 7, 0.94) 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+/* The fireflies glow above the shadow. */
+.forest-hero__fireflies {
+  z-index: 1;
+}
+.forest-hero--enter .forest-hero__scene {
+  animation: hero-arrive 3s cubic-bezier(0.16, 0.8, 0.24, 1) both;
+}
+.forest-hero--enter .forest-hero__soft {
+  animation: hero-focus 2.2s cubic-bezier(0.45, 0, 0.25, 1) 0.3s both;
+}
+.forest-hero--enter .forest-hero__scene::after {
+  animation: hero-dawn 2.6s cubic-bezier(0.45, 0, 0.3, 1) 0.15s both;
+}
+.forest-hero__content {
+  position: relative;
+  width: 100%;
+  max-width: 1240px;
+  padding: 96px clamp(16px, 4vw, 64px) 88px;
+}
+.forest-hero__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px;
+  color: #e6efe7;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6);
+}
+.forest-hero__eyebrow::before {
+  content: '';
+  width: 30px;
+  height: 1px;
+  background: var(--wood-tone);
+}
+.forest-hero__title {
+  margin: 0;
+  font-size: clamp(2.15rem, 5.4vw, 4.6rem);
+  font-weight: 750;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.35);
+  text-wrap: balance;
+}
+/* "from the forest to your door" in the wordmark's wood paint. */
+.forest-hero__wood {
+  display: block;
+  color: var(--wood-tone);
+  background-image: var(--wood-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 18px rgba(0, 0, 0, 0.45));
+}
+.forest-hero__lead {
+  max-width: 44ch;
+  margin: 20px 0 0;
+  color: #d6e2d8;
+  font-size: clamp(1rem, 1.35vw, 1.2rem);
+  line-height: 1.6;
+}
+.forest-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+.forest-hero__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 13px 24px;
+  font-size: 1rem;
+  text-decoration: none;
+}
+.forest-hero__bulk.btn--secondary {
+  color: #f5f5f1;
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(8, 20, 14, 0.35);
+}
+.forest-hero__bulk.btn--secondary:hover {
+  border-color: var(--wood-tone);
+  background: rgba(255, 255, 255, 0.12);
+}
+.forest-hero__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.forest-hero__trust li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 20, 14, 0.55);
+  color: #e3ece4;
+  font-size: 0.85rem;
+}
+.forest-hero__trust .icon {
+  color: var(--wood-tone);
+}
+.forest-hero--enter :is(.forest-hero__eyebrow, .forest-hero__title, .forest-hero__lead, .forest-hero__actions, .forest-hero__trust) {
+  animation: hero-emerge 1.3s var(--grow-ease) both;
+}
+.forest-hero--enter .forest-hero__eyebrow {
+  animation-delay: 0.7s;
+}
+.forest-hero--enter .forest-hero__title {
+  animation-duration: 1.6s;
+  animation-delay: 0.9s;
+}
+.forest-hero--enter .forest-hero__lead {
+  animation-delay: 1.3s;
+}
+.forest-hero--enter .forest-hero__actions {
+  animation-delay: 1.5s;
+}
+.forest-hero--enter .forest-hero__trust {
+  animation-delay: 1.7s;
+}
+/* Where "Shop the timber" lands, clear of the top bar. */
+.products-page__anchor {
+  scroll-margin-top: 112px;
+}
+
+@keyframes hero-breathe {
+  from {
+    scale: 1.02;
+  }
+  to {
+    scale: 1.09;
+  }
+}
+@keyframes hero-arrive {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes hero-focus {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes hero-dawn {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes hero-emerge {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .forest-hero {
+    margin: -20px -16px 32px;
+    min-height: min(86svh, 720px);
+  }
+  .forest-hero__photo,
+  .forest-hero__soft {
+    background-image: url('/forest/forest-tall.webp');
+    background-position: center 40%;
+  }
+  .forest-hero__soft {
+    background-image: url('/forest/forest-tall-soft.webp');
+  }
+  /* On a phone the words cover most of the picture, mist included. */
+  .forest-hero__shade {
+    background: linear-gradient(
+      to top,
+      rgba(var(--hero-shade), 0.94) 0%,
+      rgba(var(--hero-shade), 0.72) 45%,
+      rgba(var(--hero-shade), 0.5) 75%,
+      rgba(var(--hero-shade), 0.4) 100%
+    );
+  }
+  .forest-hero__content {
+    padding: 80px 18px 76px;
+  }
+  .forest-hero__eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+  }
+  .forest-hero__trust li {
+    font-size: 0.8rem;
+  }
+}
+
+/* ---- Product cards as pieces of wood ---- */
+html[data-look='forest'] .product-row h2 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 1.35rem;
+}
+html[data-look='forest'] .product-row h2::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(var(--ink-rgb), 0.2), transparent);
+}
+html[data-look='forest'] .product-search {
+  background: rgba(var(--bg-elevated-rgb), 0.78);
+}
+/* The card's body is a board with the grain showing faintly through. */
+html[data-look='forest'] .product-card {
+  position: relative;
+  isolation: isolate;
+  border-color: rgba(var(--ink-rgb), 0.09);
+  background:
+    linear-gradient(rgba(var(--bg-elevated-rgb), 0.9), rgba(var(--bg-elevated-rgb), 0.9)),
+    var(--wood-plank);
+  box-shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.75);
+  /* --tilt-x/--tilt-y lean it toward the mouse (components/forest/cardMotion.js). */
+  transform: perspective(1000px) rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg));
+  transition:
+    transform 0.4s var(--grow-ease),
+    box-shadow 0.4s ease,
+    border-color 0.3s ease,
+    opacity 0.8s ease var(--reveal-delay, 0s),
+    translate 0.9s var(--grow-ease) var(--reveal-delay, 0s);
+}
+html[data-look='forest'] .product-card:hover {
+  transform: perspective(1000px) rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg)) translateY(-6px);
+  border-color: rgba(235, 154, 75, 0.38);
+  box-shadow:
+    0 28px 50px -24px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(235, 154, 75, 0.25);
+}
+/* A soft light that follows the mouse across the card. */
+html[data-look='forest'] .product-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  background: radial-gradient(380px circle at var(--glow-x, 50%) var(--glow-y, 0%), var(--forest-glow), transparent 50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+html[data-look='forest'] .product-card:hover::after {
+  opacity: 1;
+}
+/* The photo moves closer on hover (a copy of it, so the badges stay put),
+   and sits on a thin sawn edge of the board. */
+html[data-look='forest'] .product-card__image {
+  overflow: hidden;
+  isolation: isolate;
+}
+html[data-look='forest'] .product-card__image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: inherit;
+  background-size: cover;
+  background-position: center;
+  transition: transform 1.2s var(--grow-ease);
+}
+html[data-look='forest'] .product-card:hover .product-card__image::before {
+  transform: scale(1.07);
+}
+html[data-look='forest'] .product-card__image::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--wood-plank);
+  background-size: 300px 100px;
+  box-shadow:
+    0 -1px 0 rgba(42, 21, 8, 0.4),
+    0 1px 0 rgba(42, 21, 8, 0.5);
+}
+/* Buying from the card (CardBuy.jsx): the picture and details stay one link
+   to the product; under them the amount, Add to cart and - the whole width,
+   in wood - Order now. The controls line up along the bottom of each row. */
+html[data-look='forest'] .product-card--shop {
+  display: flex;
+  flex-direction: column;
+}
+.product-card__link {
+  display: block;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+.card-buy {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 2px 18px 18px;
+}
+.card-buy__qty {
+  gap: 6px;
+}
+.card-buy__qty .qty-stepper__btn {
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+}
+.card-buy__qty .qty-stepper__value {
+  min-width: 20px;
+}
+.card-buy .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 10px;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+.card-buy__add.btn--secondary {
+  border-color: rgba(235, 154, 75, 0.45);
+  color: var(--text);
+}
+.card-buy__add.btn--secondary:hover {
+  border-color: var(--wood-tone);
+  color: var(--wood-tone);
+}
+.card-buy__add--done.btn--secondary,
+.card-buy__add--done.btn--secondary:hover {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.card-buy__order {
+  grid-column: 1 / -1;
+  font-weight: 700;
+}
+.card-buy--note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+.card-buy__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wood-tone);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.card-buy__link:hover {
+  text-decoration: underline;
+}
+
+/* Cards further down rise into place as they come into view. */
+html[data-look='forest'] [data-reveal] {
+  animation: none;
+}
+html[data-look='forest'] [data-reveal='wait'] {
+  opacity: 0;
+  translate: 0 34px;
+}
+/* A printed page shows every card, scrolled past or not. */
+@media print {
+  html[data-look='forest'] [data-reveal='wait'] {
+    opacity: 1;
+    translate: none;
+  }
+}
+
+/* ---- The Featured spotlight (FeaturedBanner.jsx) ----
+   "the way featured appears in the products make it more presentable" -
+   instead of a thin strip, a card: the campaign's picture large on one side,
+   melting into the card, and beside it the Featured tag, the campaign's name
+   in large type, each product on its own chip and the way in. */
+html[data-look='forest'] .featured-banner {
+  display: grid;
+  grid-template-columns: minmax(240px, 40%) 1fr;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    'media text'
+    'media actions';
+  /* The picture fills the card's height (the strip centred everything). */
+  align-items: stretch;
+  gap: 0;
+  min-height: 240px;
+  margin-bottom: 40px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(235, 154, 75, 0.28);
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(235, 154, 75, 0.12), transparent 55%),
+    rgba(var(--bg-elevated-rgb), 0.9);
+  box-shadow: 0 30px 60px -36px rgba(0, 0, 0, 0.85);
+  animation: forest-rise 0.6s var(--grow-ease) 0.1s backwards;
+}
+html[data-look='forest'] .featured-banner__media {
+  grid-area: media;
+  position: relative;
+  height: auto;
+  border-radius: 0;
+  background: #0b1610;
+}
+html[data-look='forest'] .featured-banner__media img,
+html[data-look='forest'] .featured-banner__media video {
+  position: absolute;
+  inset: 0;
+  transition: transform 1.2s var(--grow-ease);
+}
+html[data-look='forest'] .featured-banner:hover .featured-banner__media img,
+html[data-look='forest'] .featured-banner:hover .featured-banner__media video {
+  transform: scale(1.05);
+}
+html[data-look='forest'] .featured-banner__media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 55%, rgba(var(--bg-elevated-rgb), 0.9));
+  pointer-events: none;
+}
+html[data-look='forest'] .featured-banner__text {
+  grid-area: text;
+  align-self: end;
+  padding: 32px 64px 0 34px;
+}
+html[data-look='forest'] .featured-banner__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(235, 154, 75, 0.35);
+  background: rgba(235, 154, 75, 0.12);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+}
+html[data-look='forest'] .featured-banner__text h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.45rem, 2.3vw, 2.1rem);
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+html[data-look='forest'] .featured-banner__text h2::first-letter {
+  text-transform: uppercase;
+}
+.featured-banner__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.featured-banner__chips li {
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  background: rgba(var(--ink-rgb), 0.05);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.featured-banner__chips .featured-banner__chip-more {
+  color: var(--text-muted);
+}
+html[data-look='forest'] .featured-banner__actions {
+  grid-area: actions;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px 20px;
+  padding: 22px 34px 32px;
+}
+html[data-look='forest'] .featured-banner__actions .btn {
+  padding: 11px 22px;
+  text-decoration: none;
+}
+html[data-look='forest'] .featured-banner__more {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+html[data-look='forest'] .featured-banner__close {
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  background: rgba(var(--ink-rgb), 0.06);
+}
+@media (max-width: 640px) {
+  html[data-look='forest'] .featured-banner {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      'media'
+      'text'
+      'actions';
+    min-height: 0;
+  }
+  html[data-look='forest'] .featured-banner__media {
+    height: 180px;
+  }
+  html[data-look='forest'] .featured-banner__media::after {
+    background: linear-gradient(to bottom, transparent 50%, rgba(var(--bg-elevated-rgb), 0.9));
+  }
+  html[data-look='forest'] .featured-banner__text {
+    padding: 16px 18px 0;
+  }
+  html[data-look='forest'] .featured-banner__actions {
+    padding: 18px 18px 22px;
+  }
+  html[data-look='forest'] .featured-banner__close {
+    background: rgba(8, 20, 14, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #f5f5f1;
+  }
+}
+
+/* ---- Wide screens: Featured as a slim column beside the products ----
+   (FeaturedSapling.jsx, the owner's idea and picture): a thin line sets it
+   apart, a FEATURED heading with a leaf tops it, and below stands a slim
+   young tree with its roots in a ball of soil (public/forest/plant-*.webp,
+   cut from the owner's picture by brand/featured/prepare_featured_plant.py).
+   The campaign's picture or video shows inside the ball, under the top of
+   the soil, with the roots growing over it; a tag on the stem names it. */
+.products-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(24px, 2.2vw, 44px);
+  align-items: start;
+}
+.featured-sapling {
+  position: relative;
+  width: 176px;
+  padding: 2px 0 20px 24px;
+  border-left: 1px solid rgba(var(--ink-rgb), 0.14);
+  text-align: center;
+}
+.featured-sapling__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--wood-tone);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.featured-sapling__label .icon {
+  color: #6aa84f;
+}
+.featured-sapling__plant {
+  display: block;
+  width: 150px;
+  margin: 12px auto 0;
+  color: inherit;
+  text-decoration: none;
+}
+/* The crown sways a little from its stem. */
+.featured-sapling__crown {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 49.3% 100%;
+  animation: sapling-sway 7s ease-in-out infinite alternate;
+}
+.featured-sapling__roots {
+  position: relative;
+  display: block;
+}
+.featured-sapling__ball,
+.featured-sapling__rootlines {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.featured-sapling__rootlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* The campaign inside the ball: the window picture (soft, inside the soil's
+   edge, starting under the top of the soil) shapes it. */
+.featured-sapling__window {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: url('/forest/plant-window.webp');
+  mask-image: url('/forest/plant-window.webp');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.featured-sapling__media {
+  position: absolute;
+  top: 23.2%;
+  left: 22.7%;
+  width: 52.5%;
+  height: 74.5%;
+  overflow: hidden;
+  background: #1a120b;
+}
+.featured-sapling__media img,
+.featured-sapling__media video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s var(--grow-ease);
+}
+.featured-sapling__plant:hover .featured-sapling__media img,
+.featured-sapling__plant:hover .featured-sapling__media video {
+  transform: scale(1.06);
+}
+.featured-sapling__play {
+  position: absolute;
+  left: 50%;
+  top: 78%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: -13px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  transition: opacity 0.3s ease;
+}
+.featured-sapling__play .icon {
+  margin-left: 2px;
+  fill: currentColor;
+}
+.featured-sapling__plant:hover .featured-sapling__play {
+  opacity: 0;
+}
+/* Hidden: a slim FEATURED tab, written down the side, brings it back. */
+.featured-sapling--folded {
+  width: auto;
+  padding: 2px 0 0 14px;
+}
+.featured-sapling__unfold {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(235, 154, 75, 0.35);
+  background: rgba(235, 154, 75, 0.1);
+  color: var(--wood-tone);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+.featured-sapling__unfold .icon {
+  color: #6aa84f;
+}
+.featured-sapling__unfold:hover {
+  border-color: var(--wood-tone);
+  background: rgba(235, 154, 75, 0.18);
+}
+/* The same way back on narrower screens, where the card was. */
+.featured-banner__unhide {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 18px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(235, 154, 75, 0.35);
+  background: rgba(235, 154, 75, 0.1);
+  color: var(--wood-tone);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.featured-banner__unhide .icon {
+  color: #6aa84f;
+}
+
+/* The tag on the stem (between the leaves and the soil), with a strip of
+   tape. */
+.featured-sapling__tag {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  width: 84%;
+  padding: 8px 6px 6px;
+  border-radius: 3px;
+  background: #f5eddf;
+  color: #2a2016;
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.65);
+  transform: translateX(-50%) rotate(-3deg);
+  transition: transform 0.4s var(--grow-ease);
+}
+.featured-sapling__tag::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 30px;
+  height: 11px;
+  margin-left: -15px;
+  background: rgba(235, 154, 75, 0.55);
+  transform: rotate(5deg);
+}
+.featured-sapling__plant:hover .featured-sapling__tag {
+  transform: translateX(-50%) rotate(-1deg) translateY(-2px);
+}
+.featured-sapling__name {
+  display: block;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+.featured-sapling__name::first-letter {
+  text-transform: uppercase;
+}
+.featured-sapling__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-top: 4px;
+  color: #8a4a14;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.featured-sapling__until {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+.featured-sapling__more {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--wood-tone);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.featured-sapling__more:hover {
+  text-decoration: underline;
+}
+.featured-sapling__close {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 14px auto 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  background: rgba(var(--ink-rgb), 0.04);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+.featured-sapling__close:hover {
+  color: var(--text);
+}
+@keyframes sapling-sway {
+  from {
+    transform: rotate(-1.4deg);
+  }
+  to {
+    transform: rotate(1.2deg);
+  }
+}
+
+/* ---- The product page ---- */
+html[data-look='forest'] .product-detail__image {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 34px 60px -34px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(var(--ink-rgb), 0.08);
+}
+/* The photo drifts very slowly closer, with leaf shadows moving over it. */
+html[data-look='forest'] .product-detail__image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: inherit;
+  background-size: cover;
+  background-position: center;
+  animation: detail-drift 26s ease-in-out infinite alternate;
+}
+html[data-look='forest'] .product-detail__image::after {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side, rgba(255, 236, 190, 0.24), transparent) 18% 22% / 30% 26% no-repeat,
+    radial-gradient(closest-side, rgba(255, 236, 190, 0.18), transparent) 66% 18% / 36% 30% no-repeat,
+    radial-gradient(closest-side, rgba(0, 0, 0, 0.24), transparent) 46% 58% / 40% 34% no-repeat,
+    radial-gradient(closest-side, rgba(255, 236, 190, 0.16), transparent) 78% 72% / 30% 26% no-repeat,
+    radial-gradient(closest-side, rgba(0, 0, 0, 0.2), transparent) 22% 80% / 34% 30% no-repeat;
+  mix-blend-mode: soft-light;
+  animation: forest-leaves 14s ease-in-out infinite alternate;
+}
+html[data-look='forest'] .product-detail__info {
+  padding: clamp(18px, 2.4vw, 30px);
+  border-radius: 14px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background: rgba(var(--bg-elevated-rgb), 0.74);
+  box-shadow: 0 30px 60px -40px rgba(0, 0, 0, 0.8);
+}
+html[data-look='forest'] .product-detail__info h1 {
+  margin-top: 0;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  letter-spacing: -0.02em;
+}
+@keyframes detail-drift {
+  from {
+    transform: scale(1.01);
+  }
+  to {
+    transform: scale(1.06) translate3d(-1%, -1%, 0);
+  }
+}
+
+/* "From the forest to your door" (ForestJourney.jsx). */
+.forest-journey {
+  position: relative;
+  margin: 44px 0 8px;
+  padding: clamp(22px, 3vw, 36px);
+  border-radius: 16px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  background:
+    linear-gradient(rgba(var(--bg-elevated-rgb), 0.86), rgba(var(--bg-elevated-rgb), 0.86)),
+    url('/forest/forest-ambient.webp') center / cover;
+  overflow: hidden;
+}
+.forest-journey__title {
+  margin: 0 0 24px;
+  font-size: 1.3rem;
+}
+.forest-journey__steps {
+  --icon: 52px;
+  --gap: 20px;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* The path joining the four steps, centre to centre. */
+.forest-journey__steps::before {
+  content: '';
+  position: absolute;
+  top: calc(var(--icon) / 2 - 1px);
+  left: calc(var(--icon) / 2);
+  right: calc((100% - 3 * var(--gap)) / 4 - var(--icon) / 2);
+  height: 2px;
+  background: repeating-linear-gradient(to right, rgba(235, 154, 75, 0.6) 0 8px, transparent 8px 14px);
+  transform-origin: left center;
+  transition: transform 1.6s var(--grow-ease) 0.2s;
+}
+.forest-journey[data-reveal='wait'] .forest-journey__steps::before {
+  transform: scaleX(0);
+}
+.forest-journey[data-reveal] {
+  transition:
+    opacity 0.8s ease,
+    translate 0.9s var(--grow-ease);
+}
+.forest-journey__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.forest-journey__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon);
+  height: var(--icon);
+  margin-bottom: 8px;
+  border-radius: 50%;
+  background: var(--wood-log);
+  color: var(--wood-on);
+  box-shadow:
+    0 0 0 4px rgba(var(--bg-elevated-rgb), 1),
+    0 10px 22px -10px rgba(0, 0, 0, 0.7);
+}
+.forest-journey__step-title {
+  font-weight: 650;
+}
+.forest-journey__step-text {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.forest-journey__notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.forest-journey__notes li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--ink-rgb), 0.1);
+  background: rgba(var(--ink-rgb), 0.05);
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+.forest-journey__notes .icon {
+  color: var(--wood-tone);
+}
+.forest-journey__notes a {
+  color: var(--wood-tone);
+  font-weight: 600;
+}
+@media (max-width: 720px) {
+  .forest-journey__steps {
+    grid-template-columns: 1fr;
+    --gap: 18px;
+  }
+  .forest-journey__steps::before {
+    top: calc(var(--icon) / 2);
+    bottom: calc(var(--icon) / 2);
+    left: calc(var(--icon) / 2 - 1px);
+    right: auto;
+    width: 2px;
+    height: auto;
+    background: repeating-linear-gradient(to bottom, rgba(235, 154, 75, 0.6) 0 8px, transparent 8px 14px);
+    transform-origin: center top;
+  }
+  .forest-journey[data-reveal='wait'] .forest-journey__steps::before {
+    transform: scaleY(0);
+  }
+  .forest-journey__step {
+    display: grid;
+    grid-template-columns: var(--icon) 1fr;
+    column-gap: 14px;
+    row-gap: 2px;
+    align-items: start;
+  }
+  .forest-journey__icon {
+    grid-row: span 2;
+    margin: 0;
+  }
+  .forest-journey__step-title {
+    padding-top: 6px;
+  }
+  .forest-journey__notes li {
+    border-radius: 14px;
+  }
+}
+
+.forest-more {
+  margin-top: 48px;
+}
+
+/* ---- Lighter on phones: no light shafts or leaf shadows, one layer of
+   mist, a still background photo, and fireflies only in the entrance (4).
+   Measured on a phone slowed 4x (25 October 2026): the fireflies were the
+   main cost of scrolling - with all of them about 47 frames a second, with
+   these 4 about 50, the classic look 50-60. ---- */
+@media (max-width: 720px) {
+  .forest-ambience__rays,
+  .forest-ambience__leaves,
+  .forest-ambience__mist--far,
+  .forest-hero__rays,
+  .forest-hero__mist--back {
+    display: none;
+  }
+  .forest-ambience__photo,
+  .forest-hero__photo {
+    animation: none;
+  }
+  .forest-ambience .firefly,
+  .forest-hero .firefly:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+/* ---- Animations turned off: a still forest ---- */
+@media (prefers-reduced-motion: reduce) {
+  .forest-ambience *,
+  .forest-hero *,
+  .forest-hero__scene,
+  .forest-hero__scene::after,
+  html[data-look='forest'] .featured-banner,
+  .featured-sapling__crown,
+  html[data-look='forest'] .product-detail__image::before,
+  html[data-look='forest'] .product-detail__image::after {
+    animation: none !important;
+  }
+  .firefly {
+    opacity: 0.4;
+  }
+  html[data-look='forest'] .product-card,
+  html[data-look='forest'] .product-card:hover {
+    transform: none;
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+  html[data-look='forest'] .product-card:hover .product-card__image::before {
+    transform: none;
+  }
+}

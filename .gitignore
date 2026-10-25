@@ -9,6 +9,8 @@ admin_server_control/desktop/app/core/server_manager.py
 .env
 .env.*
 !.env.example
+# The website's look switch (VITE_FOREST_LOOK) - no secret in it.
+!frontend/website/.env.production
 *.pem
 *.key
 *.jks
