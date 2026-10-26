@@ -136,7 +136,7 @@ class DashboardSection(QWidget):
         self._load("/users", self._show_users)
         self._load("/products", lambda d: self._set_products(d, None))
         self._load("/products/deleted", lambda d: self._set_products(None, d))
-        self._load("/marketing/campaigns", lambda d: self._set_campaigns(d, None))
+        self._load("/marketing/campaigns?includeRetired=true", lambda d: self._set_campaigns(d, None))
         self._load("/marketing/campaigns/deleted", lambda d: self._set_campaigns(None, d))
         self._load("/trips", self._show_trips)
 
@@ -188,7 +188,8 @@ class DashboardSection(QWidget):
             self._deleted_campaigns = deleted
         if self._campaigns is None:
             return
-        rows = self._campaigns
+        retired = sum(1 for c in self._campaigns if c.get("isRetired"))
+        rows = [c for c in self._campaigns if not c.get("isRetired")]
         today = date.today().isoformat()
         running = sum(1 for c in rows if (c.get("startAt") or "") <= today <= (c.get("endAt") or "9999-12-31"))
         upcoming = sum(1 for c in rows if (c.get("startAt") or "") > today)
@@ -199,6 +200,8 @@ class DashboardSection(QWidget):
         if upcoming:
             first += f" · {upcoming} upcoming"
         first += f" · {len(rows) - running - upcoming} ended"
+        if retired:
+            first += f" · {retired} retired"
         media = f"{_plural(photos, 'photo', 'photos')} · {_plural(videos, 'video', 'videos')}"
         if self._deleted_campaigns:
             media += f" · {len(self._deleted_campaigns)} deleted"

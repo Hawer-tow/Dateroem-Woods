@@ -79,7 +79,10 @@ fun CampaignFormScreen(
     isEditing: Boolean,
     onSaved: () -> Unit,
     onDeleted: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    // After retiring, back to the list, where it now shows as retired
+    // with Bring back.
+    onRetired: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -90,6 +93,7 @@ fun CampaignFormScreen(
     var pendingCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var pendingCameraAction by rememberSaveable { mutableStateOf<PendingCameraAction?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showRetireConfirm by remember { mutableStateOf(false) }
     val voice = rememberVoiceAssistant()
 
     LaunchedEffect(state.saved) {
@@ -98,7 +102,33 @@ fun CampaignFormScreen(
     LaunchedEffect(state.deleted) {
         if (state.deleted) onDeleted()
     }
+    LaunchedEffect(state.retiredNow) {
+        if (state.retiredNow) onRetired()
+    }
     SpeakErrorEffect(voice, state.error)
+
+    if (showRetireConfirm) {
+        AlertDialog(
+            onDismissRequest = { showRetireConfirm = false },
+            title = { Text("Retire this campaign?") },
+            text = {
+                Text(
+                    "It leaves the website straight away (Featured page, banner and product tags). Its picture " +
+                        "or video, products and dates are kept, and you can bring it back any time from the " +
+                        "campaign list. Changes not saved here are not saved by this."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRetireConfirm = false
+                    viewModel.retire()
+                }) { Text("Retire", color = DateroemAccent) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRetireConfirm = false }) { Text("Cancel", color = DateroemTextMuted) }
+            }
+        )
+    }
 
     if (showDeleteConfirm) {
         AlertDialog(
@@ -222,6 +252,18 @@ fun CampaignFormScreen(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+
+            if (state.retired) {
+                Text(
+                    "Retired · not on the website. Bring it back from the campaign list.",
+                    color = DateroemAccent,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .background(DateroemAccent.copy(alpha = 0.14f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
 
             if (state.restoredDraft) {
                 Row(
@@ -426,6 +468,29 @@ fun CampaignFormScreen(
                 // FAB floats at a fixed bottom-center position regardless
                 // of scroll, so more gap above separates this from Save/
                 // Cancel and the spacer below clears the FAB's footprint.
+                //
+                // "allow a campaign to be retired just like the products" -
+                // here, with the other careful actions, well away from Save,
+                // as in the product form.
+                if (!state.retired) {
+                    OutlinedButton(
+                        onClick = { showRetireConfirm = true },
+                        enabled = !state.retiring,
+                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp)
+                    ) {
+                        if (state.retiring) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = DateroemAccent, strokeWidth = 2.dp)
+                        } else {
+                            Text("Retire Campaign", color = DateroemAccent)
+                        }
+                    }
+                    Text(
+                        "Takes it off the website without deleting it. Its media and products are kept.",
+                        color = DateroemTextMuted,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 6.dp, start = 4.dp)
+                    )
+                }
                 TextButton(
                     onClick = { showDeleteConfirm = true },
                     enabled = !state.deleting,

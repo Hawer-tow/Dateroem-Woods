@@ -184,6 +184,14 @@ body {
   height: 32px;
   width: auto;
 }
+/* The company emblem before the name (the footer's lorry emblem). */
+.navbar__emblem {
+  flex: none;
+  display: block;
+  width: 38px;
+  height: 38px;
+  margin-right: 2px;
+}
 /* The rings are laid down one year at a time from the heart outward when
    the page opens - the tree growing to its full age - then stay still. */
 .wood-wordmark__ring {
@@ -206,6 +214,7 @@ body {
 }
 .navbar__toggle {
   display: none;
+  flex: none;
   /* Matches .navbar__user-icon's exact shape/size/tint - "the icon and
      the main menu shortcut dont seem to fit with the name" was these two
      buttons looking like an unrelated square badge next to a circular
@@ -224,11 +233,24 @@ body {
 .navbar__toggle:hover {
   border-color: var(--wood-tone);
 }
+/* "can they be placed in the center not the left" (26 October 2026) - the
+   page links sit in the middle of the bar on wide screens (the middle of
+   three columns, 1fr | links | 1fr). */
 .navbar__links {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 24px;
+  align-items: center;
+  /* "they are too low in the header" - room under the links, so they (and
+     the line that grows under one on hover) sit inside the bar, not on its
+     edge or over the page. */
+  padding: 0 clamp(16px, 4vw, 64px) 14px;
+}
+.navbar__pages {
+  grid-column: 2;
   display: flex;
   gap: 24px;
   align-items: center;
-  padding: 0 clamp(16px, 4vw, 64px) 0;
 }
 .navbar__links a {
   color: var(--text-muted);
@@ -246,6 +268,7 @@ body {
    instead of standing out as a distinct "something's here" signal. */
 .navbar__cart {
   position: relative;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -284,10 +307,189 @@ body {
   }
 }
 
+/* Updates (UpdatesMenu.jsx): the cart's round button with a bell, and a
+   quiet wood-coloured dot - news, not an alarm like the cart's red one. */
+.updates-menu {
+  position: relative;
+}
+.updates-menu__button {
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.updates-menu__dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--wood-tone);
+  border: 2px solid var(--bg);
+}
+.updates-menu__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -8px;
+  z-index: 30;
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(70vh, 480px);
+  overflow-y: auto;
+  padding: 14px 16px 6px;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--ink-rgb), 0.12);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+.updates-menu__heading {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.updates-menu__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.updates-menu__item {
+  padding: 10px 0 12px;
+}
+.updates-menu__item + .updates-menu__item {
+  border-top: 1px solid rgba(var(--ink-rgb), 0.08);
+}
+.updates-menu__title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: var(--text);
+}
+.updates-menu__message {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.updates-menu__date {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+/* The colour themes as three dots (ThemeDots.jsx), macOS-style: green
+   Forest, black Dark, white Light, in a slim pill beside the bell. */
+.theme-dots__set {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--ink-rgb), 0.2);
+  background: rgba(var(--ink-rgb), 0.08);
+}
+.theme-dots__dot {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink-rgb), 0.35);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.theme-dots__dot:hover {
+  transform: scale(1.18);
+}
+.theme-dots__dot:focus-visible {
+  outline: 2px solid var(--wood-tone);
+  outline-offset: 2px;
+}
+.theme-dots__dot--forest {
+  background: radial-gradient(circle at 35% 30%, #4f9a72, #1d4232 70%);
+}
+.theme-dots__dot--dark {
+  background: radial-gradient(circle at 35% 30%, #3a3d42, #0b0c0e 70%);
+}
+.theme-dots__dot--light {
+  background: radial-gradient(circle at 35% 30%, #ffffff, #e9e4d8 75%);
+}
+/* The theme in use: a wood ring around its dot. */
+.theme-dots__dot[aria-checked='true'] {
+  box-shadow: 0 0 0 2px rgb(var(--bg-rgb)), 0 0 0 4px var(--wood-tone);
+}
+.theme-dots--in-menu {
+  display: none;
+}
+
+/* The fold-out menu's copy (phones only) - see the 720px rules below. */
+.updates-menu--in-menu {
+  display: none;
+}
+.updates-menu__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 4px;
+  border: none;
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+.updates-menu__dot--inline {
+  position: static;
+  border: none;
+}
+.navbar__toggle {
+  position: relative;
+}
+@media (max-width: 720px) {
+  .navbar__row > .updates-menu,
+  .navbar__row > .theme-dots {
+    display: none;
+  }
+  .theme-dots--in-menu {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 4px 2px;
+    color: var(--text-muted);
+  }
+  .theme-dots--in-menu .theme-dots__set {
+    gap: 16px;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 22px;
+  }
+  .theme-dots--in-menu .theme-dots__dot {
+    width: 24px;
+    height: 24px;
+  }
+  .updates-menu--in-menu {
+    display: block;
+  }
+  .updates-menu--in-menu .updates-menu__panel {
+    position: static;
+    width: auto;
+    max-height: none;
+    margin: 6px 0 4px;
+    padding: 4px 14px 2px;
+    box-shadow: none;
+  }
+}
+
 .navbar__account {
   position: relative;
 }
 .navbar__user-icon {
+  flex: none;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -1061,118 +1263,6 @@ body {
   color: var(--wood-tone);
 }
 
-/* The Theme menu at the end of the top links (components/ThemeMenu.jsx):
-   one button, a short list of Forest / Dark / Light with a swatch of each
-   theme's page, card and wood. The swatches keep their own colours in every
-   theme so each shows what it gives. */
-.theme-menu {
-  position: relative;
-  margin-left: auto;
-}
-.theme-menu__button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 10px;
-  border: 1px solid rgba(var(--ink-rgb), 0.15);
-  border-radius: 999px;
-  background: none;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-.theme-menu__button:hover,
-.theme-menu__button[aria-expanded='true'] {
-  color: var(--text);
-  border-color: rgba(var(--ink-rgb), 0.3);
-}
-.theme-menu__button:focus-visible,
-.theme-menu__item:focus-visible {
-  outline: 2px solid var(--wood-tone);
-  outline-offset: 2px;
-}
-.theme-menu__caret {
-  width: 6px;
-  height: 6px;
-  margin: -3px 1px 0 2px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg);
-}
-.theme-menu__list {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 25;
-  min-width: 170px;
-  margin: 0;
-  padding: 6px;
-  list-style: none;
-  background: var(--bg-elevated);
-  border: 1px solid rgba(var(--ink-rgb), 0.12);
-  border-radius: var(--radius);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
-}
-.theme-menu__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 10px;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.92rem;
-  text-align: left;
-  cursor: pointer;
-}
-.theme-menu__item:hover {
-  background: rgba(var(--ink-rgb), 0.07);
-}
-.theme-menu__item[aria-checked='true'] {
-  font-weight: 600;
-}
-.theme-menu__item .icon {
-  color: var(--wood-tone);
-}
-.theme-menu__label {
-  flex: 1;
-}
-.theme-menu__swatch {
-  position: relative;
-  flex: none;
-  width: 22px;
-  height: 14px;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-}
-.theme-menu__swatch::after {
-  content: '';
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #eb9a4b;
-}
-.theme-menu__swatch--forest {
-  background: linear-gradient(135deg, #0f241b 0 55%, #1d4232 55%);
-}
-.theme-menu__swatch--dark {
-  background: linear-gradient(135deg, #121417 0 55%, #1e2124 55%);
-}
-.theme-menu__swatch--light {
-  background: linear-gradient(135deg, #f4f1ea 0 55%, #ffffff 55%);
-}
-.theme-menu__swatch--light::after {
-  background: #a4561a;
-}
-
 .product-row {
   margin-bottom: 40px;
 }
@@ -1519,6 +1609,28 @@ body {
 }
 .state-message--error {
   color: var(--danger);
+}
+/* The empty cart (CartPage.jsx): a few words and the way back to the shop. */
+.cart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 56px 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.cart-empty__title {
+  margin: 10px 0 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.cart-empty__text {
+  margin: 0 0 14px;
+}
+.cart-empty .btn {
+  text-decoration: none;
 }
 
 /* "arrange them in the best way possible like cards and playable in that
@@ -3684,6 +3796,11 @@ button.help-page__contact-link {
   .navbar__wordmark {
     height: 22px;
   }
+  .navbar__emblem {
+    width: 30px;
+    height: 30px;
+    margin-right: 0;
+  }
   .navbar__toggle {
     display: flex;
   }
@@ -3697,13 +3814,9 @@ button.help-page__contact-link {
   .navbar__links--open {
     display: flex;
   }
-  .theme-menu {
-    margin: 8px 0 0;
-  }
-  .theme-menu__list {
-    position: static;
-    margin-top: 6px;
-    box-shadow: none;
+  /* In the fold-out menu the links are one column again. */
+  .navbar__pages {
+    display: contents;
   }
   .navbar__links a {
     padding: 12px 4px;
@@ -3763,12 +3876,30 @@ button.help-page__contact-link {
     font-size: 1.5rem;
   }
 }
-@media (max-width: 380px) {
+/* Phones up to 430px (360px Androids, 390px iPhones): emblem + name +
+   three round buttons need every pixel since the emblem joined the bar
+   (26 October 2026). */
+@media (max-width: 430px) {
+  .navbar__row {
+    padding: 12px 12px;
+    gap: 8px;
+  }
   .navbar__brand {
-    font-size: 0.9rem;
+    gap: 4px;
+    font-size: 0.85rem;
   }
   .navbar__wordmark {
-    height: 20px;
+    height: 18px;
+  }
+  .navbar__emblem {
+    width: 24px;
+    height: 24px;
+  }
+}
+/* Narrower still (320px): the name alone, without "Woods". */
+@media (max-width: 340px) {
+  .navbar__brand-suffix {
+    display: none;
   }
 }
 

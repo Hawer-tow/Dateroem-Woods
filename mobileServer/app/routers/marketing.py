@@ -7,10 +7,13 @@ router = APIRouter(prefix="/marketing", tags=["marketing"])
 
 
 @router.get("/campaigns")
-async def list_campaigns():
+async def list_campaigns(includeRetired: bool = False):
     """Lets the marketing creation page show existing campaigns, not just
-    create new ones."""
-    return await backend_client.get("/api/marketing/campaigns")
+    create new ones. includeRetired: the Marketing list asks for retired
+    campaigns too (marked); Home and an app from before 26 October 2026
+    don't, so a retired one never shows there as if it were running."""
+    params = {"includeRetired": "true"} if includeRetired else None
+    return await backend_client.get("/api/marketing/campaigns", params=params)
 
 
 # Must come before /campaigns/{campaign_id} - FastAPI matches routes in
@@ -55,6 +58,23 @@ async def delete_campaign(campaign_id: int, x_actor_user_id: int = Header(...)):
 async def restore_campaign(campaign_id: int, x_actor_user_id: int = Header(...)):
     return await backend_client.post(
         f"/api/marketing/campaigns/{campaign_id}/restore", json={}, headers={"X-Actor-User-Id": str(x_actor_user_id)}
+    )
+
+
+# "allow a campaign to be retired just like the products" - off the website,
+# kept, and can be brought back (Marketer/Admin/SuperAdmin, checked by the
+# backend).
+@router.post("/campaigns/{campaign_id}/retire")
+async def retire_campaign(campaign_id: int, x_actor_user_id: int = Header(...)):
+    return await backend_client.post(
+        f"/api/marketing/campaigns/{campaign_id}/retire", json={}, headers={"X-Actor-User-Id": str(x_actor_user_id)}
+    )
+
+
+@router.post("/campaigns/{campaign_id}/unretire")
+async def unretire_campaign(campaign_id: int, x_actor_user_id: int = Header(...)):
+    return await backend_client.post(
+        f"/api/marketing/campaigns/{campaign_id}/unretire", json={}, headers={"X-Actor-User-Id": str(x_actor_user_id)}
     )
 
 

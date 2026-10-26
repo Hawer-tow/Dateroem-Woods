@@ -474,7 +474,7 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
                     DeletedProductsScreen(vm)
                 }
                 composable(Section.Marketing.route) {
-                    val vm: CampaignsViewModel = viewModel(factory = CampaignsViewModel.Factory(container.api))
+                    val vm: CampaignsViewModel = viewModel(factory = CampaignsViewModel.Factory(container.api, session.userId))
                     // Same stale-until-restart issue as Products (see the
                     // comment there) - this is a direct popBackStack()
                     // target of campaign_form_create/edit.
@@ -510,7 +510,8 @@ fun HomeShell(container: AppContainer, session: Session, onLoggedOut: () -> Unit
                         isEditing = true,
                         onSaved = { navController.popBackStack() },
                         onDeleted = { navController.popBackStack() },
-                        onCancel = { navController.popBackStack() }
+                        onCancel = { navController.popBackStack() },
+                        onRetired = { navController.popBackStack() }
                     )
                 }
                 composable("deleted_campaigns") {

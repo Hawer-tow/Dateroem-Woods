@@ -393,8 +393,25 @@ interface ApiService {
         @Body request: DeliverLightDeliveryRequest
     )
 
+    // includeRetired: the Marketing list shows retired campaigns too
+    // (marked, with Bring back); Home leaves it off.
     @GET("marketing/campaigns")
-    suspend fun listCampaigns(): List<Campaign>
+    suspend fun listCampaigns(@Query("includeRetired") includeRetired: Boolean? = null): List<Campaign>
+
+    // Retire: off the website, whatever its status and dates; its media,
+    // products and dates are kept. Marketer/Admin/SuperAdmin (checked on
+    // the server).
+    @POST("marketing/campaigns/{campaignId}/retire")
+    suspend fun retireCampaign(
+        @Path("campaignId") campaignId: Int,
+        @Header("X-Actor-User-Id") actorUserId: Int
+    ): Campaign
+
+    @POST("marketing/campaigns/{campaignId}/unretire")
+    suspend fun unretireCampaign(
+        @Path("campaignId") campaignId: Int,
+        @Header("X-Actor-User-Id") actorUserId: Int
+    ): Campaign
 
     // Admin-only in the UI, same "bin" pattern as deleted products.
     @GET("marketing/campaigns/deleted")

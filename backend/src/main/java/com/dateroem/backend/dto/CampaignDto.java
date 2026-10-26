@@ -19,5 +19,11 @@ public record CampaignDto(
     // "make sure the deleted by and at are active" - see ProductDto.
     Boolean isDeleted,
     Integer deletedBy,
-    LocalDateTime deletedAt
+    LocalDateTime deletedAt,
+    // Retired (migration 041): off the website, kept, can be brought back.
+    // Ignored when a client sends a campaign to save - only the retire and
+    // bring-back routes change it.
+    Boolean isRetired,
+    LocalDateTime retiredAt,
+    Integer retiredBy
 ) {}

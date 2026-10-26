@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api, apiErrorMessage } from '../api/client.js'
 import AuthModal from '../components/AuthModal.jsx'
+import Icon from '../components/Icon.jsx'
 import PhoneCodeStep from '../components/PhoneCodeStep.jsx'
 import { encodeOrderRef } from '../core/orderRef.js'
 import { isValidKenyanPhone, KENYAN_PHONE_HINT } from '../core/phone.js'
@@ -229,8 +230,18 @@ export default function CartPage() {
 
   const selectedArea = areas.find((area) => String(area.deliveryAreaId) === String(deliveryAreaId))
 
+  // "when once clicks cart and there is nothing there provide a link to the
+  // products page" (26 October 2026) - on a phone the menu at the top is
+  // easy to miss, so the way back is right here.
   if (items.length === 0) {
-    return <p className="state-message">Your cart is empty - browse products to add something.</p>
+    return (
+      <div className="cart-empty">
+        <Icon name="cart" size={34} strokeWidth={1.5} />
+        <p className="cart-empty__title">Your cart is empty</p>
+        <p className="cart-empty__text">Browse the timber and add what you need.</p>
+        <Link to="/" className="btn btn--primary">Browse products</Link>
+      </div>
+    )
   }
 
   function chooseArea() {

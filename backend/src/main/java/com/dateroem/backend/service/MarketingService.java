@@ -24,7 +24,8 @@ import com.dateroem.backend.util.MediaUrls;
 public class MarketingService {
 
     private static final String SELECT_COLUMNS =
-        "Campaign_ID, Name, Channel, Start_At, End_At, Status, Media, Media_Type, Is_Deleted, Deleted_By, Deleted_At";
+        "Campaign_ID, Name, Channel, Start_At, End_At, Status, Media, Media_Type, Is_Deleted, Deleted_By, Deleted_At, " +
+        "Is_Retired, Retired_At, Retired_By";
 
     private final JdbcTemplate jdbcTemplate;
     private final String mediaBaseUrl;
@@ -53,7 +54,9 @@ public class MarketingService {
             rs.getObject("Start_At", LocalDate.class), rs.getObject("End_At", LocalDate.class),
             rs.getString("Status"), resolveMediaUrl(rs.getString("Media")), rs.getString("Media_Type"),
             (Boolean) rs.getObject("Is_Deleted"), (Integer) rs.getObject("Deleted_By"),
-            rs.getObject("Deleted_At", java.time.LocalDateTime.class)
+            rs.getObject("Deleted_At", java.time.LocalDateTime.class),
+            rs.getBoolean("Is_Retired"), rs.getObject("Retired_At", java.time.LocalDateTime.class),
+            (Integer) rs.getObject("Retired_By")
         );
     }
 
@@ -75,9 +78,12 @@ public class MarketingService {
     }
 
     // limit=null means "all" - same "specifying all, only 50 etc" story
-    // as ProductService.list().
-    public List<CampaignDto> list(Integer limit) {
-        String sql = "SELECT " + SELECT_COLUMNS + " FROM CAMPAIGN WHERE Is_Deleted = FALSE ORDER BY Campaign_ID DESC";
+    // as ProductService.list(). includeRetired is asked for only by the
+    // apps' campaign lists (desktop/mobile); the website server leaves it
+    // off, so a retired campaign never reaches a customer.
+    public List<CampaignDto> list(Integer limit, boolean includeRetired) {
+        String sql = "SELECT " + SELECT_COLUMNS + " FROM CAMPAIGN WHERE Is_Deleted = FALSE" +
+            (includeRetired ? "" : " AND Is_Retired = FALSE") + " ORDER BY Campaign_ID DESC";
         return limit == null
             ? jdbcTemplate.query(sql, this::mapRow)
             : jdbcTemplate.query(sql + " LIMIT ?", this::mapRow, limit);
@@ -165,6 +171,43 @@ public class MarketingService {
             "INSERT INTO AUDIT_LOGS (Target_Table, Target_Id, Payload, Created_At, Actor_ID) " +
             "VALUES (?, ?, ?, CURDATE(), ?)",
             "CAMPAIGN", campaignId, "Restored campaign", actorUserId
+        );
+    }
+
+    // "allow a campaign to be retired just like the products" - off the
+    // website straight away, whatever its Status and dates; its media,
+    // products and dates are kept, and it can be brought back.
+    @Transactional
+    public void retire(int campaignId, int actorUserId) {
+        int updated = jdbcTemplate.update(
+            "UPDATE CAMPAIGN SET Is_Retired = TRUE, Retired_By = ?, Retired_At = NOW() " +
+            "WHERE Campaign_ID = ? AND Is_Deleted = FALSE AND Is_Retired = FALSE",
+            actorUserId, campaignId
+        );
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found or already retired");
+        }
+        jdbcTemplate.update(
+            "INSERT INTO AUDIT_LOGS (Target_Table, Target_Id, Payload, Created_At, Actor_ID) " +
+            "VALUES (?, ?, ?, CURDATE(), ?)",
+            "CAMPAIGN", campaignId, "Retired campaign", actorUserId
+        );
+    }
+
+    @Transactional
+    public void unretire(int campaignId, int actorUserId) {
+        int updated = jdbcTemplate.update(
+            "UPDATE CAMPAIGN SET Is_Retired = FALSE, Retired_By = NULL, Retired_At = NULL " +
+            "WHERE Campaign_ID = ? AND Is_Deleted = FALSE AND Is_Retired = TRUE",
+            campaignId
+        );
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found or not retired");
+        }
+        jdbcTemplate.update(
+            "INSERT INTO AUDIT_LOGS (Target_Table, Target_Id, Payload, Created_At, Actor_ID) " +
+            "VALUES (?, ?, ?, CURDATE(), ?)",
+            "CAMPAIGN", campaignId, "Brought campaign back", actorUserId
         );
     }
 

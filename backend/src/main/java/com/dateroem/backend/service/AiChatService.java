@@ -128,6 +128,7 @@ public class AiChatService {
         new Guide("Marketing", MARKETING_ROLES, """
             - Marketing lists campaigns; + creates one: campaign name, channel (or all channels), status, and media - Take Photo, Record Video or Choose from Gallery.
             - Tap a campaign to edit or Delete Campaign; an Admin can restore deleted ones from the bin.
+            - Retire Campaign (inside the campaign) takes it off the website without deleting it - its media, products and dates are kept. A retired campaign shows brown in the list with Bring back.
             """),
         new Guide("Trips", MANAGERS_UP, """
             - Trips lists every trip, the active one highlighted. + starts a New Trip: product description, then Create Trip. A new trip doesn't become active by itself - pick it on the wood dial.
@@ -1002,8 +1003,9 @@ public class AiChatService {
         return context.toString();
     }
 
-    // Only campaigns that are actually live - drafts and paused ones are
-    // internal, and quoting them would promise a deal that doesn't exist.
+    // Only campaigns that are actually live - drafts, paused and retired
+    // ones are internal, and quoting them would promise a deal that
+    // doesn't exist.
     // Inner joins: a campaign with no product to buy is hidden from the
     // website's Featured page too (frontend/app/routers/marketing.py), so
     // the assistant never sends anyone to look for it.
@@ -1013,7 +1015,7 @@ public class AiChatService {
             "FROM CAMPAIGN c " +
             "JOIN CAMPAIGN_PRODUCTS cp ON cp.Campaign_ID = c.Campaign_ID " +
             "JOIN PRODUCTS p ON p.Product_ID = cp.Product_ID AND p.Is_Deleted = FALSE " +
-            "WHERE c.Is_Deleted = FALSE AND LOWER(c.Status) = 'active' " +
+            "WHERE c.Is_Deleted = FALSE AND c.Is_Retired = FALSE AND LOWER(c.Status) = 'active' " +
             "AND (c.Start_At IS NULL OR c.Start_At <= CURDATE()) AND (c.End_At IS NULL OR c.End_At >= CURDATE()) " +
             "GROUP BY c.Campaign_ID, c.Name, c.End_At ORDER BY c.Campaign_ID DESC LIMIT 10"
         );

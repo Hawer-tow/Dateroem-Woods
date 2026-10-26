@@ -19,6 +19,7 @@ from app.ui.sections.dashboard_section import DashboardSection
 from app.ui.sections.database_browser_section import DatabaseBrowserSection
 from app.ui.sections.delivery_areas_section import DeliveryAreasSection
 from app.ui.sections.faqs_section import FaqsSection
+from app.ui.sections.notices_section import NoticesSection
 from app.ui.sections.insights_section import InsightsSection
 from app.ui.sections.marketing_section import MarketingSection
 from app.ui.sections.products_section import ProductsSection
@@ -228,6 +229,7 @@ class MainWindow(QMainWindow):
             ("megaphone", "Marketing", lambda: MarketingSection(api_client)),
             ("star", "Ratings", lambda: ReviewsSection(api_client)),
             ("message", "FAQs", lambda: FaqsSection(api_client)),
+            ("bell", "Notices", lambda: NoticesSection(api_client)),
             ("map", "Trips & Finance", lambda: TripsSection(api_client)),
             ("pin", "Delivery Areas", lambda: DeliveryAreasSection(api_client)),
             ("users", "Users", lambda: UsersSection(api_client)),

@@ -25,6 +25,15 @@ class FaqRequest(BaseModel):
     published: Optional[bool] = None
 
 
+class NoticeRequest(BaseModel):
+    # One notice in the website's Updates (see the backend's NoticeService):
+    # showUntil is the last day it shows ("2026-11-30").
+    title: str
+    message: str
+    showUntil: Optional[str] = None
+    published: Optional[bool] = None
+
+
 class LoginRequest(BaseModel):
     user_name: str
     password: str

@@ -12,8 +12,15 @@ data class Campaign(
     // both. mediaType ("VIDEO"/"IMAGE") says which, so the UI knows how to
     // render it without guessing from the file extension.
     val media: String?,
-    val mediaType: String?
-)
+    val mediaType: String?,
+    // "allow a campaign to be retired just like the products" - off the
+    // website, but kept with its media and products, and can be brought
+    // back. Null (an older server) counts as not retired.
+    val isRetired: Boolean? = null
+) {
+    val retired: Boolean
+        get() = isRetired == true
+}
 
 data class CampaignFormRequest(
     val name: String,

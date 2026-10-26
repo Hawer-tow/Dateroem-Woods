@@ -22,6 +22,7 @@ from app.routers import (
     insights,
     machines_vehicles,
     marketing,
+    notices,
     orders,
     products,
     reviews,
@@ -84,6 +85,7 @@ app.include_router(workers.router)
 app.include_router(devices.router)
 app.include_router(computers.router)
 app.include_router(faqs.router)
+app.include_router(notices.router)
 app.include_router(roles.router)
 app.include_router(products.router)
 app.include_router(marketing.router)

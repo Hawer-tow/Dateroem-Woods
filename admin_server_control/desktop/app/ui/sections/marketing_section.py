@@ -1,7 +1,9 @@
 from PySide6.QtCore import QThreadPool
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from app.core.worker import Worker
+from app.ui import theme
 from app.ui.widgets.data_table import DataTable
 from app.ui.widgets.record_form_dialog import FieldSpec, RecordFormDialog
 from app.ui.sections.campaign_products_dialog import CampaignProductsDialog
@@ -23,7 +25,10 @@ FIELDS = [
 
 class MarketingSection(QWidget):
     """Full CRUD for marketing Campaigns - same shape as ProductsSection:
-    view (with Deleted toggle), create, edit, delete/restore."""
+    view (with Deleted toggle), create, edit, delete/restore and
+    retire/bring-back. Retiring takes a campaign off the website whatever
+    its Status and dates, keeping its media and products, and it can be
+    brought back."""
 
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
@@ -35,6 +40,7 @@ class MarketingSection(QWidget):
         layout = QVBoxLayout(self)
 
         self.table = DataTable("Campaigns", searchable=True, search_placeholder="Search campaigns by name, channel or status")
+        self.table.hidden_columns = {"retiredAt", "retiredBy"}
         self.table.refresh_requested.connect(self._load)
         self.table.row_selected.connect(self._on_row_selected)
         layout.addWidget(self.table)
@@ -75,6 +81,13 @@ class MarketingSection(QWidget):
         self.products_btn.setEnabled(False)
         self.products_btn.clicked.connect(self._open_products)
         action_row.addWidget(self.products_btn)
+
+        # "allow a campaign to be retired just like the products" -
+        # reversible, so it sits with Edit rather than by Delete.
+        self.retire_btn = QPushButton("Retire")
+        self.retire_btn.setEnabled(False)
+        self.retire_btn.clicked.connect(self._retire_or_bring_back)
+        action_row.addWidget(self.retire_btn)
 
         # "an admin having edit button near delete is risky" - real
         # breathing room between them, not just visual order, so a misclick
@@ -124,24 +137,37 @@ class MarketingSection(QWidget):
     def _load(self, limit):
         self.table.set_loading()
         path = "/marketing/campaigns/deleted" if self.showing_deleted else "/marketing/campaigns"
-        params = None if self.showing_deleted else ({"limit": limit} if limit else None)
+        params = None
+        if not self.showing_deleted:
+            params = {"includeRetired": "true"}
+            if limit:
+                params["limit"] = limit
         self._run(
             lambda: self.api_client.get(path, params=params),
-            lambda rows: self.table.set_rows(rows or []),
+            lambda rows: self.table.set_rows(rows or [], row_color=self._row_color),
             self.table.set_error,
         )
+
+    def _row_color(self, row):
+        # Deleted rows are tinted red by the table itself; retired (but not
+        # deleted) ones get the same wood-brown as a retired product.
+        if row.get("isRetired") and not row.get("isDeleted"):
+            return QColor(theme.RETIRED_TINT)
+        return None
 
     def _on_toggle_deleted(self, checked: bool):
         self.showing_deleted = checked
         self.delete_btn.setVisible(not checked)
         self.restore_btn.setVisible(checked)
+        self.retire_btn.setVisible(not checked)
         self.selected = None
         self._update_action_state()
         self._load(self.table.current_limit())
 
     def _on_row_selected(self, row: dict):
         self.selected = row
-        self.selection_label.setText(f"Selected: {row.get('name')} (#{row.get('campaignId')})")
+        mark = " - retired" if row.get("isRetired") else ""
+        self.selection_label.setText(f"Selected: {row.get('name')} (#{row.get('campaignId')}){mark}")
         self._update_action_state()
 
     def _update_action_state(self):
@@ -150,6 +176,9 @@ class MarketingSection(QWidget):
         self.products_btn.setEnabled(has_selection and not self.showing_deleted)
         self.delete_btn.setEnabled(has_selection and not self.showing_deleted)
         self.restore_btn.setEnabled(has_selection and self.showing_deleted)
+        self.retire_btn.setEnabled(has_selection and not self.showing_deleted)
+        # The button says what it will do to the selected campaign.
+        self.retire_btn.setText("Bring back" if (self.selected and self.selected.get("isRetired")) else "Retire")
 
     def _open_create(self):
         created = {}
@@ -190,6 +219,40 @@ class MarketingSection(QWidget):
         )
         if dialog.exec():
             self._load(self.table.current_limit())
+
+    def _retire_or_bring_back(self):
+        if not self.selected:
+            return
+        campaign_id = self.selected.get("campaignId")
+        name = self.selected.get("name")
+        if self.selected.get("isRetired"):
+            title, question, path = (
+                "Bring campaign back?",
+                f"Bring '{name}' back? It shows on the website again while it is Active, within its dates and "
+                "has at least one product.",
+                f"/marketing/campaigns/{campaign_id}/unretire",
+            )
+        else:
+            title, question, path = (
+                "Retire campaign?",
+                f"Retire '{name}'? It leaves the website (Featured page, banner and product tags) straight away. "
+                "Its picture or video, products and dates are kept, and you can bring it back any time.",
+                f"/marketing/campaigns/{campaign_id}/retire",
+            )
+        if QMessageBox.question(self, title, question) != QMessageBox.StandardButton.Yes:
+            return
+
+        def on_done(_result):
+            self.selected = None
+            self.selection_label.setText("Double-click a campaign to select it.")
+            self._update_action_state()
+            self._load(self.table.current_limit())
+
+        self._run(
+            lambda: self.api_client.post(path, actor=True),
+            on_done,
+            lambda msg: QMessageBox.critical(self, "Couldn't update campaign", msg),
+        )
 
     def _delete_selected(self):
         if not self.selected:

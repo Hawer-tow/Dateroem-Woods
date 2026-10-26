@@ -70,6 +70,7 @@ export const api = {
   myOrders: (token, limit = 50) => request(`/orders/mine?limit=${limit}`, { headers: authHeader(token) }),
   helpContact: () => request('/help/contact'),
   helpFaqs: () => request('/help/faqs'),
+  helpNotices: () => request('/help/notices'),
   sendSupportEmail: (payload, token) =>
     request('/help/email', { method: 'POST', body: JSON.stringify(payload), headers: authHeader(token) }),
   chat: (question) => request('/help/chat', { method: 'POST', body: JSON.stringify({ question }) }),

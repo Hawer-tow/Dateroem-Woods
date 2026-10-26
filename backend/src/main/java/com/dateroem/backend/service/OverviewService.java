@@ -82,13 +82,16 @@ public class OverviewService {
     }
 
     // Running, upcoming and ended by their dates - the desktop's own rule.
+    // A retired campaign (migration 041) is counted on its own, never as
+    // running.
     private Map<String, Object> campaigns() {
         String today = LocalDate.now().toString();
         Map<String, Object> row = jdbcTemplate.queryForMap(
             "SELECT " +
             "  COALESCE(SUM(Is_Deleted = FALSE), 0) AS Total, " +
-            "  COALESCE(SUM(Is_Deleted = FALSE AND COALESCE(Start_At, '0000-01-01') <= ? AND COALESCE(End_At, '9999-12-31') >= ?), 0) AS Running, " +
-            "  COALESCE(SUM(Is_Deleted = FALSE AND Start_At > ?), 0) AS Upcoming, " +
+            "  COALESCE(SUM(Is_Deleted = FALSE AND Is_Retired = FALSE AND COALESCE(Start_At, '0000-01-01') <= ? AND COALESCE(End_At, '9999-12-31') >= ?), 0) AS Running, " +
+            "  COALESCE(SUM(Is_Deleted = FALSE AND Is_Retired = FALSE AND Start_At > ?), 0) AS Upcoming, " +
+            "  COALESCE(SUM(Is_Deleted = FALSE AND Is_Retired = TRUE), 0) AS Retired, " +
             "  COALESCE(SUM(Is_Deleted = FALSE AND UPPER(Media_Type) = 'IMAGE'), 0) AS Photos, " +
             "  COALESCE(SUM(Is_Deleted = FALSE AND UPPER(Media_Type) = 'VIDEO'), 0) AS Videos, " +
             "  COALESCE(SUM(Is_Deleted = TRUE), 0) AS Deleted " +
@@ -98,11 +101,13 @@ public class OverviewService {
         long total = number(row.get("Total"));
         long running = number(row.get("Running"));
         long upcoming = number(row.get("Upcoming"));
+        long retired = number(row.get("Retired"));
         Map<String, Object> campaigns = new LinkedHashMap<>();
         campaigns.put("total", total);
         campaigns.put("running", running);
         campaigns.put("upcoming", upcoming);
-        campaigns.put("ended", Math.max(0, total - running - upcoming));
+        campaigns.put("ended", Math.max(0, total - running - upcoming - retired));
+        campaigns.put("retired", retired);
         campaigns.put("photos", number(row.get("Photos")));
         campaigns.put("videos", number(row.get("Videos")));
         campaigns.put("deleted", number(row.get("Deleted")));

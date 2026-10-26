@@ -166,6 +166,13 @@ async def faqs():
     return await backend_client.get("/api/faqs")
 
 
+@router.get("/notices")
+async def notices():
+    """The Updates in the top bar: notices the admins wrote in the desktop
+    app, until the end of their last day. Drafts never leave the backend."""
+    return await backend_client.get("/api/notices")
+
+
 @router.get("/contact")
 async def contact():
     return {

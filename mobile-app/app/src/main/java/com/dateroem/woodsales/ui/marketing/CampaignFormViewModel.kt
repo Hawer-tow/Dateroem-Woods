@@ -112,7 +112,12 @@ data class CampaignFormState(
     val deleting: Boolean = false,
     val deleted: Boolean = false,
     // Unsaved changes from an earlier visit were put back.
-    val restoredDraft: Boolean = false
+    val restoredDraft: Boolean = false,
+    // Retiring happens here, inside the campaign, as for products; Bring
+    // back is on the campaign list.
+    val retired: Boolean = false,
+    val retiring: Boolean = false,
+    val retiredNow: Boolean = false
 ) {
     // Whichever is about to be saved - a freshly picked file takes
     // priority over whatever the campaign already had.
@@ -255,7 +260,8 @@ class CampaignFormViewModel(
             status = CampaignStatus.entries.firstOrNull { it.label.equals(campaign.status, ignoreCase = true) }
                 ?: CampaignStatus.DRAFT,
             existingMediaUrl = campaign.media,
-            existingMediaType = campaign.mediaType
+            existingMediaType = campaign.mediaType,
+            retired = campaign.retired
         )
     }
 
@@ -349,6 +355,23 @@ class CampaignFormViewModel(
                 _state.value = _state.value.copy(deleting = false, deleted = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(deleting = false, error = describeError(e))
+            }
+        }
+    }
+
+    // "allow a campaign to be retired just like the products" - off the
+    // website straight away; its media, products and dates are kept, and it
+    // can be brought back from the campaign list. Unsaved edits in the form
+    // are left as they were (not saved by this).
+    fun retire() {
+        val id = editingCampaignId ?: return
+        _state.value = _state.value.copy(retiring = true, error = null)
+        viewModelScope.launch {
+            try {
+                api.retireCampaign(id, actorUserId)
+                _state.value = _state.value.copy(retiring = false, retired = true, retiredNow = true)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(retiring = false, error = describeError(e))
             }
         }
     }
