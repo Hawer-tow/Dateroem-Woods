@@ -42,75 +42,80 @@ export default function NavBar() {
 
         <div className="navbar__spacer" />
 
-        {/* Notices from the team ("we might be having an update soon"),
-            only while one is showing - see UpdatesMenu. On phones it is in
-            the fold-out menu instead. */}
-        <ThemeDots />
-        <UpdatesMenu updates={updates} onOpen={() => setShowMenu(false)} />
+        {/* The buttons on the right. On wide screens the header is three
+            columns - the brand down the left, the page links in the middle,
+            these on the right (26 October 2026, styles/index.css). */}
+        <div className="navbar__actions">
+          {/* Notices from the team ("we might be having an update soon"),
+              only while one is showing - see UpdatesMenu. On phones it is in
+              the fold-out menu instead. */}
+          <ThemeDots />
+          <UpdatesMenu updates={updates} onOpen={() => setShowMenu(false)} />
 
-        {/* "e.g 134 will push the menu away ... a more dynamic and lively
-            way without writing numbers so we preserve the area at the top
-            from adjusting" - a pulsing dot instead of a growing digit
-            count keeps this link's width fixed no matter how many items
-            are in the cart. "make the cart name to be a shopping cart icon
-            ... for even farter recognition" - icon-only, matching the
-            navbar's other icon buttons, with the dot as a corner badge in
-            a color distinct from the painted wood used everywhere else. */}
-        <Link
-          to="/cart"
-          className="navbar__cart"
-          onClick={closeMobile}
-          aria-label={count > 0 ? `Cart, ${count} items` : 'Cart'}
-        >
-          <Icon name="cart" size={19} />
-          {count > 0 && <span className="navbar__cart-dot" />}
-        </Link>
+          {/* "e.g 134 will push the menu away ... a more dynamic and lively
+              way without writing numbers so we preserve the area at the top
+              from adjusting" - a pulsing dot instead of a growing digit
+              count keeps this link's width fixed no matter how many items
+              are in the cart. "make the cart name to be a shopping cart icon
+              ... for even farter recognition" - icon-only, matching the
+              navbar's other icon buttons, with the dot as a corner badge in
+              a color distinct from the painted wood used everywhere else. */}
+          <Link
+            to="/cart"
+            className="navbar__cart"
+            onClick={closeMobile}
+            aria-label={count > 0 ? `Cart, ${count} items` : 'Cart'}
+          >
+            <Icon name="cart" size={19} />
+            {count > 0 && <span className="navbar__cart-dot" />}
+          </Link>
 
-        <div className="navbar__account">
+          <div className="navbar__account">
+            <button
+              type="button"
+              className={`navbar__user-icon${isAuthenticated && user.photoUrl ? ' navbar__user-icon--photo' : ''}`}
+              onClick={() => (isAuthenticated ? setShowMenu((v) => !v) : setShowAuth(true))}
+              aria-label={isAuthenticated ? `Account: ${user.name}` : 'Sign in'}
+            >
+              {isAuthenticated ? <Avatar name={user.name} photoUrl={user.photoUrl} size={34} /> : <Icon name="user" size={18} />}
+            </button>
+            {isAuthenticated && showMenu && (
+              <div className="navbar__account-menu">
+                <p className="navbar__account-name">{user.name}</p>
+                {/* "a profile area" - photo, details, phone and password (23 October 2026). */}
+                <Link to="/profile" className="navbar__account-link" onClick={() => setShowMenu(false)}>
+                  My profile
+                </Link>
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => {
+                    logout()
+                    setShowMenu(false)
+                  }}
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
-            className={`navbar__user-icon${isAuthenticated && user.photoUrl ? ' navbar__user-icon--photo' : ''}`}
-            onClick={() => (isAuthenticated ? setShowMenu((v) => !v) : setShowAuth(true))}
-            aria-label={isAuthenticated ? `Account: ${user.name}` : 'Sign in'}
+            className="navbar__toggle"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
           >
-            {isAuthenticated ? <Avatar name={user.name} photoUrl={user.photoUrl} size={34} /> : <Icon name="user" size={18} />}
+            <Icon name={mobileOpen ? 'close' : 'menu'} size={18} />
+            {updates.unread && !mobileOpen && <span className="updates-menu__dot" />}
           </button>
-          {isAuthenticated && showMenu && (
-            <div className="navbar__account-menu">
-              <p className="navbar__account-name">{user.name}</p>
-              {/* "a profile area" - photo, details, phone and password (23 October 2026). */}
-              <Link to="/profile" className="navbar__account-link" onClick={() => setShowMenu(false)}>
-                My profile
-              </Link>
-              <button
-                type="button"
-                className="btn btn--text"
-                onClick={() => {
-                  logout()
-                  setShowMenu(false)
-                }}
-              >
-                Sign out
-              </button>
-            </div>
-          )}
         </div>
-
-        <button
-          type="button"
-          className="navbar__toggle"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={mobileOpen}
-        >
-          <Icon name={mobileOpen ? 'close' : 'menu'} size={18} />
-          {updates.unread && !mobileOpen && <span className="updates-menu__dot" />}
-        </button>
       </div>
 
       <nav className={`navbar__links${mobileOpen ? ' navbar__links--open' : ''}`}>
         {/* "can they be placed in the center" (26 October 2026) - the page
-            links as one group in the middle of the bar, Theme at its end. */}
+            links as one group in the middle of the bar. */}
         <div className="navbar__pages">
           <Link to="/" onClick={closeMobile}>Products</Link>
           {/* Customers don't go looking for "Marketing" - the tab is named

@@ -170,6 +170,13 @@ body {
 .navbar__spacer {
   flex: 1;
 }
+/* The buttons on the right: theme dots, Updates, cart, account, menu. */
+.navbar__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: inherit;
+}
 .navbar__brand {
   display: inline-flex;
   align-items: center;
@@ -251,6 +258,7 @@ body {
   display: flex;
   gap: 24px;
   align-items: center;
+  white-space: nowrap;
 }
 .navbar__links a {
   color: var(--text-muted);
@@ -451,8 +459,8 @@ body {
   position: relative;
 }
 @media (max-width: 720px) {
-  .navbar__row > .updates-menu,
-  .navbar__row > .theme-dots {
+  .navbar__actions > .updates-menu,
+  .navbar__actions > .theme-dots {
     display: none;
   }
   .theme-dots--in-menu {
@@ -541,6 +549,59 @@ body {
 }
 .navbar__user-icon--photo {
   border-color: var(--wood-tone);
+}
+
+/* "on the left of the website since there is nothing there let it cover the
+   header well" (26 October 2026) - on wide screens the header is three
+   columns: the emblem and name, larger, down the whole left of the bar
+   (both lines), the page links in the middle under nothing, and the buttons
+   at the top right. Narrower screens keep the two lines (name and buttons,
+   then the links). */
+@media (min-width: 1300px) {
+  .navbar {
+    display: grid;
+    /* Equal sides keep the links at the page's centre; on a narrower screen
+       the name's side grows first and the links move right, never over it. */
+    grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 32px;
+    padding: 0 clamp(16px, 4vw, 64px);
+  }
+  .navbar__row {
+    display: contents;
+  }
+  .navbar__spacer {
+    display: none;
+  }
+  /* "too large in size" - a little larger than on narrower screens, not more. */
+  .navbar__brand {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+    justify-self: start;
+    gap: 10px;
+    padding: 12px 0;
+    font-size: 1.35rem;
+  }
+  .navbar__emblem {
+    width: 44px;
+    height: 44px;
+  }
+  .navbar__wordmark {
+    height: 33px;
+  }
+  .navbar__actions {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    gap: 16px;
+    padding-top: 14px;
+  }
+  .navbar__links {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 2px 0 14px;
+  }
 }
 
 /* Profile photos (components/Avatar.jsx): the photo in a circle, or the
