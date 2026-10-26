@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication
 
 from app.core import http
 from app.core.api_client import ApiClient
+from app.core.foreground import bring_to_front
 from app.core.session import Session
 from app.core.single_instance import SingleInstanceGuard
 from app.core.windows_app_id import set_windows_app_id
@@ -205,26 +206,37 @@ def main(app=None, guard=None, boot=None):
 
     guard.activate_requested.connect(activate_existing_window)
 
-    # Splash plays once, on cold start - the phone app's entrance (the misty
-    # forest rising out of the mist) - and dissolves into the sign-in
-    # screen opened behind it, which carries on the same forest. Logging out
-    # later just returns straight to the sign-in screen, no replay (this is
-    # an admin tool people open and close often; re-showing a multi-second
-    # animation every time would get old fast).
-    def show_login():
-        login_window.showMaximized()
+    # The intro plays once, on cold start - the phone app's entrance (the
+    # misty forest rising out of the mist) - and dissolves into the sign-in
+    # screen, which carries on the same forest. Logging out later just
+    # returns straight to the sign-in screen, no replay (this is an admin
+    # tool people open and close often; re-showing a multi-second animation
+    # every time would get old fast).
+    #
+    # "why play it then remove it should be one" (26 October 2026): the
+    # sign-in window opens first, taking over from the Starting window while
+    # this app is still the one in front, and the intro plays as a layer
+    # inside it. It used to be a separate full-screen window; when it closed,
+    # Windows would not bring the sign-in window forward (it only flashed
+    # its taskbar button), so one had to click it.
+    def intro_ending():
+        login_window.end_intro()
         # The network library loads on first use (core/http.py); load it
         # now, while the person is still typing, so signing in doesn't wait.
         http.warm_up()
 
     def focus_login():
         # Once the intro has dissolved, the cursor waits in Username.
-        login_window.raise_()
-        login_window.activateWindow()
+        bring_to_front(login_window)
         login_window.username_input.setFocus()
 
-    splash = SplashScreen(on_finish=show_login, on_closed=focus_login)
-    splash.showFullScreen()
+    login_window.begin_intro()
+    login_window.showMaximized()
+    splash = SplashScreen(login_window, on_finish=intro_ending, on_closed=focus_login)
+    splash.show()
+    splash.raise_()
+    bring_to_front(login_window)
+    splash.setFocus()
     if boot is not None:
         boot.close()
 

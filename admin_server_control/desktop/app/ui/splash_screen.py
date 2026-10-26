@@ -10,16 +10,22 @@ either cropped or with empty sides. The misty forest fills the screen.
 
 It hands over to sign-in without a jump ("let it feel like a transition
 graceful"): in its last moments the app's own greens wash over the forest,
-then the sign-in screen - the same forest in the same place, the same mist
-and the same wash (entrance_paint.draw_forest_backdrop) - opens behind it
-and the intro dissolves into it, the brand giving way to the sign-in card.
+then it dissolves into the sign-in screen underneath - the same forest in the
+same place, the same mist and the same wash (entrance_paint.draw_forest_backdrop)
+- the brand giving way to the sign-in card.
+
+Since 26 October 2026 it plays as a layer inside the sign-in window, not as a
+window of its own ("why play it then remove it should be one"): the separate
+full-screen window used to close and leave sign-in behind whatever else was
+open, and Windows only flashed sign-in's taskbar button instead of bringing it
+forward. One window means there is nothing to hand over.
 Every picture is scaled once, before the clock starts; the picture comes
 from brand/entrance photos/prepare_entrance.py --desktop."""
 import time
 
-from PySide6.QtCore import QEasingCurve, QPointF, QRectF, Qt, QTimer, QVariantAnimation
+from PySide6.QtCore import QEasingCurve, QEvent, QPoint, QPointF, QRectF, Qt, QTimer, QVariantAnimation
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPixmap, QRadialGradient
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from app.ui import theme
 from app.ui.entrance_paint import (
@@ -56,13 +62,22 @@ VEIL_BANDS = ((0.9, 1.6), (0.8, 1.6))
 
 
 class SplashScreen(QWidget):
-    def __init__(self, on_finish, on_closed=None, parent=None):
-        super().__init__(parent)
-        self.on_finish = on_finish      # opens the sign-in screen behind the intro
+    """The intro as a layer covering the sign-in window (host), from its
+    first frame until it has dissolved away."""
+
+    def __init__(self, host: QWidget, on_finish, on_closed=None):
+        super().__init__(host)
+        self.on_finish = on_finish      # the intro starts dissolving into sign-in
         self.on_closed = on_closed      # once the intro has dissolved away
         self._finished = False
-        # Stays above the sign-in screen opening behind it, until it has dissolved.
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        # Covers the whole sign-in window and follows it when it resizes.
+        self.setGeometry(host.rect())
+        host.installEventFilter(self)
+        # Takes the keys while it plays, so any key skips it.
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # Every frame covers the whole layer, so the sign-in screen under it
+        # need not be painted too - until the dissolve, when it shows through.
+        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
 
         self._pics = EntrancePictures(self)
         self._emblem = QPixmap(theme.EMBLEM)
@@ -88,6 +103,22 @@ class SplashScreen(QWidget):
     def keyPressEvent(self, _event):
         self._finish(SKIP_DISSOLVE_MS)
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        # The app's style sheet turns this off as the layer is first shown.
+        if not self._finished:
+            self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Type.Resize and watched is self.parentWidget():
+            self.setGeometry(watched.rect())
+        return False
+
+    def focusNextPrevChild(self, _next: bool) -> bool:
+        # Tab skips the intro like any other key, instead of moving into the
+        # sign-in form hidden underneath.
+        return False
+
     def _elapsed_ms(self) -> float:
         return 0.0 if self._start is None else (time.monotonic() - self._start) * 1000
 
@@ -100,24 +131,31 @@ class SplashScreen(QWidget):
         if self._finished:
             return
         self._finished = True
-        # The sign-in screen opens behind this one (shown *before* this one
-        # closes - QApplication quits on its last visible window closing),
-        # then this one dissolves into it, still animating its mist.
+        # Sign-in's own forest starts moving underneath, then this layer
+        # dissolves into it, still animating its mist. The fade is on this
+        # layer alone (it holds nothing but its own painting).
         self.on_finish()
-        self.raise_()
+        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, False)
+        fade = QGraphicsOpacityEffect(self)
+        fade.setOpacity(1.0)
+        self.setGraphicsEffect(fade)
         anim = QVariantAnimation(self)
         anim.setStartValue(1.0)
         anim.setEndValue(0.0)
         anim.setDuration(dissolve_ms)
         anim.setEasingCurve(QEasingCurve.Type.InOutSine)
-        anim.valueChanged.connect(lambda v: self.setWindowOpacity(float(v)))
+        anim.valueChanged.connect(lambda v: fade.setOpacity(float(v)))
         anim.finished.connect(self._close)
         self._dissolve = anim   # kept referenced, or Python collects it mid-way
         anim.start()
 
     def _close(self):
         self._timer.stop()
-        self.close()
+        host = self.parentWidget()
+        if host is not None:
+            host.removeEventFilter(self)
+        self.hide()
+        self.deleteLater()
         if self.on_closed is not None:
             self.on_closed()
 
@@ -139,14 +177,22 @@ class SplashScreen(QWidget):
         wordmark_h = (wordmark_w * self._wordmark.height() / self._wordmark.width()) if not self._wordmark.isNull() else 0
         return emblem_size, wordmark_w, wordmark_h, h * 0.02, max(12, round(h * 0.018)), max(10, round(h * 0.014))
 
-    def _prepare(self, w: int, h: int):
+    def _screen_frame(self) -> QRectF:
+        """The whole screen, in this layer's coordinates. The picture is placed
+        there, as sign-in places its own (LoginWindow._screen_frame), so the
+        two line up exactly when the intro dissolves."""
+        screen = self.screen().geometry() if self.screen() is not None else self.rect()
+        origin = self.mapToGlobal(QPoint(0, 0))
+        return QRectF(screen.x() - origin.x(), screen.y() - origin.y(), screen.width(), screen.height())
+
+    def _prepare(self, w: int, h: int, frame: QRectF):
         """Everything the intro will draw, scaled for this screen before the
         clock starts - so no frame stalls while a picture is resized."""
         pics = self._pics
         if not pics.photos["forest"].isNull():
-            pics.cover("forest", w, h)
+            pics.cover("forest", int(frame.width()), int(frame.height()))
         if not pics.fog.isNull():
-            pics.prepare_fog(h, RESTING_MIST_BANDS + VEIL_BANDS)
+            pics.prepare_fog(int(frame.height()), RESTING_MIST_BANDS + VEIL_BANDS)
         emblem_size, wordmark_w, _, _, tagline_px, name_px = self._brand_layout(w, h)
         if not self._emblem.isNull():
             self._scaled_brand("emblem", self._emblem, emblem_size)
@@ -162,10 +208,10 @@ class SplashScreen(QWidget):
     def paintEvent(self, _event):
         p = QPainter(self)
         w, h = self.width(), self.height()
-        frame = QRectF(0, 0, w, h)
+        frame = self._screen_frame()
         p.fillRect(self.rect(), QColor(0x07, 0x08, 0x0A))
         if self._start is None:
-            self._prepare(w, h)
+            self._prepare(w, h, frame)
             self._start = time.monotonic()
             QTimer.singleShot(TOTAL_MS + 2500, self._finish)
         t = self._elapsed_ms()

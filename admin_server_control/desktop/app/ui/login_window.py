@@ -245,6 +245,10 @@ class LoginWindow(QWidget):
         self._shown_at = time.monotonic()
         self._anim_timer = QTimer(self)
         self._anim_timer.timeout.connect(self._tick)
+        # While the intro plays on top of this window (main.py), the forest
+        # here waits; it starts as the intro dissolves, so its mist carries
+        # on exactly where the intro's left off.
+        self._intro_playing = False
 
         # Window opens maximized (main.py calls showMaximized()), so the
         # form itself is a fixed-width card centered in the middle via
@@ -597,10 +601,21 @@ class LoginWindow(QWidget):
         self.close_server_window()
         super().closeEvent(event)
 
+    def begin_intro(self):
+        self._intro_playing = True
+        self._anim_timer.stop()
+
+    def end_intro(self):
+        self._intro_playing = False
+        self._shown_at = time.monotonic()
+        if self.isVisible():
+            self._anim_timer.start(40)
+
     def showEvent(self, event):
         super().showEvent(event)
-        self._shown_at = time.monotonic()
-        self._anim_timer.start(40)
+        if not self._intro_playing:
+            self._shown_at = time.monotonic()
+            self._anim_timer.start(40)
         if self.servers_btn.isVisibleTo(self):
             QTimer.singleShot(0, self._ensure_server_card)
 
